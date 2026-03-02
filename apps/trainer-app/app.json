@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "GroupFit Trainer",
+    "slug": "groupfit-trainer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "groupfit-trainer",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.groupfit.trainer" },
+    "android": { "package": "com.groupfit.trainer" },
+    "experiments": { "typedRoutes": true }
+  }
+}

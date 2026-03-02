@@ -1,0 +1,61 @@
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ONBOARDING_COMPLETED_KEY = 'OnBoardingCompleted';
+const TOKEN_KEY = 'groupfit_token';
+
+export default function Index() {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      const [onboardingDone, token] = await Promise.all([
+        AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY),
+        AsyncStorage.getItem(TOKEN_KEY),
+      ]);
+
+      if (cancelled) return;
+
+      if (onboardingDone !== 'YES') {
+        router.replace('/auth/onboarding');
+        return;
+      }
+      if (!token) {
+        router.replace('/auth/login');
+        return;
+      }
+      router.replace('/app/home');
+    }
+
+    run().then(() => {
+      if (!cancelled) setReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  if (!ready) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return null;
+}
+
+const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

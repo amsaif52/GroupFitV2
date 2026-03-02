@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "GroupFit Customer",
+    "slug": "groupfit-customer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "groupfit-customer",
+    "assetBundlePatterns": ["**/*"],
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.groupfit.customer" },
+    "android": { "package": "com.groupfit.customer" },
+    "experiments": { "typedRoutes": true }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "customer-app",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@groupfit/shared": "*",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-google-signin/google-signin": "^13.1.0",
+    "@tanstack/react-query": "^5.59.0",
+    "@tamagui/config": "^1.99.0",
+    "@tamagui/core": "^1.99.0",
+    "expo": "~50.0.0",
+    "expo-apple-authentication": "~6.4.0",
+    "expo-constants": "~15.4.0",
+    "expo-linking": "~6.2.0",
+    "expo-router": "~3.4.0",
+    "expo-status-bar": "~1.11.0",
+    "react": "18.2.0",
+    "react-native": "0.73.0",
+    "react-native-safe-area-context": "4.8.2",
+    "react-native-screens": "~3.29.0",
+    "tamagui": "^1.99.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@tamagui/babel-plugin": "^1.99.0",
+    "@types/react": "~18.2.0",
+    "babel-plugin-module-resolver": "^5.0.0",
+    "typescript": "^5.3.0"
+  }
+}

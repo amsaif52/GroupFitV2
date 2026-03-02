@@ -1,0 +1,33 @@
+/* GroupFit theme – same as shared theme (newCustomer/newTrainer) for use across components */
+:root {
+  --groupfit-primary-dark: #161639;
+  --groupfit-primary-light: #ffffff;
+  --groupfit-secondary: #E21B22;
+  --groupfit-blue: #000033;
+  --groupfit-grey: #777777;
+  --groupfit-grey-dark: #57585A;
+  --groupfit-black: #060606;
+  --groupfit-white: #ffffff;
+  --groupfit-placeholder: rgba(6, 6, 6, 0.3);
+  --groupfit-border: rgba(255, 255, 255, 0.8);
+  --groupfit-border-light: rgba(44, 44, 46, 0.4);
+  --groupfit-error: #EC3D3D;
+  --groupfit-success: #07AF36;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

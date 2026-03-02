@@ -1,0 +1,43 @@
+{
+  "name": "groupfit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "GroupFit - Fitness platform with admin, trainer, and customer apps",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:api": "npm run build:shared && npm run dev --workspace=api",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:customer-app": "npm run start --workspace=customer-app",
+    "dev:trainer-app": "npm run start --workspace=trainer-app",
+    "build:api": "npm run build --workspace=api",
+    "build:web": "npm run build --workspace=web",
+    "build:shared": "npm run build --workspace=@groupfit/shared",
+    "storybook:shared": "npm run storybook --workspace=@groupfit/shared",
+    "storybook:web": "npm run storybook --workspace=web",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test --workspaces --if-present",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "playwright test --headed",
+    "prepare": "husky || true"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.0",
+    "typescript-eslint": "^8.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md}": ["prettier --write", "eslint --fix"]
+  }
+}
