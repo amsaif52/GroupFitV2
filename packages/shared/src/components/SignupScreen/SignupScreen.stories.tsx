@@ -17,6 +17,8 @@ const meta: Meta<typeof SignupScreenWeb> = {
     onSubmit: { action: 'submitted' },
     onLoginClick: { action: 'loginClicked' },
     onTermsClick: { action: 'termsClicked' },
+    onGooglePress: { action: 'googleClicked' },
+    onApplePress: { action: 'appleClicked' },
   },
 };
 
@@ -82,5 +84,12 @@ export const SubmitCallsOnSubmit: Story = {
       email: 'jane@example.com',
       password: 'secret123',
     });
+  },
+};
+
+export const WithSocialButtons: Story = {
+  args: {
+    onGooglePress: () => {},
+    onApplePress: () => {},
   },
 };

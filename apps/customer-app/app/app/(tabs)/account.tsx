@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { decodeJwtPayload } from '@groupfit/shared';
 import { ProfileScreenNative } from '@groupfit/shared/components/native';
-import { getStoredToken, clearStoredToken } from '../../lib/api';
+import { getStoredToken, clearStoredToken } from '../../../lib/api';
 
-const APP_VERSION = process.env.EXPO_PUBLIC_APP_VERSION ?? '1.0.0';
-
-export default function AccountScreenRoute() {
+export default function AccountTab() {
   const router = useRouter();
   const [userName, setUserName] = useState('');
 
@@ -25,13 +23,15 @@ export default function AccountScreenRoute() {
 
   return (
     <ProfileScreenNative
-      variant="trainer"
+      variant="customer"
       userName={userName}
-      isVerified={true}
-      appVersion={APP_VERSION}
       onLogout={handleLogout}
-      onEditProfile={() => router.push('/app/profile')}
-      onNotifications={() => {}}
+      onEditProfile={() => router.push('/app/profile/edit')}
+      onReferFriend={() => router.push('/app/refer')}
+      onMyLocations={() => router.push('/app/locations')}
+      onNotifications={() => router.push('/app/notifications')}
+      onGroups={() => router.push('/app/groups')}
+      onPaymentHistory={() => router.push('/app/payments')}
       onHelp={() => router.push('/app/help')}
     />
   );

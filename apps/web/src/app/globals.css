@@ -31,3 +31,53 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Customer app: left vertical nav + main content */
+.gf-customer-layout {
+  display: flex;
+  min-height: 100vh;
+}
+.gf-customer-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--groupfit-blue);
+  color: var(--groupfit-white);
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gf-customer-sidebar__logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 0 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  margin-bottom: 8px;
+}
+.gf-customer-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gf-customer-sidebar__link {
+  display: block;
+  padding: 12px 20px;
+  color: rgba(255,255,255,0.85);
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s;
+}
+.gf-customer-sidebar__link:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--groupfit-white);
+}
+.gf-customer-sidebar__link--active {
+  background: var(--groupfit-secondary);
+  color: var(--groupfit-white);
+}
+.gf-customer-main {
+  flex: 1;
+  padding: 24px;
+  background: var(--groupfit-primary-light);
+}

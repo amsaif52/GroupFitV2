@@ -98,4 +98,43 @@ describe('SignupScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
     expect(onLoginClick).toHaveBeenCalledTimes(1);
   });
+
+  it('shows social buttons when onGooglePress and onApplePress are provided', () => {
+    render(
+      <SignupScreen
+        onSubmit={() => {}}
+        onGooglePress={() => {}}
+        onApplePress={() => {}}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue with Apple' })).toBeInTheDocument();
+    expect(screen.getByText('or')).toBeInTheDocument();
+  });
+
+  it('calls onGooglePress when Continue with Google is clicked', () => {
+    const onGooglePress = jest.fn();
+    render(
+      <SignupScreen
+        onSubmit={() => {}}
+        onGooglePress={onGooglePress}
+        onApplePress={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
+    expect(onGooglePress).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onApplePress when Continue with Apple is clicked', () => {
+    const onApplePress = jest.fn();
+    render(
+      <SignupScreen
+        onSubmit={() => {}}
+        onGooglePress={() => {}}
+        onApplePress={onApplePress}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Apple' }));
+    expect(onApplePress).toHaveBeenCalledTimes(1);
+  });
 });

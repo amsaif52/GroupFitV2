@@ -8,6 +8,7 @@ import type { Locale } from '@groupfit/shared';
 import { api } from '@/lib/api';
 import { setStoredToken } from '@/lib/auth';
 import type { LoginResponse } from '@groupfit/shared';
+import { decodeJwtPayload } from '@groupfit/shared';
 import { ApiClientError } from '@groupfit/shared';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
@@ -28,7 +29,8 @@ export default function LoginPage() {
     try {
       const { data } = await api.post<LoginResponse>('/auth/login', { email, password });
       setStoredToken(data.accessToken);
-      router.push('/dashboard');
+      const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
+      router.push(role === ROLES.ADMIN ? '/admin/dashboard' : '/dashboard');
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof ApiClientError ? err.message : 'Login failed');
@@ -46,7 +48,8 @@ export default function LoginPage() {
           role: roleParam,
         });
         setStoredToken(data.accessToken);
-        router.push('/dashboard');
+        const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
+        router.push(role === ROLES.ADMIN ? '/admin/dashboard' : '/dashboard');
         router.refresh();
       } catch (err: unknown) {
         setError(err instanceof ApiClientError ? err.message : 'Google sign-in failed');

@@ -26,12 +26,12 @@ export default function ProfileScreenRoute() {
       variant="customer"
       userName={userName}
       onLogout={handleLogout}
-      onEditProfile={() => router.push('/app/profile')}
-      onReferFriend={() => {}}
-      onMyLocations={() => {}}
-      onNotifications={() => {}}
-      onGroups={() => {}}
-      onPaymentHistory={() => {}}
+      onEditProfile={() => router.push('/app/profile/edit')}
+      onReferFriend={() => router.push('/app/refer')}
+      onMyLocations={() => router.push('/app/locations')}
+      onNotifications={() => router.push('/app/notifications')}
+      onGroups={() => router.push('/app/groups')}
+      onPaymentHistory={() => router.push('/app/payments')}
       onHelp={() => router.push('/app/help')}
     />
   );

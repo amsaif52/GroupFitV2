@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SplashScreen } from '@groupfit/shared/components/native';
 
 const ONBOARDING_COMPLETED_KEY = 'OnBoardingCompleted';
 const TOKEN_KEY = 'groupfit_token';
@@ -29,7 +29,7 @@ export default function Index() {
         router.replace('/auth/login');
         return;
       }
-      router.replace('/app/home');
+      router.replace('/app');
     }
 
     run().then(() => {
@@ -42,20 +42,8 @@ export default function Index() {
   }, [router]);
 
   if (!ready) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    return <SplashScreen title="GroupFit" loading />;
   }
 
   return null;
 }
-
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

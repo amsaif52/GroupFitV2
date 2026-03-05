@@ -17,11 +17,23 @@ export default function SignupScreenRoute() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(_data: { name: string; email: string; password: string }) {
+  async function handleSubmit(data: { name: string; email: string; password: string }) {
     setError(null);
     setLoading(true);
-    setError('Sign up with email is not available yet. Use Google or Apple.');
-    setLoading(false);
+    try {
+      const res = await api.post<LoginResponse>('/auth/signup', {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: ROLES.CUSTOMER,
+      });
+      await setStoredToken(res.data.accessToken);
+      router.replace('/app/home');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Sign up failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleGooglePress() {

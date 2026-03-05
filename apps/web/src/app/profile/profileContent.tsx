@@ -63,52 +63,84 @@ export function CustomerProfileContent({
 
       <div className="gf-profile__cards">
         <Link href={getProfileLink('/profile/edit')} className="gf-profile__card">
-          <span className="gf-profile__card-icon" aria-hidden>👤</span>
+          <span className="gf-profile__card-icon" aria-hidden>
+            👤
+          </span>
           <span className="gf-profile__card-label">{t.nav.profile}</span>
         </Link>
         <Link href={getProfileLink('/groups')} className="gf-profile__card">
-          <span className="gf-profile__card-icon" aria-hidden>👥</span>
+          <span className="gf-profile__card-icon" aria-hidden>
+            👥
+          </span>
           <span className="gf-profile__card-label">Groups</span>
         </Link>
         <Link href={getProfileLink('/payment-history')} className="gf-profile__card">
-          <span className="gf-profile__card-icon" aria-hidden>💳</span>
+          <span className="gf-profile__card-icon" aria-hidden>
+            💳
+          </span>
           <span className="gf-profile__card-label">Payment History</span>
         </Link>
       </div>
 
       <div className="gf-profile__list">
         <ProfileLink href={getProfileLink('/refer')}>
-          <span className="gf-profile__row-icon" aria-hidden>➕</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            ➕
+          </span>
           <span>Refer a Friend</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/locations')}>
-          <span className="gf-profile__row-icon" aria-hidden>📍</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            📍
+          </span>
           <span>My Locations</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/notifications')}>
-          <span className="gf-profile__row-icon" aria-hidden>🔔</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            🔔
+          </span>
           <span>Notifications</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={PRIVACY_URL} external>
-          <span className="gf-profile__row-icon" aria-hidden>🔒</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            🔒
+          </span>
           <span>Privacy Policy</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={TERMS_URL} external>
-          <span className="gf-profile__row-icon" aria-hidden>📄</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            📄
+          </span>
           <span>Terms and Conditions</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/help')}>
-          <span className="gf-profile__row-icon" aria-hidden>❓</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            ❓
+          </span>
           <span>Help Centre</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink onClick={onLogout}>
-          <span className="gf-profile__row-icon gf-profile__row-icon--logout" aria-hidden>⎋</span>
+          <span className="gf-profile__row-icon gf-profile__row-icon--logout" aria-hidden>
+            ⎋
+          </span>
           <span className="gf-profile__signout">Sign Out</span>
         </ProfileLink>
       </div>
@@ -145,62 +177,108 @@ export function TrainerProfileContent({
 
       <div className="gf-profile__list">
         <ProfileLink href={getProfileLink('/profile/edit')}>
-          <span className="gf-profile__row-icon" aria-hidden>👤</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            👤
+          </span>
           <span>Edit Profile</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/availability')}>
-          <span className="gf-profile__row-icon" aria-hidden>📅</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            📅
+          </span>
           <span>Availability</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/activities')}>
-          <span className="gf-profile__row-icon" aria-hidden>🏃</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            🏃
+          </span>
           <span>Activities</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/activity-area')}>
-          <span className="gf-profile__row-icon" aria-hidden>📍</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            📍
+          </span>
           <span>Activity Area</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/certificates')}>
-          <span className="gf-profile__row-icon" aria-hidden>📜</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            📜
+          </span>
           <span>Certificates</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/bank-details')}>
-          <span className="gf-profile__row-icon" aria-hidden>🏦</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            🏦
+          </span>
           <span>Bank Details</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/reviews')}>
-          <span className="gf-profile__row-icon" aria-hidden>⭐</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            ⭐
+          </span>
           <span>Reviews</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/earning')}>
-          <span className="gf-profile__row-icon" aria-hidden>💰</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            💰
+          </span>
           <span>Earning</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={PRIVACY_URL} external>
-          <span className="gf-profile__row-icon" aria-hidden>🔒</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            🔒
+          </span>
           <span>Privacy Policy</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={TERMS_URL} external>
-          <span className="gf-profile__row-icon" aria-hidden>📄</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            📄
+          </span>
           <span>Terms and Conditions</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink href={getProfileLink('/help')}>
-          <span className="gf-profile__row-icon" aria-hidden>❓</span>
+          <span className="gf-profile__row-icon" aria-hidden>
+            ❓
+          </span>
           <span>Help</span>
-          <span className="gf-profile__row-chevron" aria-hidden>›</span>
+          <span className="gf-profile__row-chevron" aria-hidden>
+            ›
+          </span>
         </ProfileLink>
         <ProfileLink onClick={onLogout}>
-          <span className="gf-profile__row-icon gf-profile__row-icon--logout" aria-hidden>⎋</span>
+          <span className="gf-profile__row-icon gf-profile__row-icon--logout" aria-hidden>
+            ⎋
+          </span>
           <span className="gf-profile__signout">Logout</span>
         </ProfileLink>
       </div>

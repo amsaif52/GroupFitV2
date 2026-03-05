@@ -30,7 +30,14 @@ export default function ProfileScreenRoute() {
       isVerified={true}
       appVersion={APP_VERSION}
       onLogout={handleLogout}
-      onEditProfile={() => router.push('/app/profile')}
+      onEditProfile={() => router.push('/app/profile/edit')}
+      onAvailability={() => router.push('/app/availability')}
+      onActivities={() => router.push('/app/activities')}
+      onActivityArea={() => router.push('/app/activity-area')}
+      onCertificates={() => router.push('/app/certificates')}
+      onBankDetails={() => router.push('/app/bank-details')}
+      onReviews={() => router.push('/app/reviews')}
+      onEarning={() => router.push('/app/earning')}
       onNotifications={() => {}}
       onHelp={() => router.push('/app/help')}
     />

@@ -104,7 +104,11 @@ export function ProfileScreenNative({
   if (variant === 'trainer') {
     return (
       <>
-        <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.hero}>
             <TouchableOpacity
               onPress={() => !isVerified && setShowUnderReviewModal(true)}
@@ -121,15 +125,28 @@ export function ProfileScreenNative({
           <View style={styles.rating}>
             <Text style={styles.ratingLabel}>Overall Rating</Text>
             <Text style={styles.ratingValue}>4.0</Text>
-            <Text style={styles.stars}>{'★'.repeat(4)}<Text style={styles.starsEmpty}>{'★'}</Text></Text>
+            <Text style={styles.stars}>
+              {'★'.repeat(4)}
+              <Text style={styles.starsEmpty}>{'★'}</Text>
+            </Text>
           </View>
           <View style={styles.list}>
-            <Row icon="👤" label="My Profile" onPress={onEditProfile} />
-            <Row icon="❓" label="Help" onPress={onHelp} />
-            <Row icon="🔔" label="Notifications" onPress={onNotifications} />
+            <Row icon="👤" label="Edit Profile" onPress={onEditProfile} />
+            <Row icon="📅" label="Availability" onPress={onAvailability} />
+            <Row icon="🏃" label="Activities" onPress={onActivities} />
+            <Row icon="📍" label="Activity Area" onPress={onActivityArea} />
+            <Row icon="📜" label="Certificates" onPress={onCertificates} />
+            <Row icon="🏦" label="Bank Details" onPress={onBankDetails} />
+            <Row icon="⭐" label="Reviews" onPress={onReviews} />
+            <Row icon="💰" label="Earning" onPress={onEarning} />
             <Row icon="🔒" label="Privacy Policy" onPress={() => Linking.openURL(PRIVACY_URL)} />
-            <Row icon="📄" label="Terms and Conditions" onPress={() => Linking.openURL(TERMS_URL)} />
-            <Row icon="⎋" label="Sign Out" onPress={handleLogout} signOut />
+            <Row
+              icon="📄"
+              label="Terms and Conditions"
+              onPress={() => Linking.openURL(TERMS_URL)}
+            />
+            <Row icon="❓" label="Help" onPress={onHelp} />
+            <Row icon="⎋" label="Logout" onPress={handleLogout} signOut />
           </View>
           {appVersion != null && appVersion !== '' && (
             <Text style={styles.version}>v{appVersion}</Text>
@@ -140,7 +157,11 @@ export function ProfileScreenNative({
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{UNDER_REVIEW_TITLE}</Text>
               <Text style={styles.modalMessage}>{UNDER_REVIEW_MESSAGE}</Text>
-              <TouchableOpacity style={styles.modalButton} onPress={() => setShowUnderReviewModal(false)} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={() => setShowUnderReviewModal(false)}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.modalButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
@@ -151,7 +172,11 @@ export function ProfileScreenNative({
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.headerRow}>
         <Text style={styles.name}>{displayName}</Text>
         <View style={styles.avatar} />

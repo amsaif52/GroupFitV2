@@ -32,6 +32,9 @@ export default function ProfilePage() {
   }, [user, router]);
 
   function handleLogout() {
+    if (typeof window !== 'undefined' && !window.confirm('Are you sure you want to logout?')) {
+      return;
+    }
     clearStoredToken();
     router.push('/login');
     router.refresh();

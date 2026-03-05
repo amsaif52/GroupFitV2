@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -9,10 +9,31 @@ import type { JwtPayload } from './jwt.strategy';
 
 export interface LoginResult {
   accessToken: string;
-  user: { id: string; email: string; role: string; locale: string | null };
+  user: { id: string; email: string; role: string; locale: string | null; name?: string | null };
 }
 
 const DEFAULT_ROLE = 'customer';
+const OTP_EXPIRY_MINUTES = 5;
+const OTP_EMAIL_DOMAIN = '@otp.groupfit.local';
+
+/** Generate a 4-digit OTP. */
+function generateOtp(): string {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+/** Normalize phone for storage (digits only, keep leading + if present for E.164). */
+function normalizePhone(phone: string): string {
+  const trimmed = phone.trim();
+  const hasPlus = trimmed.startsWith('+');
+  const digits = trimmed.replace(/\D/g, '');
+  return hasPlus ? `+${digits}` : digits;
+}
+
+/** Build a unique email for phone-only users. */
+function emailForPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return `p${digits}${OTP_EMAIL_DOMAIN}`;
+}
 
 @Injectable()
 export class AuthService {
@@ -31,6 +52,33 @@ export class AuthService {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException('Invalid email or password');
 
+    return this.issueToken(user);
+  }
+
+  /**
+   * Sign up with email and password. Creates user and returns JWT (same shape as Login).
+   * Throws ConflictException if email already exists.
+   */
+  async signup(
+    email: string,
+    password: string,
+    name?: string,
+    role?: string,
+  ): Promise<LoginResult> {
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('An account with this email already exists.');
+    }
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name: name ?? null,
+        passwordHash,
+        role: role ?? DEFAULT_ROLE,
+        locale: 'en',
+      },
+    });
     return this.issueToken(user);
   }
 
@@ -110,17 +158,135 @@ export class AuthService {
     return this.issueToken(user);
   }
 
+  /**
+   * Send OTP to phone: find or create user by phone, store OTP (5 min expiry), send SMS if Twilio configured.
+   */
+  async sendOtp(phoneNumber: string, role?: string): Promise<{ message: string; userCode: string }> {
+    const phone = normalizePhone(phoneNumber);
+    if (phone.length < 10) {
+      throw new BadRequestException('Invalid phone number');
+    }
+    const otp = generateOtp();
+    const email = emailForPhone(phone);
+
+    let user = await this.prisma.user.findUnique({ where: { phone } });
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          phone,
+          role: role ?? DEFAULT_ROLE,
+          locale: 'en',
+          otp,
+          otpSentAt: new Date(),
+        },
+      });
+    } else {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { otp, otpSentAt: new Date() },
+      });
+    }
+
+    await this.sendOtpSms(phone, otp);
+    return { message: 'OTP sent successfully', userCode: user.id };
+  }
+
+  /**
+   * Resend OTP: by phone or by userCode. Same as sendOtp but can target existing user by userCode.
+   */
+  async resendOtp(phoneNumber: string, userCode?: string): Promise<{ message: string; userCode: string }> {
+    const phone = normalizePhone(phoneNumber);
+    if (phone.length < 10) {
+      throw new BadRequestException('Invalid phone number');
+    }
+    const otp = generateOtp();
+
+    let user = userCode
+      ? await this.prisma.user.findFirst({ where: { id: userCode, phone } })
+      : await this.prisma.user.findUnique({ where: { phone } });
+
+    if (!user) {
+      throw new BadRequestException('User not found for this phone number');
+    }
+
+    user = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { otp, otpSentAt: new Date() },
+    });
+
+    await this.sendOtpSms(phone, otp);
+    return { message: 'OTP sent successfully', userCode: user.id };
+  }
+
+  /**
+   * Verify OTP and return JWT. OTP must match and be within 5 minutes of otpSentAt.
+   */
+  async verifyOtp(otp: string, userCode: string): Promise<LoginResult> {
+    const user = await this.prisma.user.findUnique({ where: { id: userCode } });
+    if (!user) {
+      throw new UnauthorizedException('Otp verification failed. Please retry.');
+    }
+    if (!user.otp || user.otp !== otp) {
+      throw new UnauthorizedException('Otp verification failed. Please retry.');
+    }
+    if (!user.otpSentAt) {
+      throw new UnauthorizedException('Otp verification failed. Please retry.');
+    }
+    const expiry = new Date(user.otpSentAt.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000);
+    if (new Date() > expiry) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { otp: null, otpSentAt: null },
+      });
+      throw new UnauthorizedException('Otp has been expired.');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { otp: null, otpSentAt: null },
+    });
+
+    return this.issueToken(user);
+  }
+
+  /**
+   * Send OTP via Twilio SMS if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are set.
+   * Otherwise no-op (for local dev).
+   */
+  private async sendOtpSms(phone: string, otp: string): Promise<void> {
+    const accountSid = this.config.get<string>('TWILIO_ACCOUNT_SID');
+    const authToken = this.config.get<string>('TWILIO_AUTH_TOKEN');
+    const fromNumber = this.config.get<string>('TWILIO_FROM_NUMBER');
+    if (!accountSid || !authToken || !fromNumber) {
+      return;
+    }
+    try {
+      const twilio = await import('twilio');
+      const client = twilio.default(accountSid, authToken);
+      await client.messages.create({
+        body: `Your OTP for secure verification is ${otp}. Please use this code for verification. Do not share this code with anyone for security reasons.`,
+        from: fromNumber,
+        to: phone,
+      });
+    } catch {
+      // Log but do not fail the request - OTP is stored
+    }
+  }
+
   private issueToken(user: {
     id: string;
     email: string;
     role: string;
     locale: string | null;
+    name?: string | null;
   }): LoginResult {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
       locale: user.locale ?? undefined,
+      name: user.name ?? undefined,
     };
     const accessToken = this.jwt.sign(payload);
     return {
@@ -130,6 +296,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         locale: user.locale,
+        name: user.name ?? null,
       },
     };
   }

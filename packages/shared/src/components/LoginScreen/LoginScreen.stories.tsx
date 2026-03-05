@@ -16,6 +16,8 @@ const meta: Meta<typeof LoginScreenWeb> = {
   argTypes: {
     onSubmit: { action: 'submitted' },
     onSignUpClick: { action: 'signUpClicked' },
+    onGooglePress: { action: 'googleClicked' },
+    onApplePress: { action: 'appleClicked' },
   },
 };
 
@@ -62,5 +64,20 @@ export const SubmitCallsOnSubmit: Story = {
     await userEvent.type(canvas.getByPlaceholderText('Password'), 'secret123');
     await userEvent.click(canvas.getByRole('button', { name: 'Login' }));
     await expect(args.onSubmit).toHaveBeenCalledWith('user@example.com', 'secret123');
+  },
+};
+
+export const WithSocialButtons: Story = {
+  args: {
+    onGooglePress: () => {},
+    onApplePress: () => {},
+  },
+};
+
+export const AdminVariant: Story = {
+  args: {
+    variant: 'admin',
+    title: 'Sign In',
+    subtitle: 'Enter your email and password',
   },
 };

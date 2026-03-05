@@ -12,7 +12,7 @@ describe('LoginScreen', () => {
     render(<LoginScreen onSubmit={() => {}} />);
     expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
   });
 
   it('calls onSubmit with email and password on submit', async () => {
@@ -20,7 +20,7 @@ describe('LoginScreen', () => {
     render(<LoginScreen onSubmit={onSubmit} />);
     fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sign In' }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith('test@example.com', 'secret');
   });
@@ -61,5 +61,46 @@ describe('LoginScreen', () => {
     expect(screen.getByPlaceholderText('E-mail')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Pass')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
+  });
+
+  it('shows social buttons when onGooglePress and onApplePress are provided', () => {
+    const onGooglePress = jest.fn();
+    const onApplePress = jest.fn();
+    render(
+      <LoginScreen
+        onSubmit={() => {}}
+        onGooglePress={onGooglePress}
+        onApplePress={onApplePress}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue with Apple' })).toBeInTheDocument();
+    expect(screen.getByText('or')).toBeInTheDocument();
+  });
+
+  it('calls onGooglePress when Continue with Google is clicked', () => {
+    const onGooglePress = jest.fn();
+    render(
+      <LoginScreen
+        onSubmit={() => {}}
+        onGooglePress={onGooglePress}
+        onApplePress={() => {}}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
+    expect(onGooglePress).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onApplePress when Continue with Apple is clicked', () => {
+    const onApplePress = jest.fn();
+    render(
+      <LoginScreen
+        onSubmit={() => {}}
+        onGooglePress={() => {}}
+        onApplePress={onApplePress}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue with Apple' }));
+    expect(onApplePress).toHaveBeenCalledTimes(1);
   });
 });

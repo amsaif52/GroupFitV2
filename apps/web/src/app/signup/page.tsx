@@ -26,11 +26,17 @@ export default function SignupPage() {
     setError(null);
     setLoading(true);
     try {
-      // TODO: replace with api.post('/auth/signup', data) when backend has signup
-      await new Promise((r) => setTimeout(r, 500));
-      setError('Sign up is not available yet. Use the login page or Google.');
-    } catch {
-      setError('Something went wrong. Please try again.');
+      const { data: res } = await api.post<LoginResponse>('/auth/signup', {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: roleParam,
+      });
+      setStoredToken(res.accessToken);
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err: unknown) {
+      setError(err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -10,16 +10,270 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String?  @map("password_hash") // bcrypt hash; null for social-only users
-  googleId     String?  @unique @map("google_id")
-  appleId      String?  @unique @map("apple_id")
-  role         String   // admin | trainer | customer
-  locale       String?  @default("en")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?        // display name (signup / profile)
+  passwordHash  String?        @map("password_hash") // bcrypt hash; null for social-only users
+  googleId      String?        @unique @map("google_id")
+  appleId       String?        @unique @map("apple_id")
+  role          String         // admin | trainer | customer
+  locale        String?        @default("en")
+  phone         String?        @unique // for OTP login
+  otp           String?       // 4-digit OTP
+  otpSentAt     DateTime?     @map("otp_sent_at") // expiry check (5 min)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   conversations Conversation[]
+  sessionsAsCustomer Session[]  @relation("SessionCustomer")
+  sessionsAsTrainer  Session[]  @relation("SessionTrainer")
+  supportTickets     SupportTicket[]
+  favouriteActivities CustomerFavouriteActivity[]
+  favouriteTrainers       CustomerFavouriteTrainer[] @relation("FavouriteTrainerCustomer")
+  favouritedByCustomers   CustomerFavouriteTrainer[] @relation("FavouriteTrainerTrainer")
+  notifications      Notification[]
+  trainerAvailabilities TrainerAvailability[]
+  referralsMade         Referral[]  @relation("Referrer")
+  referredBy            Referral?   @relation("Referred")
+  certificates          TrainerCertificate[]
+  reviewsGiven         Review[]    @relation("Reviewer")
+  reviewsReceived      Review[]    @relation("ReviewedTrainer")
+  trainerActivities    TrainerActivity[]
+  groupsOwned          Group[]         @relation("GroupOwner")
+  groupMemberships     GroupMember[]   @relation("GroupMemberUser")
+  bankDetails          TrainerBankDetail?
+  serviceAreas         TrainerServiceArea[]
+  customerLocations    CustomerLocation[]
+}
+
+// When a user signs up with a referral code, create a Referral linking referrer and referred user.
+model Referral {
+  id             String   @id @default(cuid())
+  referrerId     String   @map("referrer_id")
+  referredUserId String   @unique @map("referred_user_id")
+  createdAt      DateTime @default(now())
+  referrer       User     @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser   User     @relation("Referred", fields: [referredUserId], references: [id], onDelete: Cascade)
+  @@unique([referrerId, referredUserId])
+  @@map("referral")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String?  @db.Text
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@map("notification")
+}
+
+// Trainer weekly availability slots (dayOfWeek 0=Sun..6=Sat, startTime/endTime HH:mm).
+model TrainerAvailability {
+  id         String   @id @default(cuid())
+  trainerId  String   @map("trainer_id")
+  trainer    User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  dayOfWeek  Int      @map("day_of_week") // 0 = Sunday, 6 = Saturday
+  startTime  String   @map("start_time")   // "09:00"
+  endTime    String   @map("end_time")    // "17:00"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@map("trainer_availability")
+}
+
+model CustomerFavouriteActivity {
+  id          String   @id @default(cuid())
+  customerId  String   @map("customer_id")
+  activityCode String  @map("activity_code") // matches ACTIVITY_TYPES.code
+  createdAt   DateTime @default(now())
+  customer    User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  @@unique([customerId, activityCode])
+  @@map("customer_favourite_activity")
+}
+
+model CustomerFavouriteTrainer {
+  id         String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  trainerId  String   @map("trainer_id")
+  createdAt  DateTime @default(now())
+  customer   User     @relation("FavouriteTrainerCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  trainer    User     @relation("FavouriteTrainerTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
+  @@unique([customerId, trainerId])
+  @@map("customer_favourite_trainer")
+}
+
+// Customer-created groups (e.g. for group sessions or invites).
+model Group {
+  id        String       @id @default(cuid())
+  ownerId   String       @map("owner_id")
+  name      String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  owner     User         @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   GroupMember[]
+  @@map("customer_group")
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  groupId   String   @map("group_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation("GroupMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([groupId, userId])
+  @@map("group_member")
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  trainerId   String   @map("trainer_id")
+  customer    User     @relation("SessionCustomer", fields: [customerId], references: [id], onDelete: Cascade)
+  trainer     User     @relation("SessionTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
+  activityName String? @map("activity_name") // e.g. "Yoga", "HIIT"
+  scheduledAt DateTime @map("scheduled_at")
+  status      String   // scheduled | completed | cancelled
+  amountCents Int?     @map("amount_cents") // paid amount for earnings
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String   @db.Text
+  status    String   // open | closed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Discount {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  type      String    // percent | fixed
+  value     Decimal   @db.Decimal(10, 2)
+  validFrom DateTime? @map("valid_from")
+  validTo   DateTime? @map("valid_to")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Activity types (master data). Admin CRUD; customer/trainer read via fetchAllActivity.
+model Activity {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("activity")
+}
+
+// Which activities a trainer offers (activityCode matches Activity.code).
+model TrainerActivity {
+  id          String   @id @default(cuid())
+  trainerId   String   @map("trainer_id")
+  activityCode String  @map("activity_code")
+  createdAt   DateTime @default(now())
+  trainer     User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  @@unique([trainerId, activityCode])
+  @@map("trainer_activity")
+}
+
+// Trainer certificates (name, issuing org, issued date, optional document URL).
+model TrainerCertificate {
+  id                   String    @id @default(cuid())
+  trainerId            String    @map("trainer_id")
+  trainer              User      @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  name                 String    // e.g. "CPR", "NASM"
+  issuingOrganization  String?  @map("issuing_organization")
+  issuedAt             DateTime? @map("issued_at")
+  credentialId         String?   @map("credential_id")
+  documentUrl          String?   @map("document_url") @db.Text
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  @@map("trainer_certificate")
+}
+
+// Trainer service areas (where trainer offers sessions; can toggle on/off).
+model TrainerServiceArea {
+  id        String   @id @default(cuid())
+  trainerId String   @map("trainer_id")
+  trainer   User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  label     String   // e.g. "Downtown", "North Side"
+  address   String?  @db.Text
+  latitude  Float?
+  longitude Float?
+  radiusKm  Float?   @map("radius_km")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("trainer_service_area")
+}
+
+// Trainer bank details for payouts (store only masked/last4; full details via Stripe Connect in production).
+model TrainerBankDetail {
+  id                String   @id @default(cuid())
+  trainerId         String   @unique @map("trainer_id")
+  trainer           User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  accountHolderName String   @map("account_holder_name")
+  bankName          String?  @map("bank_name")
+  last4             String   @map("last4")   // last 4 digits of account
+  routingLast4      String?  @map("routing_last4") // last 4 of routing (optional)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  @@map("trainer_bank_detail")
+}
+
+// Customer reviews for a trainer (rating 1-5, optional comment and session link).
+model Review {
+  id         String   @id @default(cuid())
+  trainerId  String   @map("trainer_id")
+  customerId String   @map("customer_id")
+  sessionId  String?  @map("session_id")
+  rating     Int      // 1-5
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now())
+  trainer    User     @relation("ReviewedTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
+  customer   User     @relation("Reviewer", fields: [customerId], references: [id], onDelete: Cascade)
+  @@map("review")
+}
+
+// Admin master data: FAQ entries.
+model Faq {
+  id        String   @id @default(cuid())
+  question  String   @db.Text
+  answer    String   @db.Text
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("faq")
+}
+
+// Admin: key-value settings (e.g. contact_email, customize_dashboard JSON).
+model ContactSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+  @@map("contact_setting")
+}
+
+// Customer saved locations (e.g. for session booking).
+model CustomerLocation {
+  id        String   @id @default(cuid())
+  customerId String   @map("customer_id")
+  customer  User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label     String
+  address   String?  @db.Text
+  latitude  Float?
+  longitude Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("customer_location")
 }
 
 model Conversation {

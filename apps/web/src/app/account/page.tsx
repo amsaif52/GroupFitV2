@@ -8,6 +8,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '../routes';
 import { CustomerProfileContent, TrainerProfileContent } from '../profile/profileContent';
+import { CustomerLayout } from '../CustomerLayout';
+import { TrainerLayout } from '../TrainerLayout';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -51,7 +53,7 @@ export default function AccountPage() {
 
   const isTrainer = role === ROLES.TRAINER;
 
-  return (
+  const content = (
     <main className="gf-profile-main">
       <div className="gf-profile__topbar">
         <Link href={ROUTES.dashboard} className="gf-profile__back">
@@ -67,4 +69,10 @@ export default function AccountPage() {
       )}
     </main>
   );
+
+  if (!isTrainer) {
+    return <CustomerLayout>{content}</CustomerLayout>;
+  }
+
+  return <TrainerLayout>{content}</TrainerLayout>;
 }
