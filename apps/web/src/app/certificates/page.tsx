@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TrainerLayout } from '../TrainerLayout';
 import { trainerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
+import { getApiErrorMessage } from '@groupfit/shared';
 
 type CertItem = {
   id: string;
@@ -44,8 +45,8 @@ export default function CertificatesPage() {
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load certificates');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load certificates'));
         setList([]);
       })
       .finally(() => setLoading(false));
@@ -110,7 +111,7 @@ export default function CertificatesPage() {
             setError(String(data?.message ?? 'Update failed'));
           }
         })
-        .catch(() => setError('Update failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Update failed')))
         .finally(() => setSubmitLoading(false));
     } else {
       trainerApi
@@ -130,7 +131,7 @@ export default function CertificatesPage() {
             setError(String(data?.message ?? 'Add failed'));
           }
         })
-        .catch(() => setError('Add failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Add failed')))
         .finally(() => setSubmitLoading(false));
     }
   };
@@ -145,7 +146,7 @@ export default function CertificatesPage() {
         if (data?.mtype === 'success') fetchList();
         else setError(String(data?.message ?? 'Delete failed'));
       })
-      .catch(() => setError('Delete failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
       .finally(() => setActionId(null));
   };
 
@@ -159,7 +160,16 @@ export default function CertificatesPage() {
         Add and manage your certifications (e.g. CPR, NASM, ACE).
       </p>
 
-      <Link href={ROUTES.dashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
+      <Link
+        href={ROUTES.dashboard}
+        style={{
+          fontSize: 14,
+          color: 'var(--groupfit-secondary)',
+          fontWeight: 600,
+          marginBottom: 16,
+          display: 'inline-block',
+        }}
+      >
         ← Dashboard
       </Link>
 
@@ -168,60 +178,147 @@ export default function CertificatesPage() {
       <button
         type="button"
         onClick={openAdd}
-        style={{ marginBottom: 20, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+        style={{
+          marginBottom: 20,
+          padding: '10px 16px',
+          borderRadius: 8,
+          border: 'none',
+          background: 'var(--groupfit-secondary)',
+          color: '#fff',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
       >
         Add certificate
       </button>
 
       {showForm && (
-        <div style={{ marginBottom: 24, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{editing ? 'Edit certificate' : 'New certificate'}</h2>
+        <div
+          style={{
+            marginBottom: 24,
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+          }}
+        >
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
+            {editing ? 'Edit certificate' : 'New certificate'}
+          </h2>
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Name *</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Name *
+            </label>
             <input
               type="text"
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="e.g. CPR, NASM-CPT"
               required
-              style={{ padding: 8, width: '100%', maxWidth: 280, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 280,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Issuing organization (optional)</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Issuing organization (optional)
+            </label>
             <input
               type="text"
               value={formIssuingOrg}
               onChange={(e) => setFormIssuingOrg(e.target.value)}
               placeholder="e.g. American Red Cross"
-              style={{ padding: 8, width: '100%', maxWidth: 320, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 320,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Issue date (optional)</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Issue date (optional)
+            </label>
             <input
               type="date"
               value={formIssuedAt}
               onChange={(e) => setFormIssuedAt(e.target.value)}
-              style={{ padding: 8, width: '100%', maxWidth: 180, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 180,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Credential ID (optional)</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Credential ID (optional)
+            </label>
             <input
               type="text"
               value={formCredentialId}
               onChange={(e) => setFormCredentialId(e.target.value)}
               placeholder="License or credential number"
-              style={{ padding: 8, width: '100%', maxWidth: 280, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 280,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Document URL (optional)</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Document URL (optional)
+            </label>
             <input
               type="url"
               value={formDocumentUrl}
               onChange={(e) => setFormDocumentUrl(e.target.value)}
               placeholder="https://..."
-              style={{ padding: 8, width: '100%', maxWidth: 400, marginBottom: 16, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 400,
+                marginBottom: 16,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={submitLoading} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: submitLoading ? 'not-allowed' : 'pointer' }}>
+              <button
+                type="submit"
+                disabled={submitLoading}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--groupfit-secondary)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: submitLoading ? 'not-allowed' : 'pointer',
+                }}
+              >
                 {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
               </button>
-              <button type="button" onClick={closeForm} style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #666', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+              <button
+                type="button"
+                onClick={closeForm}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #666',
+                  background: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
@@ -244,19 +341,66 @@ export default function CertificatesPage() {
               }}
             >
               <div style={{ fontWeight: 600, marginBottom: 4 }}>{row.name}</div>
-              {row.issuingOrganization && <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>{row.issuingOrganization}</div>}
-              {row.issuedAt && <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>Issued {new Date(row.issuedAt).toLocaleDateString()}</div>}
-              {row.credentialId && <div style={{ fontSize: 13, color: 'var(--groupfit-grey)' }}>ID: {row.credentialId}</div>}
+              {row.issuingOrganization && (
+                <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>
+                  {row.issuingOrganization}
+                </div>
+              )}
+              {row.issuedAt && (
+                <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>
+                  Issued {new Date(row.issuedAt).toLocaleDateString()}
+                </div>
+              )}
+              {row.credentialId && (
+                <div style={{ fontSize: 13, color: 'var(--groupfit-grey)' }}>
+                  ID: {row.credentialId}
+                </div>
+              )}
               {row.documentUrl && (
-                <a href={row.documentUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, color: 'var(--groupfit-secondary)', marginTop: 4, display: 'inline-block' }}>
+                <a
+                  href={row.documentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--groupfit-secondary)',
+                    marginTop: 4,
+                    display: 'inline-block',
+                  }}
+                >
                   View document
                 </a>
               )}
               <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                <button type="button" onClick={() => openEdit(row)} style={{ padding: '6px 12px', fontSize: 13, borderRadius: 6, border: '1px solid var(--groupfit-secondary)', background: '#fff', color: 'var(--groupfit-secondary)', cursor: 'pointer' }}>
+                <button
+                  type="button"
+                  onClick={() => openEdit(row)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 13,
+                    borderRadius: 6,
+                    border: '1px solid var(--groupfit-secondary)',
+                    background: '#fff',
+                    color: 'var(--groupfit-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
                   Edit
                 </button>
-                <button type="button" onClick={() => handleDelete(row.id)} disabled={actionId === row.id} style={{ padding: '6px 12px', fontSize: 13, borderRadius: 6, border: '1px solid #c00', background: '#fff', color: '#c00', cursor: actionId === row.id ? 'not-allowed' : 'pointer' }}>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(row.id)}
+                  disabled={actionId === row.id}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 13,
+                    borderRadius: 6,
+                    border: '1px solid #c00',
+                    background: '#fff',
+                    color: '#c00',
+                    cursor: actionId === row.id ? 'not-allowed' : 'pointer',
+                  }}
+                >
                   {actionId === row.id ? '…' : 'Remove'}
                 </button>
               </div>

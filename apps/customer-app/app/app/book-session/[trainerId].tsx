@@ -1,7 +1,18 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { customerApi } from '../../../lib/api';
 
 export default function BookSessionScreen() {
@@ -26,7 +37,8 @@ export default function BookSessionScreen() {
     const scheduledAt = d.toISOString();
     setLoading(true);
     setError(null);
-    customerApi.addSession(trainerId, scheduledAt, activity.trim() || undefined)
+    customerApi
+      .addSession(trainerId, scheduledAt, activity.trim() || undefined)
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
         if (data?.mtype === 'success') {
@@ -35,7 +47,7 @@ export default function BookSessionScreen() {
           setError(String(data?.message ?? 'Failed to book session'));
         }
       })
-      .catch(() => setError('Failed to book session'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Failed to book session')))
       .finally(() => setLoading(false));
   };
 
@@ -51,7 +63,10 @@ export default function BookSessionScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <TouchableOpacity onPress={() => router.back()} style={styles.backRow}>
           <Text style={styles.link}>← Back</Text>
@@ -85,8 +100,16 @@ export default function BookSessionScreen() {
             editable={!loading}
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          <TouchableOpacity onPress={handleSubmit} disabled={loading} style={[styles.button, loading && styles.buttonDisabled]}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Book session</Text>}
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={loading}
+            style={[styles.button, loading && styles.buttonDisabled]}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Book session</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -120,7 +143,13 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   error: { fontSize: 14, color: '#c00', marginTop: 12 },
-  button: { marginTop: 20, padding: 14, borderRadius: 8, backgroundColor: colors.secondary, alignItems: 'center' },
+  button: {
+    marginTop: 20,
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+    alignItems: 'center',
+  },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 });

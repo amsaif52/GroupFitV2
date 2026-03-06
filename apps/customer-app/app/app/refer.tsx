@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { customerApi } from '../../lib/api';
 
-const REFERRAL_MESSAGE = 'Join GroupFit – your fitness community. Get started with GroupFit today. https://groupfit.app';
+const REFERRAL_MESSAGE =
+  'Join GroupFit – your fitness community. Get started with GroupFit today. https://groupfit.app';
 
 type ReferralItem = {
   id: string;
@@ -43,8 +45,8 @@ export default function ReferFriendScreen() {
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load referrals');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load referrals'));
         setList([]);
       })
       .finally(() => setLoading(false));

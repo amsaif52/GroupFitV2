@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TrainerLayout } from '../TrainerLayout';
 import { trainerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
+import { getApiErrorMessage } from '@groupfit/shared';
 
 type BankDetails = {
   id: string;
@@ -47,9 +48,9 @@ export default function BankDetailsPage() {
           setError(null);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setDetails(null);
-        setError('Failed to load bank details');
+        setError(getApiErrorMessage(err, 'Failed to load bank details'));
       })
       .finally(() => setLoading(false));
   };
@@ -105,7 +106,7 @@ export default function BankDetailsPage() {
           setError(String(data?.message ?? 'Save failed'));
         }
       })
-      .catch(() => setError('Save failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Save failed')))
       .finally(() => setSubmitLoading(false));
   };
 
@@ -116,10 +117,20 @@ export default function BankDetailsPage() {
       </header>
 
       <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 16 }}>
-        Add or update your bank account for receiving payments. Only the last 4 digits of account and routing numbers are stored.
+        Add or update your bank account for receiving payments. Only the last 4 digits of account
+        and routing numbers are stored.
       </p>
 
-      <Link href={ROUTES.dashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
+      <Link
+        href={ROUTES.dashboard}
+        style={{
+          fontSize: 14,
+          color: 'var(--groupfit-secondary)',
+          fontWeight: 600,
+          marginBottom: 16,
+          display: 'inline-block',
+        }}
+      >
         ← Dashboard
       </Link>
 
@@ -128,27 +139,56 @@ export default function BankDetailsPage() {
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
       ) : showForm ? (
-        <div style={{ marginBottom: 24, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{details ? 'Update bank details' : 'Add bank details'}</h2>
+        <div
+          style={{
+            marginBottom: 24,
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+          }}
+        >
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
+            {details ? 'Update bank details' : 'Add bank details'}
+          </h2>
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Account holder name *</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Account holder name *
+            </label>
             <input
               type="text"
               value={formAccountHolder}
               onChange={(e) => setFormAccountHolder(e.target.value)}
               placeholder="Full name on account"
               required
-              style={{ padding: 8, width: '100%', maxWidth: 280, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 280,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Bank name (optional)</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Bank name (optional)
+            </label>
             <input
               type="text"
               value={formBankName}
               onChange={(e) => setFormBankName(e.target.value)}
               placeholder="e.g. Chase, Bank of America"
-              style={{ padding: 8, width: '100%', maxWidth: 280, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 280,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Last 4 digits of account number *</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Last 4 digits of account number *
+            </label>
             <input
               type="text"
               inputMode="numeric"
@@ -156,9 +196,17 @@ export default function BankDetailsPage() {
               value={formLast4}
               onChange={(e) => setFormLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder="1234"
-              style={{ padding: 8, width: 80, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: 80,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Last 4 digits of routing number (optional)</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Last 4 digits of routing number (optional)
+            </label>
             <input
               type="text"
               inputMode="numeric"
@@ -166,37 +214,103 @@ export default function BankDetailsPage() {
               value={formRoutingLast4}
               onChange={(e) => setFormRoutingLast4(e.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder="5678"
-              style={{ padding: 8, width: 80, marginBottom: 16, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: 80,
+                marginBottom: 16,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={submitLoading} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: submitLoading ? 'not-allowed' : 'pointer' }}>
+              <button
+                type="submit"
+                disabled={submitLoading}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--groupfit-secondary)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: submitLoading ? 'not-allowed' : 'pointer',
+                }}
+              >
                 {submitLoading ? 'Saving…' : 'Save'}
               </button>
-              <button type="button" onClick={closeForm} style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #666', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+              <button
+                type="button"
+                onClick={closeForm}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #666',
+                  background: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
       ) : details ? (
-        <div style={{ padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8, marginBottom: 16 }}>
+        <div
+          style={{
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+            marginBottom: 16,
+          }}
+        >
           <div style={{ fontWeight: 600, marginBottom: 4 }}>{details.accountHolderName}</div>
-          {details.bankName && <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>{details.bankName}</div>}
-          <div style={{ fontSize: 14, color: 'var(--groupfit-grey)' }}>Account ending in ••••{details.last4}</div>
-          {details.routingLast4 && <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginTop: 4 }}>Routing ••••{details.routingLast4}</div>}
+          {details.bankName && (
+            <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>
+              {details.bankName}
+            </div>
+          )}
+          <div style={{ fontSize: 14, color: 'var(--groupfit-grey)' }}>
+            Account ending in ••••{details.last4}
+          </div>
+          {details.routingLast4 && (
+            <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginTop: 4 }}>
+              Routing ••••{details.routingLast4}
+            </div>
+          )}
           <button
             type="button"
             onClick={openForm}
-            style={{ marginTop: 16, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--groupfit-secondary)', background: '#fff', color: 'var(--groupfit-secondary)', fontWeight: 600, cursor: 'pointer' }}
+            style={{
+              marginTop: 16,
+              padding: '10px 16px',
+              borderRadius: 8,
+              border: '1px solid var(--groupfit-secondary)',
+              background: '#fff',
+              color: 'var(--groupfit-secondary)',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
           >
             Update bank details
           </button>
         </div>
       ) : (
         <>
-          <p style={{ color: 'var(--groupfit-grey)', marginBottom: 16 }}>No bank details on file. Add them to receive payments.</p>
+          <p style={{ color: 'var(--groupfit-grey)', marginBottom: 16 }}>
+            No bank details on file. Add them to receive payments.
+          </p>
           <button
             type="button"
             onClick={openForm}
-            style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--groupfit-secondary)',
+              color: '#fff',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
           >
             Add bank details
           </button>

@@ -13,10 +13,23 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { customerApi } from '../../lib/api';
 
-type GroupItem = { id: string; name: string; ownerId: string; memberCount?: number; createdAt: string };
-type GroupMemberItem = { id: string; userId: string; userName?: string; userEmail?: string; createdAt: string };
+type GroupItem = {
+  id: string;
+  name: string;
+  ownerId: string;
+  memberCount?: number;
+  createdAt: string;
+};
+type GroupMemberItem = {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  createdAt: string;
+};
 type SoloMemberItem = { id: string; name?: string; email: string };
 
 export default function GroupsScreen() {
@@ -49,8 +62,8 @@ export default function GroupsScreen() {
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load groups');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load groups'));
         setGroups([]);
       })
       .finally(() => setLoading(false));
@@ -105,7 +118,7 @@ export default function GroupsScreen() {
           setError(String(data?.message ?? 'Create failed'));
         }
       })
-      .catch(() => setError('Create failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Create failed')))
       .finally(() => setCreateLoading(false));
   };
 
@@ -121,14 +134,14 @@ export default function GroupsScreen() {
           setShowAddMember(false);
           customerApi.fetchgroupMembers(selectedGroupId).then((r) => {
             const d = r?.data as Record<string, unknown>;
-            setMembers((d?.fetchgroupMembers ?? d?.list) as GroupMemberItem[] ?? []);
+            setMembers(((d?.fetchgroupMembers ?? d?.list) as GroupMemberItem[]) ?? []);
           });
           fetchGroups();
         } else {
           setError(String(data?.message ?? 'Add member failed'));
         }
       })
-      .catch(() => setError('Add member failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Add member failed')))
       .finally(() => setAddMemberLoading(false));
   };
 
@@ -152,7 +165,7 @@ export default function GroupsScreen() {
                 setError(String(data?.message ?? 'Remove failed'));
               }
             })
-            .catch(() => setError('Remove failed'))
+            .catch((err) => setError(getApiErrorMessage(err, 'Remove failed')))
             .finally(() => setActionLoading(null));
         },
       },
@@ -180,7 +193,7 @@ export default function GroupsScreen() {
                 setError(String(data?.message ?? 'Delete failed'));
               }
             })
-            .catch(() => setError('Delete failed'))
+            .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
             .finally(() => setActionLoading(null));
         },
       },
@@ -201,10 +214,7 @@ export default function GroupsScreen() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => setShowCreateForm((v) => !v)}
-        >
+        <TouchableOpacity style={styles.primaryButton} onPress={() => setShowCreateForm((v) => !v)}>
           <Text style={styles.primaryButtonText}>{showCreateForm ? 'Cancel' : 'Create group'}</Text>
         </TouchableOpacity>
 
@@ -268,7 +278,10 @@ export default function GroupsScreen() {
                       <>
                         <View style={styles.membersHeader}>
                           <Text style={styles.membersTitle}>Members</Text>
-                          <TouchableOpacity onPress={loadSoloMembers} style={styles.secondaryButton}>
+                          <TouchableOpacity
+                            onPress={loadSoloMembers}
+                            style={styles.secondaryButton}
+                          >
                             <Text style={styles.secondaryButtonText}>Add member</Text>
                           </TouchableOpacity>
                         </View>
@@ -368,7 +381,13 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { color: '#fff', fontWeight: '600' },
   buttonDisabled: { opacity: 0.7 },
-  form: { marginBottom: 24, padding: 16, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 8 },
+  form: {
+    marginBottom: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+  },
   input: {
     borderWidth: 1,
     borderColor: colors.borderLight,
@@ -388,25 +407,73 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   cardExpanded: { backgroundColor: '#f8f9fa' },
-  cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   cardTitleWrap: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: '700' },
   memberCount: { fontSize: 14, color: colors.grey, marginTop: 4 },
-  dangerButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#c00', borderRadius: 6 },
+  dangerButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#c00',
+    borderRadius: 6,
+  },
   dangerButtonText: { color: '#c00', fontSize: 13 },
   dangerButtonSmall: { paddingVertical: 4, paddingHorizontal: 10 },
   membersSection: { marginTop: 16 },
-  membersHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  membersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   membersTitle: { fontSize: 14, fontWeight: '600' },
-  secondaryButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.secondary, borderRadius: 6 },
+  secondaryButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 6,
+  },
   secondaryButtonText: { color: colors.secondary, fontSize: 13 },
-  memberRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  memberRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
   memberName: { fontSize: 14 },
   muted: { fontSize: 14, color: colors.grey },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 360, maxHeight: '80%' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 360,
+    maxHeight: '80%',
+  },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   modalClose: { marginTop: 16 },
-  soloItem: { paddingVertical: 12, paddingHorizontal: 0, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  soloItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
   soloItemText: { fontSize: 16 },
 });

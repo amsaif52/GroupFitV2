@@ -5,8 +5,15 @@ import Link from 'next/link';
 import { CustomerLayout } from '../CustomerLayout';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
+import { getApiErrorMessage } from '@groupfit/shared';
 
-type NotificationItem = { id: string; title: string; body?: string; read: boolean; createdAt: string };
+type NotificationItem = {
+  id: string;
+  title: string;
+  body?: string;
+  read: boolean;
+  createdAt: string;
+};
 
 export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
@@ -27,8 +34,8 @@ export default function NotificationsPage() {
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load notifications');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load notifications'));
         setList([]);
       })
       .finally(() => setLoading(false));
@@ -76,7 +83,10 @@ export default function NotificationsPage() {
   return (
     <CustomerLayout>
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <Link href={ROUTES.dashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>
+        <Link
+          href={ROUTES.dashboard}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
           ← Dashboard
         </Link>
         <h1 style={{ fontSize: 22, fontWeight: 700, marginTop: 8 }}>Notifications</h1>
@@ -122,10 +132,21 @@ export default function NotificationsPage() {
                 borderLeft: n.read ? 'none' : '4px solid var(--groupfit-secondary)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                }}
+              >
                 <div>
                   <strong style={{ fontSize: 16 }}>{n.title}</strong>
-                  {n.body && <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--groupfit-grey)' }}>{n.body}</p>}
+                  {n.body && (
+                    <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--groupfit-grey)' }}>
+                      {n.body}
+                    </p>
+                  )}
                   <p style={{ marginTop: 4, fontSize: 12, color: 'var(--groupfit-grey)' }}>
                     {n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}
                   </p>

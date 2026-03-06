@@ -1,10 +1,25 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { trainerApi } from '../../lib/api';
 
-type NotificationItem = { id: string; title: string; body?: string; read: boolean; createdAt: string };
+type NotificationItem = {
+  id: string;
+  title: string;
+  body?: string;
+  read: boolean;
+  createdAt: string;
+};
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -27,8 +42,8 @@ export default function NotificationsScreen() {
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load notifications');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load notifications'));
         setList([]);
       })
       .finally(() => {
@@ -103,7 +118,13 @@ export default function NotificationsScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.secondary]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.secondary]}
+          />
+        }
       >
         {loading ? (
           <ActivityIndicator size="large" color={colors.secondary} style={{ marginTop: 24 }} />
@@ -113,10 +134,7 @@ export default function NotificationsScreen() {
           <Text style={styles.message}>No notifications yet.</Text>
         ) : (
           list.map((n) => (
-            <View
-              key={n.id}
-              style={[styles.card, n.read ? styles.cardRead : styles.cardUnread]}
-            >
+            <View key={n.id} style={[styles.card, n.read ? styles.cardRead : styles.cardUnread]}>
               <View style={styles.cardMain}>
                 <Text style={styles.cardTitle}>{n.title}</Text>
                 {n.body ? <Text style={styles.cardBody}>{n.body}</Text> : null}

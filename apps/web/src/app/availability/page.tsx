@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TrainerLayout } from '../TrainerLayout';
 import { trainerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
+import { getApiErrorMessage } from '@groupfit/shared';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -54,8 +55,8 @@ export default function AvailabilityPage() {
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load availability');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load availability'));
         setList([]);
       })
       .finally(() => setLoading(false));
@@ -116,7 +117,7 @@ export default function AvailabilityPage() {
             setError(String(data?.message ?? 'Update failed'));
           }
         })
-        .catch(() => setError('Update failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Update failed')))
         .finally(() => setSubmitLoading(false));
     } else {
       trainerApi
@@ -134,7 +135,7 @@ export default function AvailabilityPage() {
             setError(String(data?.message ?? 'Add failed'));
           }
         })
-        .catch(() => setError('Add failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Add failed')))
         .finally(() => setSubmitLoading(false));
     }
   };
@@ -149,7 +150,7 @@ export default function AvailabilityPage() {
         if (data?.mtype === 'success') fetchList();
         else setError(String(data?.message ?? 'Delete failed'));
       })
-      .catch(() => setError('Delete failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
       .finally(() => setActionId(null));
   };
 
@@ -160,10 +161,20 @@ export default function AvailabilityPage() {
       </header>
 
       <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 16 }}>
-        Set your weekly availability. Customers can book sessions within these time slots. Day 0 = Sunday, 6 = Saturday.
+        Set your weekly availability. Customers can book sessions within these time slots. Day 0 =
+        Sunday, 6 = Saturday.
       </p>
 
-      <Link href={ROUTES.dashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
+      <Link
+        href={ROUTES.dashboard}
+        style={{
+          fontSize: 14,
+          color: 'var(--groupfit-secondary)',
+          fontWeight: 600,
+          marginBottom: 16,
+          display: 'inline-block',
+        }}
+      >
         ← Dashboard
       </Link>
 
@@ -172,46 +183,115 @@ export default function AvailabilityPage() {
       <button
         type="button"
         onClick={openAdd}
-        style={{ marginBottom: 20, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+        style={{
+          marginBottom: 20,
+          padding: '10px 16px',
+          borderRadius: 8,
+          border: 'none',
+          background: 'var(--groupfit-secondary)',
+          color: '#fff',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
       >
         Add time slot
       </button>
 
       {showForm && (
-        <div style={{ marginBottom: 24, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{editing ? 'Edit time slot' : 'New time slot'}</h2>
+        <div
+          style={{
+            marginBottom: 24,
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+          }}
+        >
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
+            {editing ? 'Edit time slot' : 'New time slot'}
+          </h2>
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Day of week</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Day of week
+            </label>
             <select
               value={formDay}
               onChange={(e) => setFormDay(Number(e.target.value))}
-              style={{ padding: 8, width: '100%', maxWidth: 200, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 200,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             >
               {DAY_NAMES.map((name, i) => (
-                <option key={i} value={i}>{name}</option>
+                <option key={i} value={i}>
+                  {name}
+                </option>
               ))}
             </select>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Start time</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Start time
+            </label>
             <input
               type="time"
               value={formStart}
               onChange={(e) => setFormStart(e.target.value)}
               required
-              style={{ padding: 8, width: 120, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: 120,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>End time</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              End time
+            </label>
             <input
               type="time"
               value={formEnd}
               onChange={(e) => setFormEnd(e.target.value)}
               required
-              style={{ padding: 8, width: 120, marginBottom: 16, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: 120,
+                marginBottom: 16,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={submitLoading} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: submitLoading ? 'not-allowed' : 'pointer' }}>
+              <button
+                type="submit"
+                disabled={submitLoading}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--groupfit-secondary)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: submitLoading ? 'not-allowed' : 'pointer',
+                }}
+              >
                 {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
               </button>
-              <button type="button" onClick={closeForm} style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #666', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+              <button
+                type="button"
+                onClick={closeForm}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #666',
+                  background: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
@@ -220,7 +300,9 @@ export default function AvailabilityPage() {
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
       ) : list.length === 0 ? (
-        <div className="gf-home__empty">No time slots yet. Add when you’re available for sessions.</div>
+        <div className="gf-home__empty">
+          No time slots yet. Add when you’re available for sessions.
+        </div>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {list.map((row) => (
@@ -233,18 +315,53 @@ export default function AvailabilityPage() {
                 borderRadius: 8,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                }}
+              >
                 <div>
-                  <span style={{ fontWeight: 600 }}>{DAY_NAMES[row.dayOfWeek] ?? `Day ${row.dayOfWeek}`}</span>
+                  <span style={{ fontWeight: 600 }}>
+                    {DAY_NAMES[row.dayOfWeek] ?? `Day ${row.dayOfWeek}`}
+                  </span>
                   <span style={{ marginLeft: 8, color: 'var(--groupfit-grey)' }}>
                     {formatTimeForInput(row.startTime)} – {formatTimeForInput(row.endTime)}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" onClick={() => openEdit(row)} style={{ padding: '6px 12px', fontSize: 13, borderRadius: 6, border: '1px solid var(--groupfit-secondary)', background: '#fff', color: 'var(--groupfit-secondary)', cursor: 'pointer' }}>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(row)}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: 13,
+                      borderRadius: 6,
+                      border: '1px solid var(--groupfit-secondary)',
+                      background: '#fff',
+                      color: 'var(--groupfit-secondary)',
+                      cursor: 'pointer',
+                    }}
+                  >
                     Edit
                   </button>
-                  <button type="button" onClick={() => handleDelete(row.id)} disabled={actionId === row.id} style={{ padding: '6px 12px', fontSize: 13, borderRadius: 6, border: '1px solid #c00', background: '#fff', color: '#c00', cursor: actionId === row.id ? 'not-allowed' : 'pointer' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(row.id)}
+                    disabled={actionId === row.id}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: 13,
+                      borderRadius: 6,
+                      border: '1px solid #c00',
+                      background: '#fff',
+                      color: '#c00',
+                      cursor: actionId === row.id ? 'not-allowed' : 'pointer',
+                    }}
+                  >
                     {actionId === row.id ? '…' : 'Remove'}
                   </button>
                 </div>

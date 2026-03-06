@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { trainerApi } from '../../lib/api';
 
 type ServiceAreaItem = {
@@ -48,13 +49,15 @@ export default function ActivityAreaScreen() {
           setError(String(data.message ?? 'Failed to load'));
           setList([]);
         } else {
-          const areaList = (data?.trainerServiceList ?? data?.list) as ServiceAreaItem[] | undefined;
+          const areaList = (data?.trainerServiceList ?? data?.list) as
+            | ServiceAreaItem[]
+            | undefined;
           setList(areaList ?? []);
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load service areas');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load service areas'));
         setList([]);
       })
       .finally(() => setLoading(false));
@@ -116,7 +119,7 @@ export default function ActivityAreaScreen() {
             setError(String(data?.message ?? 'Update failed'));
           }
         })
-        .catch(() => setError('Update failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Update failed')))
         .finally(() => setSubmitLoading(false));
     } else {
       trainerApi
@@ -136,7 +139,7 @@ export default function ActivityAreaScreen() {
             setError(String(data?.message ?? 'Add failed'));
           }
         })
-        .catch(() => setError('Add failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Add failed')))
         .finally(() => setSubmitLoading(false));
     }
   };
@@ -156,7 +159,7 @@ export default function ActivityAreaScreen() {
               if (data?.mtype === 'success') fetchList();
               else setError(String(data?.message ?? 'Delete failed'));
             })
-            .catch(() => setError('Delete failed'))
+            .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
             .finally(() => setActionId(null));
         },
       },
@@ -172,7 +175,7 @@ export default function ActivityAreaScreen() {
         if (data?.mtype === 'success') fetchList();
         else setError(String(data?.message ?? 'Update failed'));
       })
-      .catch(() => setError('Update failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Update failed')))
       .finally(() => setActionId(null));
   };
 
@@ -185,7 +188,9 @@ export default function ActivityAreaScreen() {
         <Text style={styles.title}>Service areas</Text>
       </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.subtitle}>Define where you offer sessions. Toggle an area off to hide it from search.</Text>
+        <Text style={styles.subtitle}>
+          Define where you offer sessions. Toggle an area off to hide it from search.
+        </Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <TouchableOpacity style={styles.primaryButton} onPress={() => setShowForm((v) => !v)}>
           <Text style={styles.primaryButtonText}>{showForm ? 'Cancel' : 'Add service area'}</Text>
@@ -193,19 +198,61 @@ export default function ActivityAreaScreen() {
         {showForm && (
           <View style={styles.form}>
             <Text style={styles.label}>Label *</Text>
-            <TextInput style={styles.input} value={formLabel} onChangeText={setFormLabel} placeholder="e.g. Downtown" placeholderTextColor={colors.grey} editable={!submitLoading} />
+            <TextInput
+              style={styles.input}
+              value={formLabel}
+              onChangeText={setFormLabel}
+              placeholder="e.g. Downtown"
+              placeholderTextColor={colors.grey}
+              editable={!submitLoading}
+            />
             <Text style={styles.label}>Address (optional)</Text>
-            <TextInput style={styles.input} value={formAddress} onChangeText={setFormAddress} placeholder="Street, city" placeholderTextColor={colors.grey} editable={!submitLoading} />
+            <TextInput
+              style={styles.input}
+              value={formAddress}
+              onChangeText={setFormAddress}
+              placeholder="Street, city"
+              placeholderTextColor={colors.grey}
+              editable={!submitLoading}
+            />
             <Text style={styles.label}>Latitude / Longitude (optional)</Text>
             <View style={styles.row}>
-              <TextInput style={[styles.input, styles.inputShort]} value={formLatitude} onChangeText={setFormLatitude} placeholder="Lat" placeholderTextColor={colors.grey} keyboardType="decimal-pad" />
-              <TextInput style={[styles.input, styles.inputShort]} value={formLongitude} onChangeText={setFormLongitude} placeholder="Lng" placeholderTextColor={colors.grey} keyboardType="decimal-pad" />
+              <TextInput
+                style={[styles.input, styles.inputShort]}
+                value={formLatitude}
+                onChangeText={setFormLatitude}
+                placeholder="Lat"
+                placeholderTextColor={colors.grey}
+                keyboardType="decimal-pad"
+              />
+              <TextInput
+                style={[styles.input, styles.inputShort]}
+                value={formLongitude}
+                onChangeText={setFormLongitude}
+                placeholder="Lng"
+                placeholderTextColor={colors.grey}
+                keyboardType="decimal-pad"
+              />
             </View>
             <Text style={styles.label}>Radius km (optional)</Text>
-            <TextInput style={[styles.input, { width: 80 }]} value={formRadiusKm} onChangeText={setFormRadiusKm} placeholder="10" placeholderTextColor={colors.grey} keyboardType="decimal-pad" editable={!submitLoading} />
+            <TextInput
+              style={[styles.input, { width: 80 }]}
+              value={formRadiusKm}
+              onChangeText={setFormRadiusKm}
+              placeholder="10"
+              placeholderTextColor={colors.grey}
+              keyboardType="decimal-pad"
+              editable={!submitLoading}
+            />
             <View style={styles.formRow}>
-              <TouchableOpacity style={[styles.primaryButton, submitLoading && styles.buttonDisabled]} onPress={handleSubmit} disabled={submitLoading}>
-                <Text style={styles.primaryButtonText}>{submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}</Text>
+              <TouchableOpacity
+                style={[styles.primaryButton, submitLoading && styles.buttonDisabled]}
+                onPress={handleSubmit}
+                disabled={submitLoading}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.cancelButton} onPress={closeForm}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -223,18 +270,40 @@ export default function ActivityAreaScreen() {
               <Text style={styles.cardTitle}>{row.label}</Text>
               {row.address ? <Text style={styles.cardSub}>{row.address}</Text> : null}
               {(row.latitude != null || row.longitude != null) && (
-                <Text style={styles.cardSub}>{row.latitude}, {row.longitude}{row.radiusKm != null ? ` · ${row.radiusKm} km` : ''}</Text>
+                <Text style={styles.cardSub}>
+                  {row.latitude}, {row.longitude}
+                  {row.radiusKm != null ? ` · ${row.radiusKm} km` : ''}
+                </Text>
               )}
-              <Text style={[styles.cardSub, { color: row.isActive ? colors.secondary : colors.grey, fontWeight: '600' }]}>{row.isActive ? 'Active' : 'Inactive'}</Text>
+              <Text
+                style={[
+                  styles.cardSub,
+                  { color: row.isActive ? colors.secondary : colors.grey, fontWeight: '600' },
+                ]}
+              >
+                {row.isActive ? 'Active' : 'Inactive'}
+              </Text>
               <View style={styles.cardRow}>
-                <TouchableOpacity style={styles.toggleButton} onPress={() => handleToggleActive(row.id, row.isActive)} disabled={actionId === row.id}>
-                  <Text style={styles.toggleButtonText}>{actionId === row.id ? '…' : row.isActive ? 'Deactivate' : 'Activate'}</Text>
+                <TouchableOpacity
+                  style={styles.toggleButton}
+                  onPress={() => handleToggleActive(row.id, row.isActive)}
+                  disabled={actionId === row.id}
+                >
+                  <Text style={styles.toggleButtonText}>
+                    {actionId === row.id ? '…' : row.isActive ? 'Deactivate' : 'Activate'}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => openEdit(row)}>
                   <Text style={styles.secondaryButtonText}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.dangerButton} onPress={() => handleDelete(row.id)} disabled={actionId === row.id}>
-                  <Text style={styles.dangerButtonText}>{actionId === row.id ? '…' : 'Remove'}</Text>
+                <TouchableOpacity
+                  style={styles.dangerButton}
+                  onPress={() => handleDelete(row.id)}
+                  disabled={actionId === row.id}
+                >
+                  <Text style={styles.dangerButtonText}>
+                    {actionId === row.id ? '…' : 'Remove'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -247,34 +316,94 @@ export default function ActivityAreaScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primaryLight },
-  topbar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
   back: { fontSize: 14, color: colors.secondary, fontWeight: '600' },
   title: { fontSize: 20, fontWeight: '600', color: colors.black },
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   subtitle: { fontSize: 14, color: colors.grey, marginBottom: 16 },
   error: { color: '#c00', marginBottom: 16 },
-  primaryButton: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.secondary, alignSelf: 'flex-start', marginBottom: 20 },
+  primaryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
   primaryButtonText: { color: '#fff', fontWeight: '600' },
   buttonDisabled: { opacity: 0.7 },
-  form: { marginBottom: 24, padding: 16, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 8 },
+  form: {
+    marginBottom: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+  },
   label: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: colors.borderLight, borderRadius: 6, padding: 10, marginBottom: 12, fontSize: 16, color: colors.black },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 16,
+    color: colors.black,
+  },
   inputShort: { flex: 1 },
   row: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   formRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  cancelButton: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: '#666' },
+  cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#666',
+  },
   cancelButtonText: { color: '#666', fontWeight: '600' },
   loader: { marginVertical: 20 },
   empty: { fontSize: 16, color: colors.grey },
-  card: { padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 8 },
+  card: {
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+  },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
   cardSub: { fontSize: 14, color: colors.grey, marginBottom: 4 },
   cardRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 8 },
-  toggleButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.secondary, borderRadius: 6 },
+  toggleButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 6,
+  },
   toggleButtonText: { color: colors.secondary, fontSize: 13 },
-  secondaryButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.secondary, borderRadius: 6 },
+  secondaryButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 6,
+  },
   secondaryButtonText: { color: colors.secondary, fontSize: 13 },
-  dangerButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#c00', borderRadius: 6 },
+  dangerButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#c00',
+    borderRadius: 6,
+  },
   dangerButtonText: { color: '#c00', fontSize: 13 },
 });

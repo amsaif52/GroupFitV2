@@ -1,11 +1,28 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  TextInput,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { trainerApi } from '../../../lib/api';
 
 function toDatePart(d: Date) {
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  return (
+    d.getFullYear() +
+    '-' +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(d.getDate()).padStart(2, '0')
+  );
 }
 function toTimePart(d: Date) {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
@@ -26,7 +43,8 @@ export default function TrainerSessionDetailScreen() {
   const fetchDetail = () => {
     if (!id) return;
     setLoading(true);
-    trainerApi.fetchSessionDetails(id)
+    trainerApi
+      .fetchSessionDetails(id)
       .then((res) => {
         const data = res?.data as Record<string, unknown> | undefined;
         if (data?.mtype === 'error') {
@@ -37,7 +55,10 @@ export default function TrainerSessionDetailScreen() {
           setError(null);
         }
       })
-      .catch(() => { setError('Failed to load session'); setDetail(null); })
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load session'));
+        setDetail(null);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -59,13 +80,14 @@ export default function TrainerSessionDetailScreen() {
         style: 'destructive',
         onPress: () => {
           setActionLoading(true);
-          trainerApi.cancelSession(id)
+          trainerApi
+            .cancelSession(id)
             .then((res) => {
               const data = res?.data as Record<string, unknown>;
               if (data?.mtype === 'success') router.replace('/app/sessions');
               else setError(String(data?.message ?? 'Failed to cancel'));
             })
-            .catch(() => setError('Failed to cancel session'))
+            .catch((err) => setError(getApiErrorMessage(err, 'Failed to cancel session')))
             .finally(() => setActionLoading(false));
         },
       },
@@ -115,7 +137,7 @@ export default function TrainerSessionDetailScreen() {
           setRescheduleError(String(data?.message ?? 'Failed to reschedule'));
         }
       })
-      .catch(() => setRescheduleError('Failed to reschedule session'))
+      .catch((err) => setRescheduleError(getApiErrorMessage(err, 'Failed to reschedule session')))
       .finally(() => setActionLoading(false));
   };
 
@@ -150,13 +172,19 @@ export default function TrainerSessionDetailScreen() {
       ) : detail ? (
         <View style={styles.card}>
           <Text style={styles.label}>Session</Text>
-          <Text style={styles.value}>{String(detail.sessionName ?? detail.sessionId ?? 'Session')}</Text>
+          <Text style={styles.value}>
+            {String(detail.sessionName ?? detail.sessionId ?? 'Session')}
+          </Text>
           <Text style={styles.label}>Date & time</Text>
-          <Text style={styles.value}>{detail.scheduledAt ? new Date(String(detail.scheduledAt)).toLocaleString() : '—'}</Text>
+          <Text style={styles.value}>
+            {detail.scheduledAt ? new Date(String(detail.scheduledAt)).toLocaleString() : '—'}
+          </Text>
           <Text style={styles.label}>Status</Text>
           <Text style={styles.value}>{String(detail.status ?? '')}</Text>
           <Text style={styles.label}>Customer</Text>
-          <Text style={styles.value}>{String(detail.customerName ?? detail.customerEmail ?? '')}</Text>
+          <Text style={styles.value}>
+            {String(detail.customerName ?? detail.customerEmail ?? '')}
+          </Text>
           {detail.amountCents != null && (
             <>
               <Text style={styles.label}>Amount</Text>
@@ -165,10 +193,20 @@ export default function TrainerSessionDetailScreen() {
           )}
           {canAct && (
             <View style={styles.actions}>
-              <TouchableOpacity onPress={handleCancel} disabled={actionLoading} style={[styles.buttonDanger, actionLoading && styles.buttonDisabled]}>
-                <Text style={styles.buttonDangerText}>{actionLoading ? 'Please wait…' : 'Cancel session'}</Text>
+              <TouchableOpacity
+                onPress={handleCancel}
+                disabled={actionLoading}
+                style={[styles.buttonDanger, actionLoading && styles.buttonDisabled]}
+              >
+                <Text style={styles.buttonDangerText}>
+                  {actionLoading ? 'Please wait…' : 'Cancel session'}
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={openReschedule} disabled={actionLoading} style={[styles.buttonPrimary, actionLoading && styles.buttonDisabled]}>
+              <TouchableOpacity
+                onPress={openReschedule}
+                disabled={actionLoading}
+                style={[styles.buttonPrimary, actionLoading && styles.buttonDisabled]}
+              >
                 <Text style={styles.buttonPrimaryText}>Reschedule</Text>
               </TouchableOpacity>
             </View>
@@ -200,10 +238,21 @@ export default function TrainerSessionDetailScreen() {
             />
             {rescheduleError ? <Text style={styles.rescheduleError}>{rescheduleError}</Text> : null}
             <View style={styles.modalButtons}>
-              <TouchableOpacity onPress={handleReschedule} disabled={actionLoading} style={[styles.buttonPrimary, actionLoading && styles.buttonDisabled]}>
+              <TouchableOpacity
+                onPress={handleReschedule}
+                disabled={actionLoading}
+                style={[styles.buttonPrimary, actionLoading && styles.buttonDisabled]}
+              >
                 <Text style={styles.buttonPrimaryText}>{actionLoading ? 'Saving…' : 'Save'}</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => { setShowReschedule(false); setRescheduleError(null); }} disabled={actionLoading} style={styles.buttonSecondary}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowReschedule(false);
+                  setRescheduleError(null);
+                }}
+                disabled={actionLoading}
+                style={styles.buttonSecondary}
+              >
                 <Text style={styles.buttonSecondaryText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -234,18 +283,55 @@ const styles = StyleSheet.create({
   value: { fontSize: 16, color: colors.black },
   error: { fontSize: 14, color: colors.grey },
   actions: { marginTop: 20, gap: 12 },
-  buttonDanger: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#c00', alignItems: 'center' },
-  buttonPrimary: { padding: 12, borderRadius: 8, backgroundColor: colors.secondary, alignItems: 'center' },
+  buttonDanger: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c00',
+    alignItems: 'center',
+  },
+  buttonPrimary: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+    alignItems: 'center',
+  },
   buttonPrimaryText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   buttonDisabled: { opacity: 0.6 },
   buttonDangerText: { fontSize: 16, fontWeight: '600', color: '#c00' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 340 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 340,
+  },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: colors.borderLight, borderRadius: 6, padding: 10, marginBottom: 12, fontSize: 16, color: colors.black },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 16,
+    color: colors.black,
+  },
   rescheduleError: { color: '#c00', fontSize: 14, marginBottom: 12 },
   modalButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  buttonSecondary: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.grey, alignItems: 'center' },
+  buttonSecondary: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.grey,
+    alignItems: 'center',
+  },
   buttonSecondaryText: { fontSize: 16, fontWeight: '600', color: colors.grey },
 });

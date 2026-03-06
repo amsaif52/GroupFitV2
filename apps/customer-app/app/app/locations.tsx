@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { customerApi } from '../../lib/api';
 
 type LocationItem = {
@@ -50,8 +51,8 @@ export default function MyLocationsScreen() {
           setError(null);
         }
       })
-      .catch(() => {
-        setError('Failed to load locations');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load locations'));
         setList([]);
       })
       .finally(() => setLoading(false));
@@ -113,7 +114,7 @@ export default function MyLocationsScreen() {
             setError(String(data?.message ?? 'Update failed'));
           }
         })
-        .catch(() => setError('Update failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Update failed')))
         .finally(() => setSubmitLoading(false));
     } else {
       customerApi
@@ -132,7 +133,7 @@ export default function MyLocationsScreen() {
             setError(String(data?.message ?? 'Add failed'));
           }
         })
-        .catch(() => setError('Add failed'))
+        .catch((err) => setError(getApiErrorMessage(err, 'Add failed')))
         .finally(() => setSubmitLoading(false));
     }
   };
@@ -152,7 +153,7 @@ export default function MyLocationsScreen() {
               if (data?.mtype === 'success') fetchList();
               else setError(String(data?.message ?? 'Delete failed'));
             })
-            .catch(() => setError('Delete failed'))
+            .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
             .finally(() => setActionId(null));
         },
       },
@@ -169,7 +170,9 @@ export default function MyLocationsScreen() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.subtitle}>Saved addresses for sessions. Add, edit, or remove locations.</Text>
+        <Text style={styles.subtitle}>
+          Saved addresses for sessions. Add, edit, or remove locations.
+        </Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <TouchableOpacity style={styles.primaryButton} onPress={openAdd}>
@@ -222,7 +225,9 @@ export default function MyLocationsScreen() {
                 onPress={handleSubmit}
                 disabled={submitLoading}
               >
-                <Text style={styles.primaryButtonText}>{submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}</Text>
+                <Text style={styles.primaryButtonText}>
+                  {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.cancelButton} onPress={closeForm}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -254,7 +259,9 @@ export default function MyLocationsScreen() {
                   onPress={() => handleDelete(row.id)}
                   disabled={actionId === row.id}
                 >
-                  <Text style={styles.dangerButtonText}>{actionId === row.id ? '…' : 'Remove'}</Text>
+                  <Text style={styles.dangerButtonText}>
+                    {actionId === row.id ? '…' : 'Remove'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -293,7 +300,13 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { color: '#fff', fontWeight: '600' },
   buttonDisabled: { opacity: 0.7 },
-  form: { marginBottom: 24, padding: 16, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 8 },
+  form: {
+    marginBottom: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+  },
   formTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
   label: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
   input: {
@@ -308,7 +321,13 @@ const styles = StyleSheet.create({
   inputShort: { flex: 1 },
   row: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   formButtons: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  cancelButton: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: '#666' },
+  cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#666',
+  },
   cancelButtonText: { color: '#666', fontWeight: '600' },
   loader: { marginVertical: 20 },
   empty: { fontSize: 16, color: colors.grey },
@@ -323,8 +342,20 @@ const styles = StyleSheet.create({
   cardAddress: { fontSize: 14, color: colors.grey, marginBottom: 4 },
   cardCoords: { fontSize: 12, color: colors.grey, marginBottom: 8 },
   cardActions: { flexDirection: 'row', gap: 8 },
-  secondaryButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.secondary, borderRadius: 6 },
+  secondaryButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 6,
+  },
   secondaryButtonText: { color: colors.secondary, fontSize: 13 },
-  dangerButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#c00', borderRadius: 6 },
+  dangerButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#c00',
+    borderRadius: 6,
+  },
   dangerButtonText: { color: '#c00', fontSize: 13 },
 });

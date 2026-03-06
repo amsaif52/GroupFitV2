@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { trainerApi } from '../../lib/api';
 
 type TrainerActivityItem = {
@@ -54,19 +55,23 @@ export default function ActivitiesScreen() {
           setError(String(myData.message ?? 'Failed to load'));
           setList([]);
         } else {
-          const myList = (myData?.trainerActivityList ?? myData?.list) as TrainerActivityItem[] | undefined;
+          const myList = (myData?.trainerActivityList ?? myData?.list) as
+            | TrainerActivityItem[]
+            | undefined;
           setList(myList ?? []);
           setError(null);
         }
         if (allData?.mtype === 'error') {
           setMasterList([]);
         } else {
-          const all = (allData?.allActivityList ?? allData?.list) as MasterActivityItem[] | undefined;
+          const all = (allData?.allActivityList ?? allData?.list) as
+            | MasterActivityItem[]
+            | undefined;
           setMasterList(all ?? []);
         }
       })
-      .catch(() => {
-        setError('Failed to load activities');
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to load activities'));
         setList([]);
         setMasterList([]);
       })
@@ -94,7 +99,7 @@ export default function ActivitiesScreen() {
           setError(String(data?.message ?? 'Add failed'));
         }
       })
-      .catch(() => setError('Add failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Add failed')))
       .finally(() => setAddLoading(false));
   };
 
@@ -123,7 +128,7 @@ export default function ActivitiesScreen() {
           setError(String(data?.message ?? 'Update failed'));
         }
       })
-      .catch(() => setError('Update failed'))
+      .catch((err) => setError(getApiErrorMessage(err, 'Update failed')))
       .finally(() => setEditLoading(false));
   };
 
@@ -142,7 +147,7 @@ export default function ActivitiesScreen() {
               if (data?.mtype === 'success') fetchLists();
               else setError(String(data?.message ?? 'Delete failed'));
             })
-            .catch(() => setError('Delete failed'))
+            .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
             .finally(() => setActionId(null));
         },
       },
@@ -160,7 +165,11 @@ export default function ActivitiesScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.subtitle}>Activities you offer. Add from the master list below.</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <TouchableOpacity style={styles.primaryButton} onPress={() => setShowAddModal(true)} disabled={availableToAdd.length === 0}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => setShowAddModal(true)}
+          disabled={availableToAdd.length === 0}
+        >
           <Text style={styles.primaryButtonText}>Add activity</Text>
         </TouchableOpacity>
         {loading ? (
@@ -176,8 +185,14 @@ export default function ActivitiesScreen() {
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => startEdit(row)}>
                   <Text style={styles.secondaryButtonText}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.dangerButton} onPress={() => handleDelete(row.id)} disabled={actionId === row.id}>
-                  <Text style={styles.dangerButtonText}>{actionId === row.id ? '…' : 'Remove'}</Text>
+                <TouchableOpacity
+                  style={styles.dangerButton}
+                  onPress={() => handleDelete(row.id)}
+                  disabled={actionId === row.id}
+                >
+                  <Text style={styles.dangerButtonText}>
+                    {actionId === row.id ? '…' : 'Remove'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -198,13 +213,22 @@ export default function ActivitiesScreen() {
                 data={availableToAdd}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.soloItem} onPress={() => handleAdd(item.code)} disabled={addLoading}>
-                    <Text style={styles.soloItemText}>{item.name} ({item.code})</Text>
+                  <TouchableOpacity
+                    style={styles.soloItem}
+                    onPress={() => handleAdd(item.code)}
+                    disabled={addLoading}
+                  >
+                    <Text style={styles.soloItemText}>
+                      {item.name} ({item.code})
+                    </Text>
                   </TouchableOpacity>
                 )}
               />
             )}
-            <TouchableOpacity style={[styles.primaryButton, styles.modalClose]} onPress={() => setShowAddModal(false)}>
+            <TouchableOpacity
+              style={[styles.primaryButton, styles.modalClose]}
+              onPress={() => setShowAddModal(false)}
+            >
               <Text style={styles.primaryButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -222,13 +246,22 @@ export default function ActivitiesScreen() {
                 data={masterList}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <TouchableOpacity style={styles.soloItem} onPress={() => handleEdit(item.code)} disabled={editLoading}>
-                    <Text style={styles.soloItemText}>{item.name} ({item.code})</Text>
+                  <TouchableOpacity
+                    style={styles.soloItem}
+                    onPress={() => handleEdit(item.code)}
+                    disabled={editLoading}
+                  >
+                    <Text style={styles.soloItemText}>
+                      {item.name} ({item.code})
+                    </Text>
                   </TouchableOpacity>
                 )}
               />
             )}
-            <TouchableOpacity style={[styles.primaryButton, styles.modalClose]} onPress={cancelEdit}>
+            <TouchableOpacity
+              style={[styles.primaryButton, styles.modalClose]}
+              onPress={cancelEdit}
+            >
               <Text style={styles.primaryButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -240,29 +273,83 @@ export default function ActivitiesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primaryLight },
-  topbar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
   back: { fontSize: 14, color: colors.secondary, fontWeight: '600' },
   title: { fontSize: 20, fontWeight: '600', color: colors.black },
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   subtitle: { fontSize: 14, color: colors.grey, marginBottom: 16 },
   error: { color: '#c00', marginBottom: 16 },
-  primaryButton: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.secondary, alignSelf: 'flex-start', marginBottom: 20 },
+  primaryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
   primaryButtonText: { color: '#fff', fontWeight: '600' },
   loader: { marginVertical: 20 },
   empty: { fontSize: 16, color: colors.grey },
-  card: { padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 8 },
+  card: {
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+  },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
   cardSub: { fontSize: 14, color: colors.grey, marginBottom: 4 },
   cardRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  secondaryButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.secondary, borderRadius: 6 },
+  secondaryButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 6,
+  },
   secondaryButtonText: { color: colors.secondary, fontSize: 13 },
-  cancelButton: { paddingVertical: 6, paddingHorizontal: 12, marginLeft: 8, borderWidth: 1, borderColor: '#666', borderRadius: 6 },
+  cancelButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: '#666',
+    borderRadius: 6,
+  },
   cancelButtonText: { color: '#666', fontSize: 13 },
-  dangerButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#c00', borderRadius: 6 },
+  dangerButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#c00',
+    borderRadius: 6,
+  },
   dangerButtonText: { color: '#c00', fontSize: 13 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 360, maxHeight: '80%' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 360,
+    maxHeight: '80%',
+  },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
   modalClose: { marginTop: 16 },
   soloItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
