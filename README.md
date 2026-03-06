@@ -120,5 +120,5 @@ Requires `DATABASE_URL` in `.env` for the API (use a real DB or a throwaway Post
 
 - **components/** – Atomic design (atoms, molecules, organisms, templates)
 - **utils/** – Constants and utilities
-- **i18n/** – Translations (en, fr, extensible)
+- **i18n/** – Translations (en, fr, extensible). Use `resolveAppLocale(profileLocale)` or profile locale + `getTranslations(locale)`. **App language must not be taken from device/browser** (no `navigator.language` on web, no device locale on RN); only the user’s profile locale or default may set the app language.
 - **api/** – API types (`ApiUser`, `LoginRequest`, `LoginResponse`, `ApiErrorBody`), `createApiClient`, `API_ERROR_CODES`

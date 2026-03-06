@@ -9,6 +9,16 @@ const translations: Record<Locale, TranslationDict> = {
   fr: fr as unknown as TranslationDict,
 };
 
+/**
+ * Resolve app locale from profile only. Do not use navigator.language (web) or device locale (RN);
+ * the user's device default must not overwrite the app's language.
+ */
+export function resolveAppLocale(profileLocale?: string | null): Locale {
+  const s = profileLocale?.toLowerCase().trim();
+  if (s === 'fr') return 'fr';
+  return DEFAULT_LOCALE;
+}
+
 export function getTranslations(locale: Locale = DEFAULT_LOCALE): typeof en {
   return translations[locale] ?? translations[DEFAULT_LOCALE];
 }
@@ -23,5 +33,5 @@ export function t(locale: Locale, key: string): string {
   return typeof value === 'string' ? value : key;
 }
 
-export { translations, LOCALES };
+export { translations, LOCALES, resolveAppLocale };
 export { en, fr };

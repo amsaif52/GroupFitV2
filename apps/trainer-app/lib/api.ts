@@ -1,4 +1,4 @@
-import { createAxiosApiClient } from '@groupfit/shared';
+import { createAxiosApiClient, decodeJwtPayload } from '@groupfit/shared';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
@@ -14,6 +14,12 @@ export async function loadStoredToken(): Promise<string | null> {
 
 export function getStoredToken(): string | null {
   return memoryToken;
+}
+
+/** Decode stored JWT for UI (locale, role, etc.). Returns null if no token. */
+export function getStoredUser(): ReturnType<typeof decodeJwtPayload> {
+  const token = getStoredToken();
+  return token ? decodeJwtPayload(token) : null;
 }
 
 export async function setStoredToken(token: string): Promise<void> {
@@ -45,16 +51,29 @@ export function healthCheck() {
 
 /** Trainer division: POST /api/trainer/<action>. Use for trainer-app. */
 export const trainerApi = {
-  viewProfile: () => api.post<{ mtype: string; name?: string; emailid?: string; phone?: string; locale?: string }>('/trainer/viewProfile', {}),
+  viewProfile: () =>
+    api.post<{ mtype: string; name?: string; emailid?: string; phone?: string; locale?: string }>(
+      '/trainer/viewProfile',
+      {}
+    ),
   editProfile: (body: { name?: string; phone?: string; locale?: string }) =>
     api.post<{ mtype: string; message?: string }>('/trainer/editProfile', body),
 
   trainerSessionList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; trainerSessionList?: unknown[] }>('/trainer/trainerSessionList', body ?? {}),
+    api.post<{ mtype: string; trainerSessionList?: unknown[] }>(
+      '/trainer/trainerSessionList',
+      body ?? {}
+    ),
   trainerSessionNewList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; trainerSessionNewList?: unknown[] }>('/trainer/trainerSessionNewList', body ?? {}),
+    api.post<{ mtype: string; trainerSessionNewList?: unknown[] }>(
+      '/trainer/trainerSessionNewList',
+      body ?? {}
+    ),
   trainerSessionCompletedList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; trainerSessionCompletedList?: unknown[] }>('/trainer/trainerSessionCompletedList', body ?? {}),
+    api.post<{ mtype: string; trainerSessionCompletedList?: unknown[] }>(
+      '/trainer/trainerSessionCompletedList',
+      body ?? {}
+    ),
   todaySession: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; todaySession?: unknown[] }>('/trainer/todaySession', body ?? {}),
   fetchSessionDetails: (sessionId: string) =>
@@ -72,23 +91,47 @@ export const trainerApi = {
     api.post<{ mtype: string; referralSummary?: unknown }>('/trainer/referralSummary', body ?? {}),
 
   viewServiceArea: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; address?: string; city?: string; country?: string }>('/trainer/viewServiceArea', body ?? {}),
+    api.post<{ mtype: string; address?: string; city?: string; country?: string }>(
+      '/trainer/viewServiceArea',
+      body ?? {}
+    ),
   trainerAvailabilityList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; availabilityList?: unknown[] }>('/trainer/trainerAvailabilityList', body ?? {}),
+    api.post<{ mtype: string; availabilityList?: unknown[] }>(
+      '/trainer/trainerAvailabilityList',
+      body ?? {}
+    ),
   viewListAllAvailabilty: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; availabilityList?: unknown[] }>('/trainer/viewListAllAvailabilty', body ?? {}),
+    api.post<{ mtype: string; availabilityList?: unknown[] }>(
+      '/trainer/viewListAllAvailabilty',
+      body ?? {}
+    ),
   addTrainerAvailability: (dayOfWeek: number, startTime: string, endTime: string) =>
-    api.post<Record<string, unknown>>('/trainer/addTrainerAvailability', { dayOfWeek, startTime, endTime }),
+    api.post<Record<string, unknown>>('/trainer/addTrainerAvailability', {
+      dayOfWeek,
+      startTime,
+      endTime,
+    }),
   editTrainerAvailability: (id: string, dayOfWeek?: number, startTime?: string, endTime?: string) =>
-    api.post<Record<string, unknown>>('/trainer/editTrainerAvailability', { id, dayOfWeek, startTime, endTime }),
+    api.post<Record<string, unknown>>('/trainer/editTrainerAvailability', {
+      id,
+      dayOfWeek,
+      startTime,
+      endTime,
+    }),
   viewAvailabilty: (id?: string) =>
     api.post<Record<string, unknown>>('/trainer/viewAvailabilty', { id }),
   deleteAvaibilitySlot: (id: string) =>
     api.post<Record<string, unknown>>('/trainer/deleteAvaibilitySlot', { id }),
   trainerActivityList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; trainerActivityList?: unknown[] }>('/trainer/trainerActivityList', body ?? {}),
+    api.post<{ mtype: string; trainerActivityList?: unknown[] }>(
+      '/trainer/trainerActivityList',
+      body ?? {}
+    ),
   allActivityList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; allActivityList?: unknown[] }>('/trainer/allActivityList', body ?? {}),
+    api.post<{ mtype: string; allActivityList?: unknown[] }>(
+      '/trainer/allActivityList',
+      body ?? {}
+    ),
   addTrainerActivity: (activityCode: string) =>
     api.post<Record<string, unknown>>('/trainer/addTrainerActivity', { activityCode }),
   editTrainerActivity: (id: string, activityCode: string) =>
@@ -97,45 +140,81 @@ export const trainerApi = {
     api.post<Record<string, unknown>>('/trainer/deleteActivity', { id }),
 
   trainerServiceList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; trainerServiceList?: unknown[]; list?: unknown[] }>('/trainer/trainerServiceList', body ?? {}),
-  addTrainerService: (body: { label: string; address?: string | null; latitude?: number | null; longitude?: number | null; radiusKm?: number | null }) =>
-    api.post<Record<string, unknown>>('/trainer/addTrainerService', body),
-  editTrainerService: (body: { id: string; label?: string; address?: string | null; latitude?: number | null; longitude?: number | null; radiusKm?: number | null }) =>
-    api.post<Record<string, unknown>>('/trainer/editTrainerService', body),
+    api.post<{ mtype: string; trainerServiceList?: unknown[]; list?: unknown[] }>(
+      '/trainer/trainerServiceList',
+      body ?? {}
+    ),
+  addTrainerService: (body: {
+    label: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    radiusKm?: number | null;
+  }) => api.post<Record<string, unknown>>('/trainer/addTrainerService', body),
+  editTrainerService: (body: {
+    id: string;
+    label?: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    radiusKm?: number | null;
+  }) => api.post<Record<string, unknown>>('/trainer/editTrainerService', body),
   deleteTrainerService: (id: string) =>
     api.post<Record<string, unknown>>('/trainer/deleteTrainerService', { id }),
   serviceAreaOnOff: (id: string, isActive: boolean) =>
     api.post<Record<string, unknown>>('/trainer/serviceAreaOnOff', { id, isActive }),
 
   trainerCertificateList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; trainerCertificateList?: unknown[]; list?: unknown[] }>('/trainer/trainerCertificateList', body ?? {}),
-  addTrainerCertificate: (body: { name: string; issuingOrganization?: string | null; issuedAt?: string | null; credentialId?: string | null; documentUrl?: string | null }) =>
-    api.post<Record<string, unknown>>('/trainer/addTrainerCertificate', body),
-  editTrainerCertificate: (body: { id: string; name?: string; issuingOrganization?: string | null; issuedAt?: string | null; credentialId?: string | null; documentUrl?: string | null }) =>
-    api.post<Record<string, unknown>>('/trainer/editTrainerCertificate', body),
+    api.post<{ mtype: string; trainerCertificateList?: unknown[]; list?: unknown[] }>(
+      '/trainer/trainerCertificateList',
+      body ?? {}
+    ),
+  addTrainerCertificate: (body: {
+    name: string;
+    issuingOrganization?: string | null;
+    issuedAt?: string | null;
+    credentialId?: string | null;
+    documentUrl?: string | null;
+  }) => api.post<Record<string, unknown>>('/trainer/addTrainerCertificate', body),
+  editTrainerCertificate: (body: {
+    id: string;
+    name?: string;
+    issuingOrganization?: string | null;
+    issuedAt?: string | null;
+    credentialId?: string | null;
+    documentUrl?: string | null;
+  }) => api.post<Record<string, unknown>>('/trainer/editTrainerCertificate', body),
   deleteCertification: (id: string) =>
     api.post<Record<string, unknown>>('/trainer/deleteCertification', { id }),
 
   viewTrainerBankDetails: (body?: Record<string, unknown>) =>
     api.post<Record<string, unknown>>('/trainer/viewTrainerBankDetails', body ?? {}),
-  addTrainerBankDetails: (body: { accountHolderName: string; bankName?: string | null; last4?: string | null; routingLast4?: string | null }) =>
-    api.post<Record<string, unknown>>('/trainer/addTrainerBankDetails', body),
+  addTrainerBankDetails: (body: {
+    accountHolderName: string;
+    bankName?: string | null;
+    last4?: string | null;
+    routingLast4?: string | null;
+  }) => api.post<Record<string, unknown>>('/trainer/addTrainerBankDetails', body),
 
-  getNotificationList: () =>
-    api.post<Record<string, unknown>>('/trainer/GetNotificationList', {}),
-  getNotificationFlag: () =>
-    api.post<Record<string, unknown>>('/trainer/GetNotificationFlag', {}),
+  getNotificationList: () => api.post<Record<string, unknown>>('/trainer/GetNotificationList', {}),
+  getNotificationFlag: () => api.post<Record<string, unknown>>('/trainer/GetNotificationFlag', {}),
   updateNotificationReadStatus: (notificationId?: string) =>
     api.post<Record<string, unknown>>('/trainer/UpdateNotificationReadStatus', { notificationId }),
   deleteNotification: (notificationId: string) =>
     api.post<Record<string, unknown>>('/trainer/deleteNotification', { notificationId }),
-  readAllNotification: () =>
-    api.post<Record<string, unknown>>('/trainer/ReadAllNotification', {}),
+  readAllNotification: () => api.post<Record<string, unknown>>('/trainer/ReadAllNotification', {}),
 
   faqlist: () =>
-    api.post<{ mtype: string; faqlist?: { id: string; question: string; answer: string }[]; list?: unknown[] }>('/trainer/faqlist', {}),
+    api.post<{
+      mtype: string;
+      faqlist?: { id: string; question: string; answer: string }[];
+      list?: unknown[];
+    }>('/trainer/faqlist', {}),
   fetchContactLink: () =>
-    api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>('/trainer/fetchContactLink', {}),
+    api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>(
+      '/trainer/fetchContactLink',
+      {}
+    ),
   raiseSupport: (body: { subject?: string; message?: string }) =>
     api.post<Record<string, unknown>>('/trainer/raiseSupport', body),
   /** Trainer assistant chat (JWT; trainer or admin only). Body: message, conversationId (optional). */

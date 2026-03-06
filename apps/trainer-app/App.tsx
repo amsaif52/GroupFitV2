@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TamaguiProvider } from 'tamagui';
 import config from './tamagui.config';
-import { getTranslations, ROLES } from '@groupfit/shared';
+import { getTranslations, resolveAppLocale, ROLES } from '@groupfit/shared';
 import {
   LoginScreen,
   SignupScreen,
@@ -13,6 +13,7 @@ import {
   ProfileScreenNative,
   ErrorBoundaryNative,
 } from '@groupfit/shared/components/native';
+import { getStoredUser } from './lib/api';
 
 const ONBOARDING_COMPLETED_KEY = 'OnBoardingCompleted';
 
@@ -27,7 +28,7 @@ export default function App() {
   const [showSignup, setShowSignup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('');
-  const t = getTranslations('en');
+  const t = getTranslations(resolveAppLocale(getStoredUser()?.locale));
 
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY).then((value: string | null) => {
@@ -47,14 +48,14 @@ export default function App() {
   if (showOnboarding) {
     return (
       <ErrorBoundaryNative>
-      <TamaguiProvider config={config} defaultTheme="light">
-        <OnboardingScreen
-          slides={ONBOARDING_SLIDES_TRAINER}
-          onComplete={handleOnboardingComplete}
-          getStartedLabel="Let's begin"
-        />
-        <StatusBar style="light" />
-      </TamaguiProvider>
+        <TamaguiProvider config={config} defaultTheme="light">
+          <OnboardingScreen
+            slides={ONBOARDING_SLIDES_TRAINER}
+            onComplete={handleOnboardingComplete}
+            getStartedLabel="Let's begin"
+          />
+          <StatusBar style="light" />
+        </TamaguiProvider>
       </ErrorBoundaryNative>
     );
   }
@@ -62,27 +63,27 @@ export default function App() {
   if (isLoggedIn) {
     return (
       <ErrorBoundaryNative>
-      <TamaguiProvider config={config} defaultTheme="light">
-        <ProfileScreenNative
-          variant="trainer"
-          userName={userName}
-          onLogout={async () => {
-            setIsLoggedIn(false);
-            setUserName('');
-            await AsyncStorage.removeItem('groupfit_token');
-          }}
-          onEditProfile={() => {}}
-          onAvailability={() => {}}
-          onActivities={() => {}}
-          onActivityArea={() => {}}
-          onCertificates={() => {}}
-          onBankDetails={() => {}}
-          onReviews={() => {}}
-          onEarning={() => {}}
-          onHelp={() => {}}
-        />
-        <StatusBar style="dark" />
-      </TamaguiProvider>
+        <TamaguiProvider config={config} defaultTheme="light">
+          <ProfileScreenNative
+            variant="trainer"
+            userName={userName}
+            onLogout={async () => {
+              setIsLoggedIn(false);
+              setUserName('');
+              await AsyncStorage.removeItem('groupfit_token');
+            }}
+            onEditProfile={() => {}}
+            onAvailability={() => {}}
+            onActivities={() => {}}
+            onActivityArea={() => {}}
+            onCertificates={() => {}}
+            onBankDetails={() => {}}
+            onReviews={() => {}}
+            onEarning={() => {}}
+            onHelp={() => {}}
+          />
+          <StatusBar style="dark" />
+        </TamaguiProvider>
       </ErrorBoundaryNative>
     );
   }
@@ -90,25 +91,61 @@ export default function App() {
   if (showSignup) {
     return (
       <ErrorBoundaryNative>
+        <QueryClientProvider client={queryClient}>
+          <TamaguiProvider config={config} defaultTheme="light">
+            <SignupScreen
+              title={t.auth.signUpTitle}
+              subtitle={t.roles[ROLES.TRAINER]}
+              nameLabel={t.auth.name}
+              emailLabel={t.auth.email}
+              passwordLabel={t.auth.password}
+              confirmPasswordLabel={t.auth.confirmPassword}
+              submitLabel={t.auth.createAccount}
+              loadingLabel={t.common.loading}
+              footerPrompt={t.auth.alreadyHaveAccount}
+              footerLinkText={t.auth.login}
+              termsLabel={t.auth.termsAgreePrefix}
+              termsLinkText={t.auth.termsLink}
+              onSubmit={async () => {
+                // TODO: wire api.post('/auth/signup') and then login or verify
+              }}
+              onLoginClick={() => setShowSignup(false)}
+              onGooglePress={async () => {
+                // TODO: @react-native-google-signin/google-signin, then POST id_token to backend for JWT
+              }}
+              onApplePress={async () => {
+                // TODO: expo-apple-authentication or @invertase/react-native-apple-authentication, then POST to backend
+              }}
+              continueWithGoogleLabel={t.auth.continueWithGoogle}
+              continueWithAppleLabel={t.auth.continueWithApple}
+              orLabel={t.auth.or}
+            />
+            <StatusBar style="dark" />
+          </TamaguiProvider>
+        </QueryClientProvider>
+      </ErrorBoundaryNative>
+    );
+  }
+
+  return (
+    <ErrorBoundaryNative>
       <QueryClientProvider client={queryClient}>
         <TamaguiProvider config={config} defaultTheme="light">
-          <SignupScreen
-            title={t.auth.signUpTitle}
+          <LoginScreen
+            title={'Get Together.\nGet Fit.'}
             subtitle={t.roles[ROLES.TRAINER]}
-            nameLabel={t.auth.name}
             emailLabel={t.auth.email}
             passwordLabel={t.auth.password}
-            confirmPasswordLabel={t.auth.confirmPassword}
-            submitLabel={t.auth.createAccount}
+            submitLabel={t.auth.login}
             loadingLabel={t.common.loading}
-            footerPrompt={t.auth.alreadyHaveAccount}
-            footerLinkText={t.auth.login}
-            termsLabel={t.auth.termsAgreePrefix}
-            termsLinkText={t.auth.termsLink}
-            onSubmit={async () => {
-              // TODO: wire api.post('/auth/signup') and then login or verify
+            footerPrompt="New here?"
+            footerLinkText={t.auth.signUp}
+            onSubmit={async (email, _password) => {
+              // TODO: wire api.post('/auth/login') and store token; then set token + user
+              setUserName(email || '');
+              setIsLoggedIn(true);
             }}
-            onLoginClick={() => setShowSignup(false)}
+            onSignUpClick={() => setShowSignup(true)}
             onGooglePress={async () => {
               // TODO: @react-native-google-signin/google-signin, then POST id_token to backend for JWT
             }}
@@ -122,42 +159,6 @@ export default function App() {
           <StatusBar style="dark" />
         </TamaguiProvider>
       </QueryClientProvider>
-      </ErrorBoundaryNative>
-    );
-  }
-
-  return (
-    <ErrorBoundaryNative>
-    <QueryClientProvider client={queryClient}>
-      <TamaguiProvider config={config} defaultTheme="light">
-        <LoginScreen
-          title={'Get Together.\nGet Fit.'}
-          subtitle={t.roles[ROLES.TRAINER]}
-          emailLabel={t.auth.email}
-          passwordLabel={t.auth.password}
-          submitLabel={t.auth.login}
-          loadingLabel={t.common.loading}
-          footerPrompt="New here?"
-          footerLinkText={t.auth.signUp}
-          onSubmit={async (email, _password) => {
-            // TODO: wire api.post('/auth/login') and store token; then set token + user
-            setUserName(email || '');
-            setIsLoggedIn(true);
-          }}
-          onSignUpClick={() => setShowSignup(true)}
-          onGooglePress={async () => {
-            // TODO: @react-native-google-signin/google-signin, then POST id_token to backend for JWT
-          }}
-          onApplePress={async () => {
-            // TODO: expo-apple-authentication or @invertase/react-native-apple-authentication, then POST to backend
-          }}
-          continueWithGoogleLabel={t.auth.continueWithGoogle}
-          continueWithAppleLabel={t.auth.continueWithApple}
-          orLabel={t.auth.or}
-        />
-        <StatusBar style="dark" />
-      </TamaguiProvider>
-    </QueryClientProvider>
     </ErrorBoundaryNative>
   );
 }

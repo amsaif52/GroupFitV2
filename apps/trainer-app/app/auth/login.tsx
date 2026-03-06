@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Platform } from 'react-native';
-import { getTranslations, ROLES } from '@groupfit/shared';
+import { getTranslations, resolveAppLocale, ROLES } from '@groupfit/shared';
 import type { LoginResponse } from '@groupfit/shared';
 import { LoginScreen } from '@groupfit/shared/components/native';
-import { api, setStoredToken } from '../../lib/api';
+import { api, setStoredToken, getStoredUser } from '../../lib/api';
 import { ApiClientError } from '@groupfit/shared';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -13,7 +13,7 @@ const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
 
 export default function LoginScreenRoute() {
   const router = useRouter();
-  const t = getTranslations('en');
+  const t = getTranslations(resolveAppLocale(getStoredUser()?.locale));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -75,7 +75,12 @@ export default function LoginScreenRoute() {
       await setStoredToken(res.data.accessToken);
       router.replace('/app/home');
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'ERR_REQUEST_CANCELED') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'code' in err &&
+        (err as { code: string }).code === 'ERR_REQUEST_CANCELED'
+      ) {
         return;
       }
       setError(err instanceof ApiClientError ? err.message : 'Apple sign-in failed');

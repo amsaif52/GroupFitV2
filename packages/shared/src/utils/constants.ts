@@ -14,11 +14,11 @@ export const API_PREFIXES = {
   ADMIN: '/admin',
 } as const;
 
-/** Supported locales */
+/** Supported locales. App language must never be derived from device/browser (navigator.language, etc.); use profile locale or DEFAULT_LOCALE only. */
 export const LOCALES = ['en', 'fr'] as const;
 export type Locale = (typeof LOCALES)[number];
 
-/** Default locale */
+/** Default locale when user has not set one. Device default must not overwrite app language. */
 export const DEFAULT_LOCALE: Locale = 'en';
 
 /** App identifiers */

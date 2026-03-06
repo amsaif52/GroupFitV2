@@ -1,4 +1,4 @@
-import { createAxiosApiClient } from '@groupfit/shared';
+import { createAxiosApiClient, decodeJwtPayload } from '@groupfit/shared';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
@@ -15,6 +15,12 @@ export async function loadStoredToken(): Promise<string | null> {
 
 export function getStoredToken(): string | null {
   return memoryToken;
+}
+
+/** Decode stored JWT for UI (locale, role, etc.). Returns null if no token. */
+export function getStoredUser(): ReturnType<typeof decodeJwtPayload> {
+  const token = getStoredToken();
+  return token ? decodeJwtPayload(token) : null;
 }
 
 export async function setStoredToken(token: string): Promise<void> {

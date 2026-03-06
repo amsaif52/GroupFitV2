@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { getStoredUser, clearStoredToken } from '@/lib/auth';
 import { ROLES, type Role } from '@groupfit/shared';
-import { getTranslations } from '@groupfit/shared';
+import { useAppLocale } from '@/hooks/useAppLocale';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '../routes';
@@ -13,7 +13,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<ReturnType<typeof getStoredUser> | undefined>(undefined);
   const [role, setRole] = useState<Role>(ROLES.CUSTOMER);
-  const t = getTranslations('en');
+  const { t } = useAppLocale(user?.locale);
 
   useEffect(() => {
     const u = getStoredUser();

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getTranslations } from '@groupfit/shared';
+import { useAppLocale } from '@/hooks/useAppLocale';
 import { getStoredUser, getStoredViewAs, clearStoredToken } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { useRouter } from 'next/navigation';
@@ -24,14 +24,15 @@ function CustomerDashboardContent() {
     let cancelled = false;
     (async () => {
       try {
-        const [todayRes, upcomingRes, allActRes, favActRes, trendRes, favTrainRes] = await Promise.all([
-          customerApi.todaysessionlist(),
-          customerApi.customerSessionList({ status: 'Upcoming' }),
-          customerApi.fetchAllActivity(),
-          customerApi.fetchFavouriteActivities(),
-          customerApi.GetTrendingActivities(),
-          customerApi.fetchFavouriteTrainers(),
-        ]);
+        const [todayRes, upcomingRes, allActRes, favActRes, trendRes, favTrainRes] =
+          await Promise.all([
+            customerApi.todaysessionlist(),
+            customerApi.customerSessionList({ status: 'Upcoming' }),
+            customerApi.fetchAllActivity(),
+            customerApi.fetchFavouriteActivities(),
+            customerApi.GetTrendingActivities(),
+            customerApi.fetchFavouriteTrainers(),
+          ]);
         if (cancelled) return;
         const getData = (r: { data?: unknown }) => (r?.data as Record<string, unknown>) ?? {};
         setTodaySessions((getData(todayRes).todaysessionlist as unknown[]) ?? []);
@@ -53,7 +54,9 @@ function CustomerDashboardContent() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const section = (
@@ -66,21 +69,40 @@ function CustomerDashboardContent() {
     <section className="gf-home__section">
       <div className="gf-home__section-head">
         <h2 className="gf-home__section-title">{title}</h2>
-        <Link href={seeAll} className="gf-home__see-all">See all</Link>
+        <Link href={seeAll} className="gf-home__see-all">
+          See all
+        </Link>
       </div>
       <div className={`gf-home__empty ${tall ? 'gf-home__empty--tall' : ''}`}>
-        {loading ? 'Loading…' : (items.length === 0 ? emptyMsg : `${items.length} item(s)`)}
+        {loading ? 'Loading…' : items.length === 0 ? emptyMsg : `${items.length} item(s)`}
       </div>
     </section>
   );
 
   return (
     <div className="gf-home__body">
-      {section('Upcoming Sessions', ROUTES.sessions, todaySessions.length > 0 ? todaySessions : upcomingSessions, 'There are no sessions scheduled for today', true)}
+      {section(
+        'Upcoming Sessions',
+        ROUTES.sessions,
+        todaySessions.length > 0 ? todaySessions : upcomingSessions,
+        'There are no sessions scheduled for today',
+        true
+      )}
       {section('Activities', ROUTES.activities, activities, 'There are no activities available')}
-      {section('Favourites', ROUTES.activities, favouriteActivities, 'There are no favourited activities', true)}
+      {section(
+        'Favourites',
+        ROUTES.activities,
+        favouriteActivities,
+        'There are no favourited activities',
+        true
+      )}
       {section('Trending', ROUTES.activities, trending, 'There are no trending activities', true)}
-      {section('My Trainers', ROUTES.trainers, favouriteTrainers, 'There are no favorited trainers')}
+      {section(
+        'My Trainers',
+        ROUTES.trainers,
+        favouriteTrainers,
+        'There are no favorited trainers'
+      )}
     </div>
   );
 }
@@ -106,42 +128,63 @@ function TrainerDashboardContent() {
         setNewSessions((getData(newRes).trainerSessionNewList as unknown[]) ?? []);
         setEarning(getData(earnRes).currentEarning ?? null);
       } catch {
-        if (!cancelled) setTodaySessions([]); setNewSessions([]); setEarning(null);
+        if (!cancelled) setTodaySessions([]);
+        setNewSessions([]);
+        setEarning(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const amountStr = earning != null && typeof earning === 'object' && 'amount' in (earning as object)
-    ? String((earning as Record<string, unknown>).amount)
-    : earning != null ? String(earning) : '£0.00';
+  const amountStr =
+    earning != null && typeof earning === 'object' && 'amount' in (earning as object)
+      ? String((earning as Record<string, unknown>).amount)
+      : earning != null
+        ? String(earning)
+        : '£0.00';
 
   return (
     <div className="gf-home__body">
       <section className="gf-home__section">
         <div className="gf-home__section-head">
           <h2 className="gf-home__section-title">Today&apos;s Sessions</h2>
-          <Link href={ROUTES.sessions} className="gf-home__see-all">See all</Link>
+          <Link href={ROUTES.sessions} className="gf-home__see-all">
+            See all
+          </Link>
         </div>
         <div className="gf-home__empty gf-home__empty--tall">
-          {loading ? 'Loading…' : (todaySessions.length === 0 ? 'There are no sessions scheduled for today' : `${todaySessions.length} item(s)`)}
+          {loading
+            ? 'Loading…'
+            : todaySessions.length === 0
+              ? 'There are no sessions scheduled for today'
+              : `${todaySessions.length} item(s)`}
         </div>
       </section>
       <section className="gf-home__section">
         <div className="gf-home__section-head">
           <h2 className="gf-home__section-title">New Sessions</h2>
-          <Link href={ROUTES.sessions} className="gf-home__see-all">See all</Link>
+          <Link href={ROUTES.sessions} className="gf-home__see-all">
+            See all
+          </Link>
         </div>
         <div className="gf-home__empty gf-home__empty--tall">
-          {loading ? 'Loading…' : (newSessions.length === 0 ? 'No new sessions' : `${newSessions.length} item(s)`)}
+          {loading
+            ? 'Loading…'
+            : newSessions.length === 0
+              ? 'No new sessions'
+              : `${newSessions.length} item(s)`}
         </div>
       </section>
       <section className="gf-home__section">
         <div className="gf-home__section-head">
           <h2 className="gf-home__section-title">Earning</h2>
-          <Link href={ROUTES.earning} className="gf-home__see-all">See all</Link>
+          <Link href={ROUTES.earning} className="gf-home__see-all">
+            See all
+          </Link>
         </div>
         <div className="gf-home__earning">
           <p className="gf-home__earning-label">Current month</p>
@@ -154,8 +197,8 @@ function TrainerDashboardContent() {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const t = getTranslations('en');
   const user = getStoredUser();
+  const { t } = useAppLocale(user?.locale);
   const viewAs = getStoredViewAs();
   const isAdmin = user?.role === ROLES.ADMIN;
 
@@ -174,7 +217,9 @@ export default function DashboardPage() {
     api.get('/health').catch(() => {
       if (!cancelled) router.replace(ROUTES.serverUnavailable);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, router]);
 
   function handleLogout() {
@@ -189,11 +234,17 @@ export default function DashboardPage() {
   }
 
   // Effective view: admin uses viewAs (customer/trainer); others use role
-  const effectiveView = viewAs ?? (user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN ? 'trainer' : 'customer');
+  const effectiveView =
+    viewAs ?? (user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN ? 'trainer' : 'customer');
   const isTrainer = effectiveView === 'trainer';
 
   const switchExperienceLink = isAdmin ? (
-    <Link href={ROUTES.chooseExperience} style={{ marginRight: 12, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>Switch experience</Link>
+    <Link
+      href={ROUTES.chooseExperience}
+      style={{ marginRight: 12, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+    >
+      Switch experience
+    </Link>
   ) : null;
 
   if (isTrainer) {
@@ -202,7 +253,13 @@ export default function DashboardPage() {
         <header className="gf-home__header" style={{ marginBottom: 16 }}>
           <span className="gf-home__logo">GroupFit</span>
           <div className="gf-home__header-actions">
-            <Link href={getProfileLink('/notifications')} className="gf-home__header-link" aria-label="Notifications">🔔</Link>
+            <Link
+              href={getProfileLink('/notifications')}
+              className="gf-home__header-link"
+              aria-label="Notifications"
+            >
+              🔔
+            </Link>
             <Link href={ROUTES.account} className="gf-home__avatar" aria-label="Account" />
           </div>
         </header>
@@ -216,7 +273,21 @@ export default function DashboardPage() {
           {switchExperienceLink}
           <Link href={ROUTES.profile}>{t.nav.profile}</Link>
           <Link href={ROUTES.account}>Account</Link>
-          <button type="button" onClick={handleLogout} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'var(--groupfit-secondary)', cursor: 'pointer', fontWeight: 600 }}>Log out</button>
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              font: 'inherit',
+              color: 'var(--groupfit-secondary)',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            Log out
+          </button>
         </div>
       </TrainerLayout>
     );
@@ -227,7 +298,13 @@ export default function DashboardPage() {
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
         <span className="gf-home__logo">GroupFit</span>
         <div className="gf-home__header-actions">
-          <Link href={ROUTES.notifications} className="gf-home__header-link" aria-label="Notifications">🔔</Link>
+          <Link
+            href={ROUTES.notifications}
+            className="gf-home__header-link"
+            aria-label="Notifications"
+          >
+            🔔
+          </Link>
           <Link href={ROUTES.account} className="gf-home__avatar" aria-label="Account" />
         </div>
       </header>
@@ -241,7 +318,21 @@ export default function DashboardPage() {
         {switchExperienceLink}
         <Link href={ROUTES.profile}>{t.nav.profile}</Link>
         <Link href={ROUTES.account}>Account</Link>
-        <button type="button" onClick={handleLogout} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'var(--groupfit-secondary)', cursor: 'pointer', fontWeight: 600 }}>Log out</button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            font: 'inherit',
+            color: 'var(--groupfit-secondary)',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          Log out
+        </button>
       </div>
     </CustomerLayout>
   );
