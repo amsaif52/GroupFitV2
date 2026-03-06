@@ -47,11 +47,22 @@ export function healthCheck() {
 /** Customer division: POST /api/customer/<action>. Use for customer-app. */
 export const customerApi = {
   viewProfile: () =>
-    api.post<{ mtype: string; name?: string; emailid?: string; phone?: string; locale?: string }>(
-      '/customer/viewProfile',
-      {}
-    ),
-  editProfile: (body: { name?: string; phone?: string; locale?: string }) =>
+    api.post<{
+      mtype: string;
+      name?: string;
+      emailid?: string;
+      phone?: string;
+      locale?: string;
+      countryCode?: string;
+    }>('/customer/viewProfile', {}),
+  /** Create Stripe PaymentIntent; returns clientSecret for Payment Sheet. */
+  paymentSheet: (body: { amountCents?: number; currency?: string }) =>
+    api.post<{ mtype: string; clientSecret?: string | null }>('/customer/PaymentSheet', body),
+  paymentStatus: (paymentIntentId: string) =>
+    api.post<{ mtype: string; status?: string }>('/customer/PaymentStatus', { paymentIntentId }),
+  sessionPayment: (body: { sessionId?: string; paymentIntentId?: string }) =>
+    api.post<{ mtype: string; paid?: boolean }>('/customer/sessionPayment', body),
+  editProfile: (body: { name?: string; phone?: string; locale?: string; countryCode?: string }) =>
     api.post<{ mtype: string; message?: string }>('/customer/editProfile', body),
   paymentList: () => api.post<{ mtype: string; list?: unknown[] }>('/customer/PaymentList', {}),
 

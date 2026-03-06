@@ -17,6 +17,7 @@ export default function ProfileEditPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [locale, setLocale] = useState('en');
+  const [countryCode, setCountryCode] = useState('');
   const [role, setRole] = useState<string>(ROLES.CUSTOMER);
 
   useEffect(() => {
@@ -32,20 +33,31 @@ export default function ProfileEditPage() {
     (async () => {
       try {
         const res = await api.viewProfile();
-        const data = res.data as { mtype?: string; name?: string; emailid?: string; phone?: string; locale?: string };
+        const data = res.data as {
+          mtype?: string;
+          name?: string;
+          emailid?: string;
+          phone?: string;
+          locale?: string;
+          countryCode?: string;
+        };
         if (!cancelled && data?.mtype === 'success') {
           setName(data.name ?? '');
           setEmail(data.emailid ?? '');
           setPhone(data.phone ?? '');
           setLocale(data.locale ?? 'en');
+          setCountryCode(data.countryCode ?? '');
         }
       } catch (e) {
-        if (!cancelled) setError(e instanceof ApiClientError ? e.message : 'Failed to load profile');
+        if (!cancelled)
+          setError(e instanceof ApiClientError ? e.message : 'Failed to load profile');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -58,6 +70,7 @@ export default function ProfileEditPage() {
         name: name.trim() || undefined,
         phone: phone.trim() || undefined,
         locale: locale.trim() || undefined,
+        countryCode: countryCode.trim().toUpperCase() || undefined,
       });
       const data = res.data as { mtype?: string; message?: string };
       if (data?.mtype === 'success') {
@@ -92,47 +105,104 @@ export default function ProfileEditPage() {
       {error && <p style={{ color: 'var(--groupfit-secondary)', marginBottom: '1rem' }}>{error}</p>}
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="name" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Name</label>
+          <label htmlFor="name" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
+            Name
+          </label>
           <input
             id="name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
-            style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #ccc', borderRadius: 8 }}
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #ccc',
+              borderRadius: 8,
+            }}
           />
         </div>
         <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="email" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Email</label>
+          <label htmlFor="email" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
+            Email
+          </label>
           <input
             id="email"
             type="email"
             value={email}
             readOnly
-            style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #ccc', borderRadius: 8, backgroundColor: '#eee' }}
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #ccc',
+              borderRadius: 8,
+              backgroundColor: '#eee',
+            }}
           />
         </div>
         <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="phone" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Phone</label>
+          <label htmlFor="phone" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
+            Phone
+          </label>
           <input
             id="phone"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+44 7700 900000"
-            style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #ccc', borderRadius: 8 }}
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #ccc',
+              borderRadius: 8,
+            }}
           />
         </div>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label htmlFor="locale" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>Locale</label>
+        <div style={{ marginBottom: '1rem' }}>
+          <label htmlFor="locale" style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
+            Locale
+          </label>
           <input
             id="locale"
             type="text"
             value={locale}
             onChange={(e) => setLocale(e.target.value)}
             placeholder="en"
-            style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #ccc', borderRadius: 8 }}
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #ccc',
+              borderRadius: 8,
+            }}
           />
+        </div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label
+            htmlFor="countryCode"
+            style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}
+          >
+            Country (for payments, e.g. US, GB)
+          </label>
+          <select
+            id="countryCode"
+            value={countryCode}
+            onChange={(e) => setCountryCode(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.75rem',
+              border: '1px solid #ccc',
+              borderRadius: 8,
+            }}
+          >
+            <option value="">—</option>
+            <option value="US">United States</option>
+            <option value="GB">United Kingdom</option>
+            <option value="IN">India</option>
+            <option value="AU">Australia</option>
+            <option value="CA">Canada</option>
+            <option value="DE">Germany</option>
+            <option value="FR">France</option>
+          </select>
         </div>
         <button
           type="submit"

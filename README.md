@@ -12,8 +12,9 @@ Monorepo for the GroupFit fitness platform.
 
 **UI:** Web and both React Native apps use **Tamagui** for a shared design system (themes, layout, components). Each app has its own `tamagui.config.ts` using `@tamagui/config/v5`.
 
-**Storybook:**  
-- **Shared** (constants, i18n, utils): `npm run storybook:shared` → http://localhost:6006  
+**Storybook:**
+
+- **Shared** (constants, i18n, utils): `npm run storybook:shared` → http://localhost:6006
 - **Web UI:** `npm run storybook:web` → http://localhost:6007
 
 ## Quick run & test
@@ -39,17 +40,20 @@ cd apps/api && npx prisma migrate dev   # first-time DB setup
 
 ### Environment variables
 
-| Variable | Where | Purpose |
-|----------|--------|---------|
-| `DATABASE_URL` | API | PostgreSQL connection (required for API and E2E). |
-| `PORT` | API | Server port (default 3001). |
-| `CORS_ORIGIN` | API | Allowed origin (e.g. `http://localhost:3000`). |
-| `JWT_SECRET` | API | Signing secret (min 32 chars). |
-| `JWT_EXPIRES_IN` | API | Token expiry (e.g. `7d`). |
-| `OPENAI_API_KEY` | API | Enables customer/trainer chat assistants. |
-| `OPENAI_CHAT_MODEL` | API | Model name (default `gpt-4o-mini`). |
-| `NEXT_PUBLIC_API_URL` | Web | API base URL (e.g. `http://localhost:3001/api`). |
-| `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` | E2E | Optional; enables login→dashboard E2E test. |
+| Variable                               | Where        | Purpose                                                                       |
+| -------------------------------------- | ------------ | ----------------------------------------------------------------------------- |
+| `DATABASE_URL`                         | API          | PostgreSQL connection (required for API and E2E).                             |
+| `PORT`                                 | API          | Server port (default 3001).                                                   |
+| `CORS_ORIGIN`                          | API          | Allowed origin (e.g. `http://localhost:3000`).                                |
+| `JWT_SECRET`                           | API          | Signing secret (min 32 chars).                                                |
+| `JWT_EXPIRES_IN`                       | API          | Token expiry (e.g. `7d`).                                                     |
+| `OPENAI_API_KEY`                       | API          | Enables customer/trainer chat assistants.                                     |
+| `OPENAI_CHAT_MODEL`                    | API          | Model name (default `gpt-4o-mini`).                                           |
+| `NEXT_PUBLIC_API_URL`                  | Web          | API base URL (e.g. `http://localhost:3001/api`).                              |
+| `STRIPE_SECRET_KEY`                    | API          | Stripe secret key (sk\_…) for Payment Intents (session payments).             |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`   | Web          | Stripe publishable key for Payment Element (card, Apple Pay, Google Pay).     |
+| `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`   | Customer app | Stripe publishable key for Payment Sheet (card, Apple Pay, Google Pay on RN). |
+| `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` | E2E          | Optional; enables login→dashboard E2E test.                                   |
 
 ### Runbook (ops)
 
@@ -57,6 +61,7 @@ cd apps/api && npx prisma migrate dev   # first-time DB setup
 - **Web can’t reach API:** Ensure API is running on the port in `NEXT_PUBLIC_API_URL` and `CORS_ORIGIN` includes the web origin.
 - **E2E fails (timeouts):** Start API and web manually, then run `npm run e2e`; ensure no port conflicts. For login test, set `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD`.
 - **Chat assistant says “not configured”:** Set `OPENAI_API_KEY` in `.env` for the API.
+- **Session payment / Apple Pay / Google Pay:** Set `STRIPE_SECRET_KEY` on the API and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (web) or `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` (customer-app). Enable Apple Pay and Google Pay in the [Stripe Dashboard](https://dashboard.stripe.com/settings/payment_methods). For native Apple/Google Pay on RN, configure Apple Pay capability (iOS) and Google Pay in the Stripe Dashboard and app.
 
 If you use **pnpm**, keep `pnpm-workspace.yaml` and run `pnpm install` then `pnpm build:shared`. Root scripts in `package.json` use npm; adjust for pnpm if needed (`pnpm --filter api dev`, etc.).
 

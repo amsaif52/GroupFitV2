@@ -37,6 +37,17 @@ export const COUNTRIES: CountryItem[] = [
   { code: 'FR', name: 'France', isdCode: '+33' },
 ];
 
+/** Default Stripe currency for a country (trainer/customer location). */
+export const COUNTRY_TO_CURRENCY: Record<string, string> = {
+  US: 'usd',
+  GB: 'gbp',
+  IN: 'inr',
+  AU: 'aud',
+  CA: 'cad',
+  DE: 'eur',
+  FR: 'eur',
+};
+
 /** Example states (UK); add more or load from DB */
 export const STATES: StateItem[] = [
   { code: 'ENG', name: 'England', countryCode: 'GB' },

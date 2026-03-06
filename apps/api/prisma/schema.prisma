@@ -18,6 +18,7 @@ model User {
   appleId       String?        @unique @map("apple_id")
   role          String         // admin | trainer | customer
   locale        String?        @default("en")
+  countryCode   String?        @map("country_code") // ISO 3166-1 alpha-2 (e.g. US, GB) for payments/location
   phone         String?        @unique // for OTP login
   otp           String?       // 4-digit OTP
   otpSentAt     DateTime?     @map("otp_sent_at") // expiry check (5 min)

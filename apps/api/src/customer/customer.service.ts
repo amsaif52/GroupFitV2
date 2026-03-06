@@ -7,6 +7,7 @@ import {
   CITIES,
   ACTIVITY_TYPES,
   CANCEL_REASONS,
+  COUNTRY_TO_CURRENCY,
 } from '../common/reference-data';
 
 /** Session row with trainer (for customer session list map callback typing) */
@@ -110,6 +111,7 @@ export class CustomerService {
       role: user.role,
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
+      countryCode: user.countryCode ?? undefined,
     };
   }
 
@@ -123,6 +125,7 @@ export class CustomerService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.countryCode !== undefined && { countryCode: dto.countryCode || null }),
       },
     });
     return {
@@ -133,6 +136,7 @@ export class CustomerService {
       emailid: updated.email,
       locale: updated.locale ?? 'en',
       phone: updated.phone ?? '',
+      countryCode: updated.countryCode ?? undefined,
     };
   }
 
@@ -398,9 +402,13 @@ export class CustomerService {
   async fetchSessionDetails(userId: string, sessionId: string) {
     const session = await this.prisma.session.findFirst({
       where: { id: sessionId, customerId: userId },
-      include: { trainer: { select: { id: true, name: true, email: true, phone: true } } },
+      include: {
+        trainer: { select: { id: true, name: true, email: true, phone: true, countryCode: true } },
+      },
     });
     if (!session) return { mtype: 'error', message: 'Session not found' };
+    const trainerCountry = session.trainer.countryCode?.toUpperCase();
+    const trainerCurrency = (trainerCountry && COUNTRY_TO_CURRENCY[trainerCountry]) || 'usd';
     return {
       mtype: 'success',
       message: 'OK',
@@ -411,6 +419,8 @@ export class CustomerService {
       trainerName: session.trainer.name ?? session.trainer.email,
       trainerEmail: session.trainer.email,
       trainerPhone: session.trainer.phone,
+      trainerCountryCode: session.trainer.countryCode ?? undefined,
+      trainerCurrency,
       scheduledAt: session.scheduledAt.toISOString(),
       status: session.status,
       amountCents: session.amountCents,

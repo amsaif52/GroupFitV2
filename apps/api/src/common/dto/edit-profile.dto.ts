@@ -20,4 +20,11 @@ export class EditProfileDto {
   @IsString()
   @MaxLength(30)
   phone?: string;
+
+  @ApiProperty({ example: 'GB', description: 'ISO 3166-1 alpha-2 country code', required: false })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(2)
+  countryCode?: string;
 }

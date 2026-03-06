@@ -1,7 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { EditProfileDto } from '../common/dto/edit-profile.dto';
-import { COUNTRIES, STATES, CITIES, LANGUAGES, EXPERIENCE_LEVELS, CANCEL_REASONS } from '../common/reference-data';
+import {
+  COUNTRIES,
+  STATES,
+  CITIES,
+  LANGUAGES,
+  EXPERIENCE_LEVELS,
+  CANCEL_REASONS,
+} from '../common/reference-data';
 
 /** Session row with customer (for trainer session list map callback typing) */
 interface SessionWithCustomer {
@@ -32,7 +39,13 @@ export class TrainerService {
   }
 
   APIVersionCheck() {
-    return { mtype: 'success', message: 'OK', version: '1.0', division: 'trainer', timestamp: new Date().toISOString() };
+    return {
+      mtype: 'success',
+      message: 'OK',
+      version: '1.0',
+      division: 'trainer',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   async viewProfile(userId: string) {
@@ -47,6 +60,7 @@ export class TrainerService {
       role: user.role,
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
+      countryCode: user.countryCode ?? undefined,
     };
   }
 
@@ -59,6 +73,7 @@ export class TrainerService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.countryCode !== undefined && { countryCode: dto.countryCode || null }),
       },
     });
     return {
@@ -69,12 +84,16 @@ export class TrainerService {
       emailid: updated.email,
       locale: updated.locale ?? 'en',
       phone: updated.phone ?? '',
+      countryCode: updated.countryCode ?? undefined,
     };
   }
 
   /** Request account deletion (JWT). Returns success; actual deletion can be admin/support flow. */
   deleteProfile() {
-    return { mtype: 'success', message: 'Account deletion requested. Contact support to complete.' };
+    return {
+      mtype: 'success',
+      message: 'Account deletion requested. Contact support to complete.',
+    };
   }
 
   /** Basic profile (legacy name for viewProfile). JWT = current trainer. */
@@ -90,11 +109,15 @@ export class TrainerService {
       role: user.role,
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
+      countryCode: user.countryCode ?? undefined,
     };
   }
 
   /** Save social links (stub: no DB fields yet; accept body, return success). */
-  saveSocialLinks(_userId: string, _body: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string }) {
+  saveSocialLinks(
+    _userId: string,
+    _body: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string }
+  ) {
     return { mtype: 'success', message: 'OK' };
   }
 
@@ -165,13 +188,21 @@ export class TrainerService {
     const list = await this.prisma.activity.findMany({
       orderBy: { code: 'asc' },
     });
-    const out = list.map((a: { id: string; code: string; name: string; description: string | null; createdAt: Date }) => ({
-      id: a.id,
-      code: a.code,
-      name: a.name,
-      description: a.description ?? '',
-      createdAt: a.createdAt.toISOString(),
-    }));
+    const out = list.map(
+      (a: {
+        id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        createdAt: Date;
+      }) => ({
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        description: a.description ?? '',
+        createdAt: a.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', list, allActivityList: out };
   }
 
@@ -185,22 +216,26 @@ export class TrainerService {
       ? await this.prisma.activity.findMany({ where: { code: { in: codes } } })
       : [];
     const byCode = Object.fromEntries(activities.map((a: { code: string }) => [a.code, a]));
-    const list = rows.map((r: { id: string; trainerId: string; activityCode: string; createdAt: Date }) => {
-      const a = byCode[r.activityCode];
-      return {
-        id: r.id,
-        trainerId: r.trainerId,
-        activityCode: r.activityCode,
-        activityName: a?.name ?? r.activityCode,
-        activityDescription: a?.description ?? '',
-        createdAt: r.createdAt.toISOString(),
-      };
-    });
+    const list = rows.map(
+      (r: { id: string; trainerId: string; activityCode: string; createdAt: Date }) => {
+        const a = byCode[r.activityCode];
+        return {
+          id: r.id,
+          trainerId: r.trainerId,
+          activityCode: r.activityCode,
+          activityName: a?.name ?? r.activityCode,
+          activityDescription: a?.description ?? '',
+          createdAt: r.createdAt.toISOString(),
+        };
+      }
+    );
     return { mtype: 'success', message: 'OK', list, trainerActivityList: list };
   }
 
   async addTrainerActivity(trainerId: string, activityCode: string) {
-    const code = String(activityCode ?? '').trim().toLowerCase();
+    const code = String(activityCode ?? '')
+      .trim()
+      .toLowerCase();
     if (!code) return { mtype: 'error', message: 'Activity code is required' };
     const activity = await this.prisma.activity.findUnique({ where: { code } });
     if (!activity) return { mtype: 'error', message: 'Activity not found' };
@@ -225,7 +260,8 @@ export class TrainerService {
       const existing = await this.prisma.trainerActivity.findUnique({
         where: { trainerId_activityCode: { trainerId, activityCode: code } },
       });
-      if (existing && existing.id !== id) return { mtype: 'error', message: 'Already added this activity' };
+      if (existing && existing.id !== id)
+        return { mtype: 'error', message: 'Already added this activity' };
       await this.prisma.trainerActivity.update({
         where: { id },
         data: { activityCode: code },
@@ -263,13 +299,21 @@ export class TrainerService {
       where: { trainerId: userId },
       orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     });
-    const availabilityList = rows.map((r: { id: string; dayOfWeek: number; startTime: string; endTime: string; createdAt: Date }) => ({
-      id: r.id,
-      dayOfWeek: r.dayOfWeek,
-      startTime: r.startTime,
-      endTime: r.endTime,
-      createdAt: r.createdAt.toISOString(),
-    }));
+    const availabilityList = rows.map(
+      (r: {
+        id: string;
+        dayOfWeek: number;
+        startTime: string;
+        endTime: string;
+        createdAt: Date;
+      }) => ({
+        id: r.id,
+        dayOfWeek: r.dayOfWeek,
+        startTime: r.startTime,
+        endTime: r.endTime,
+        createdAt: r.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', availabilityList };
   }
 
@@ -277,9 +321,15 @@ export class TrainerService {
     return this.trainerAvailabilityList(userId);
   }
 
-  async addTrainerAvailability(userId: string, dayOfWeek: number, startTime: string, endTime: string) {
+  async addTrainerAvailability(
+    userId: string,
+    dayOfWeek: number,
+    startTime: string,
+    endTime: string
+  ) {
     const day = Number(dayOfWeek);
-    if (Number.isNaN(day) || day < 0 || day > 6) return { mtype: 'error', message: 'dayOfWeek must be 0-6' };
+    if (Number.isNaN(day) || day < 0 || day > 6)
+      return { mtype: 'error', message: 'dayOfWeek must be 0-6' };
     const start = String(startTime ?? '').trim();
     const end = String(endTime ?? '').trim();
     if (!start || !end) return { mtype: 'error', message: 'startTime and endTime required' };
@@ -289,7 +339,13 @@ export class TrainerService {
     return { mtype: 'success', message: 'OK', id: slot.id };
   }
 
-  async editTrainerAvailability(userId: string, id: string, dayOfWeek?: number, startTime?: string, endTime?: string) {
+  async editTrainerAvailability(
+    userId: string,
+    id: string,
+    dayOfWeek?: number,
+    startTime?: string,
+    endTime?: string
+  ) {
     const slot = await this.prisma.trainerAvailability.findFirst({
       where: { id, trainerId: userId },
     });
@@ -297,7 +353,8 @@ export class TrainerService {
     const data: { dayOfWeek?: number; startTime?: string; endTime?: string } = {};
     if (dayOfWeek !== undefined) {
       const day = Number(dayOfWeek);
-      if (Number.isNaN(day) || day < 0 || day > 6) return { mtype: 'error', message: 'dayOfWeek must be 0-6' };
+      if (Number.isNaN(day) || day < 0 || day > 6)
+        return { mtype: 'error', message: 'dayOfWeek must be 0-6' };
       data.dayOfWeek = day;
     }
     if (startTime !== undefined) data.startTime = String(startTime).trim();
@@ -344,15 +401,25 @@ export class TrainerService {
       where: { trainerId },
       orderBy: { createdAt: 'desc' },
     });
-    const out = list.map((c: { id: string; name: string; issuingOrganization: string | null; issuedAt: Date | null; credentialId: string | null; documentUrl: string | null; createdAt: Date }) => ({
-      id: c.id,
-      name: c.name,
-      issuingOrganization: c.issuingOrganization,
-      issuedAt: c.issuedAt?.toISOString() ?? null,
-      credentialId: c.credentialId,
-      documentUrl: c.documentUrl,
-      createdAt: c.createdAt.toISOString(),
-    }));
+    const out = list.map(
+      (c: {
+        id: string;
+        name: string;
+        issuingOrganization: string | null;
+        issuedAt: Date | null;
+        credentialId: string | null;
+        documentUrl: string | null;
+        createdAt: Date;
+      }) => ({
+        id: c.id,
+        name: c.name,
+        issuingOrganization: c.issuingOrganization,
+        issuedAt: c.issuedAt?.toISOString() ?? null,
+        credentialId: c.credentialId,
+        documentUrl: c.documentUrl,
+        createdAt: c.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', list: out, trainerCertificateList: out };
   }
 
@@ -362,7 +429,7 @@ export class TrainerService {
     issuingOrganization?: string | null,
     issuedAt?: string | null,
     credentialId?: string | null,
-    documentUrl?: string | null,
+    documentUrl?: string | null
   ) {
     const nameNorm = String(name ?? '').trim();
     if (!nameNorm) return { mtype: 'error', message: 'Name is required' };
@@ -386,7 +453,7 @@ export class TrainerService {
     issuingOrganization?: string | null,
     issuedAt?: string | null,
     credentialId?: string | null,
-    documentUrl?: string | null,
+    documentUrl?: string | null
   ) {
     const cert = await this.prisma.trainerCertificate.findFirst({ where: { id, trainerId } });
     if (!cert) return { mtype: 'error', message: 'Certificate not found' };
@@ -396,7 +463,9 @@ export class TrainerService {
       where: { id },
       data: {
         name: nameNorm,
-        ...(issuingOrganization !== undefined && { issuingOrganization: issuingOrganization?.trim() || null }),
+        ...(issuingOrganization !== undefined && {
+          issuingOrganization: issuingOrganization?.trim() || null,
+        }),
         ...(issuedAt !== undefined && { issuedAt: issuedAt ? new Date(issuedAt) : null }),
         ...(credentialId !== undefined && { credentialId: credentialId?.trim() || null }),
         ...(documentUrl !== undefined && { documentUrl: documentUrl?.trim() || null }),
@@ -434,7 +503,13 @@ export class TrainerService {
   /** Additional image codes for trainer profile (empty by default; extend when storage exists). */
   getAdditionalImageCodes() {
     const getAdditionalImageCodes: string[] = [];
-    return { mtype: 'success', message: 'OK', getAdditionalImageCodes, codes: getAdditionalImageCodes, list: getAdditionalImageCodes };
+    return {
+      mtype: 'success',
+      message: 'OK',
+      getAdditionalImageCodes,
+      codes: getAdditionalImageCodes,
+      list: getAdditionalImageCodes,
+    };
   }
 
   addAdditionalImageCodes() {
@@ -451,16 +526,27 @@ export class TrainerService {
       where: { trainerId },
       orderBy: { createdAt: 'asc' },
     });
-    const out = list.map((a: { id: string; label: string; address: string | null; latitude: number | null; longitude: number | null; radiusKm: number | null; isActive: boolean; createdAt: Date }) => ({
-      id: a.id,
-      label: a.label,
-      address: a.address,
-      latitude: a.latitude,
-      longitude: a.longitude,
-      radiusKm: a.radiusKm,
-      isActive: a.isActive,
-      createdAt: a.createdAt.toISOString(),
-    }));
+    const out = list.map(
+      (a: {
+        id: string;
+        label: string;
+        address: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        radiusKm: number | null;
+        isActive: boolean;
+        createdAt: Date;
+      }) => ({
+        id: a.id,
+        label: a.label,
+        address: a.address,
+        latitude: a.latitude,
+        longitude: a.longitude,
+        radiusKm: a.radiusKm,
+        isActive: a.isActive,
+        createdAt: a.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', list, trainerServiceList: out };
   }
 
@@ -470,7 +556,7 @@ export class TrainerService {
     address?: string | null,
     latitude?: number | null,
     longitude?: number | null,
-    radiusKm?: number | null,
+    radiusKm?: number | null
   ) {
     const labelNorm = String(label ?? '').trim();
     if (!labelNorm) return { mtype: 'error', message: 'Label is required' };
@@ -517,7 +603,7 @@ export class TrainerService {
     address?: string | null,
     latitude?: number | null,
     longitude?: number | null,
-    radiusKm?: number | null,
+    radiusKm?: number | null
   ) {
     const area = await this.prisma.trainerServiceArea.findFirst({ where: { id, trainerId } });
     if (!area) return { mtype: 'error', message: 'Service area not found' };
@@ -565,13 +651,18 @@ export class TrainerService {
     accountHolderName: string,
     bankName?: string | null,
     last4?: string | null,
-    routingLast4?: string | null,
+    routingLast4?: string | null
   ) {
     const name = String(accountHolderName ?? '').trim();
     if (!name) return { mtype: 'error', message: 'Account holder name is required' };
-    const four = String(last4 ?? '').trim().replace(/\D/g, '').slice(-4);
-    if (four.length !== 4) return { mtype: 'error', message: 'Last 4 digits of account are required' };
-    const route4 = routingLast4 != null ? String(routingLast4).trim().replace(/\D/g, '').slice(-4) : null;
+    const four = String(last4 ?? '')
+      .trim()
+      .replace(/\D/g, '')
+      .slice(-4);
+    if (four.length !== 4)
+      return { mtype: 'error', message: 'Last 4 digits of account are required' };
+    const route4 =
+      routingLast4 != null ? String(routingLast4).trim().replace(/\D/g, '').slice(-4) : null;
     const bank = bankName != null ? String(bankName).trim() || null : null;
     await this.prisma.trainerBankDetail.upsert({
       where: { trainerId },
@@ -731,7 +822,8 @@ export class TrainerService {
       where: { id: sessionId, trainerId: userId },
     });
     if (!session) return { mtype: 'error', message: 'Session not found' };
-    if (session.status !== 'scheduled') return { mtype: 'error', message: 'Session cannot be cancelled' };
+    if (session.status !== 'scheduled')
+      return { mtype: 'error', message: 'Session cannot be cancelled' };
     await this.prisma.session.update({
       where: { id: sessionId },
       data: { status: 'cancelled' },
@@ -744,7 +836,8 @@ export class TrainerService {
       where: { id: sessionId, trainerId: userId },
     });
     if (!session) return { mtype: 'error', message: 'Session not found' };
-    if (session.status !== 'scheduled') return { mtype: 'error', message: 'Session cannot be rescheduled' };
+    if (session.status !== 'scheduled')
+      return { mtype: 'error', message: 'Session cannot be rescheduled' };
     const date = new Date(newScheduledAt);
     if (Number.isNaN(date.getTime())) return { mtype: 'error', message: 'Invalid date/time' };
     await this.prisma.session.update({
@@ -804,7 +897,11 @@ export class TrainerService {
         _count: true,
       }),
       this.prisma.session.aggregate({
-        where: { trainerId: userId, status: 'completed', scheduledAt: { gte: startOfLastMonth, lte: endOfLastMonth } },
+        where: {
+          trainerId: userId,
+          status: 'completed',
+          scheduledAt: { gte: startOfLastMonth, lte: endOfLastMonth },
+        },
         _sum: { amountCents: true },
         _count: true,
       }),
@@ -859,16 +956,27 @@ export class TrainerService {
       include: { customer: { select: { id: true, name: true, email: true } } },
       orderBy: { createdAt: 'desc' },
     });
-    const list = reviews.map((r: { id: string; trainerId: string; customerId: string; sessionId: string | null; rating: number; comment: string | null; createdAt: Date; customer: { name: string | null; email: string } }) => ({
-      id: r.id,
-      trainerId: r.trainerId,
-      customerId: r.customerId,
-      customerName: r.customer.name ?? r.customer.email,
-      sessionId: r.sessionId,
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: r.createdAt.toISOString(),
-    }));
+    const list = reviews.map(
+      (r: {
+        id: string;
+        trainerId: string;
+        customerId: string;
+        sessionId: string | null;
+        rating: number;
+        comment: string | null;
+        createdAt: Date;
+        customer: { name: string | null; email: string };
+      }) => ({
+        id: r.id,
+        trainerId: r.trainerId,
+        customerId: r.customerId,
+        customerName: r.customer.name ?? r.customer.email,
+        sessionId: r.sessionId,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', list, FetchReviews: list };
   }
 
@@ -916,7 +1024,8 @@ export class TrainerService {
   }
 
   async raiseSupport(userId: string, subject: string, message: string) {
-    if (!subject?.trim() || !message?.trim()) return { mtype: 'error', message: 'Subject and message required' };
+    if (!subject?.trim() || !message?.trim())
+      return { mtype: 'error', message: 'Subject and message required' };
     const ticket = await this.prisma.supportTicket.create({
       data: { userId, subject: subject.trim(), message: message.trim(), status: 'open' },
     });
@@ -944,13 +1053,15 @@ export class TrainerService {
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, body: true, read: true, createdAt: true },
     });
-    const notificationList = rows.map((r: { id: string; title: string; body: string | null; read: boolean; createdAt: Date }) => ({
-      id: r.id,
-      title: r.title,
-      body: r.body ?? '',
-      read: r.read,
-      createdAt: r.createdAt.toISOString(),
-    }));
+    const notificationList = rows.map(
+      (r: { id: string; title: string; body: string | null; read: boolean; createdAt: Date }) => ({
+        id: r.id,
+        title: r.title,
+        body: r.body ?? '',
+        read: r.read,
+        createdAt: r.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', notificationList };
   }
 
@@ -999,6 +1110,9 @@ export class TrainerService {
 
   /** Request trainer account deletion (same as deleteProfile for legacy route). */
   deletetrainer() {
-    return { mtype: 'success', message: 'Account deletion requested. Contact support to complete.' };
+    return {
+      mtype: 'success',
+      message: 'Account deletion requested. Contact support to complete.',
+    };
   }
 }
