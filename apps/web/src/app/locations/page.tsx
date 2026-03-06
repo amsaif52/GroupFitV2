@@ -6,6 +6,7 @@ import { CustomerLayout } from '../CustomerLayout';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
+import { useDefaultLocation } from '@/contexts/DefaultLocationContext';
 
 type LocationItem = {
   id: string;
@@ -17,6 +18,7 @@ type LocationItem = {
 };
 
 export default function LocationsPage() {
+  const { defaultLocation, setDefaultLocation, clearDefaultLocation } = useDefaultLocation();
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState<LocationItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -137,8 +139,10 @@ export default function LocationsPage() {
       .deleteCustomerService(id)
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
-        if (data?.mtype === 'success') fetchList();
-        else setError(String(data?.message ?? 'Delete failed'));
+        if (data?.mtype === 'success') {
+          if (defaultLocation?.id === id) clearDefaultLocation();
+          fetchList();
+        } else setError(String(data?.message ?? 'Delete failed'));
       })
       .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
       .finally(() => setActionId(null));
@@ -322,7 +326,16 @@ export default function LocationsPage() {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>{row.label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontWeight: 600 }}>{row.label}</span>
+                {defaultLocation?.id === row.id && (
+                  <span
+                    style={{ fontSize: 12, fontWeight: 600, color: 'var(--groupfit-secondary)' }}
+                  >
+                    Default
+                  </span>
+                )}
+              </div>
               {row.address && (
                 <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>
                   {row.address}
@@ -333,7 +346,31 @@ export default function LocationsPage() {
                   {row.latitude}, {row.longitude}
                 </div>
               )}
-              <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+              <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDefaultLocation({
+                      id: row.id,
+                      label: row.label,
+                      address: row.address,
+                      latitude: row.latitude,
+                      longitude: row.longitude,
+                    })
+                  }
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: 13,
+                    borderRadius: 6,
+                    border: '1px solid var(--groupfit-secondary)',
+                    background:
+                      defaultLocation?.id === row.id ? 'var(--groupfit-border-light)' : '#fff',
+                    color: 'var(--groupfit-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {defaultLocation?.id === row.id ? 'Default address' : 'Set as default'}
+                </button>
                 <button
                   type="button"
                   onClick={() => openEdit(row)}

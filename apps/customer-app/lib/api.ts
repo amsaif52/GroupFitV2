@@ -46,38 +46,66 @@ export function healthCheck() {
 
 /** Customer division: POST /api/customer/<action>. Use for customer-app. */
 export const customerApi = {
-  viewProfile: () => api.post<{ mtype: string; name?: string; emailid?: string; phone?: string; locale?: string }>('/customer/viewProfile', {}),
+  viewProfile: () =>
+    api.post<{ mtype: string; name?: string; emailid?: string; phone?: string; locale?: string }>(
+      '/customer/viewProfile',
+      {}
+    ),
   editProfile: (body: { name?: string; phone?: string; locale?: string }) =>
     api.post<{ mtype: string; message?: string }>('/customer/editProfile', body),
   paymentList: () => api.post<{ mtype: string; list?: unknown[] }>('/customer/PaymentList', {}),
 
   // Sessions
   customerSessionList: (body: { status?: string }) =>
-    api.post<{ mtype: string; customerSessionList?: unknown[] }>('/customer/customerSessionList', body),
+    api.post<{ mtype: string; customerSessionList?: unknown[] }>(
+      '/customer/customerSessionList',
+      body
+    ),
   customerSessionCompletedList: (body: { status?: string }) =>
-    api.post<{ mtype: string; customerSessionCompletedList?: unknown[] }>('/customer/customerSessionCompletedList', body),
+    api.post<{ mtype: string; customerSessionCompletedList?: unknown[] }>(
+      '/customer/customerSessionCompletedList',
+      body
+    ),
   todaysessionlist: () =>
     api.post<{ mtype: string; todaysessionlist?: unknown[] }>('/customer/todaysessionlist', {}),
 
   // Activities
   fetchAllActivity: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; activityList?: unknown[] }>('/customer/fetchAllActivity', body ?? {}),
+  /** Activities offered by trainers at location (latitude, longitude, radiusKm optional). */
+  activitiesAtLocation: (body: { latitude?: number; longitude?: number; radiusKm?: number }) =>
+    api.post<{ mtype: string; activityList?: unknown[] }>('/customer/activitiesAtLocation', body),
   fetchFavouriteActivities: () =>
-    api.post<{ mtype: string; favouriteActivities?: unknown[] }>('/customer/fetchFavouriteActivities', {}),
+    api.post<{ mtype: string; favouriteActivities?: unknown[] }>(
+      '/customer/fetchFavouriteActivities',
+      {}
+    ),
   addFavouriteActivity: (activityCode: string) =>
     api.post<Record<string, unknown>>('/customer/addFavouriteActivity', { activityCode }),
   removeFavouriteActivity: (activityCode: string) =>
     api.post<Record<string, unknown>>('/customer/removeFavouriteActivity', { activityCode }),
   GetTrendingActivities: () =>
-    api.post<{ mtype: string; trendingActivities?: unknown[] }>('/customer/GetTrendingActivities', {}),
+    api.post<{ mtype: string; trendingActivities?: unknown[] }>(
+      '/customer/GetTrendingActivities',
+      {}
+    ),
 
   // Trainers
   fetchFavouriteTrainers: () =>
-    api.post<{ mtype: string; favouriteTrainersList?: unknown[] }>('/customer/fetchFavouriteTrainers', {}),
-  topratedTrainersList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; topratedTrainersList?: unknown[] }>('/customer/topratedTrainersList', body ?? {}),
+    api.post<{ mtype: string; favouriteTrainersList?: unknown[] }>(
+      '/customer/fetchFavouriteTrainers',
+      {}
+    ),
+  topratedTrainersList: (body?: { latitude?: number; longitude?: number; radiusKm?: number }) =>
+    api.post<{ mtype: string; topratedTrainersList?: unknown[] }>(
+      '/customer/topratedTrainersList',
+      body ?? {}
+    ),
   favouriteTrainersList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; favouriteTrainersList?: unknown[] }>('/customer/favouriteTrainersList', body ?? {}),
+    api.post<{ mtype: string; favouriteTrainersList?: unknown[] }>(
+      '/customer/favouriteTrainersList',
+      body ?? {}
+    ),
   addFavouriteTrainer: (trainerId: string) =>
     api.post<Record<string, unknown>>('/customer/addFavouriteTrainer', { trainerId }),
   deleteFavouriteTrainer: (trainerId: string) =>
@@ -93,12 +121,14 @@ export const customerApi = {
   viewTrainer: (trainerId: string) =>
     api.post<Record<string, unknown>>('/customer/viewTrainer', { trainerId }),
   addSession: (trainerId: string, scheduledAt: string, activityName?: string) =>
-    api.post<Record<string, unknown>>('/customer/addSession', { trainerId, scheduledAt, activityName }),
+    api.post<Record<string, unknown>>('/customer/addSession', {
+      trainerId,
+      scheduledAt,
+      activityName,
+    }),
 
-  getNotificationList: () =>
-    api.post<Record<string, unknown>>('/customer/GetNotificationList', {}),
-  getNotificationFlag: () =>
-    api.post<Record<string, unknown>>('/customer/GetNotificationFlag', {}),
+  getNotificationList: () => api.post<Record<string, unknown>>('/customer/GetNotificationList', {}),
+  getNotificationFlag: () => api.post<Record<string, unknown>>('/customer/GetNotificationFlag', {}),
   updateNotificationReadStatus: (notificationId?: string) =>
     api.post<Record<string, unknown>>('/customer/UpdateNotificationReadStatus', { notificationId }),
   deleteNotification: (notificationId: string) =>
@@ -106,11 +136,17 @@ export const customerApi = {
 
   // Groups
   fetchallgroupslist: () =>
-    api.post<{ mtype: string; fetchallgroupslist?: unknown[]; list?: unknown[] }>('/customer/fetchallgroupslist', {}),
+    api.post<{ mtype: string; fetchallgroupslist?: unknown[]; list?: unknown[] }>(
+      '/customer/fetchallgroupslist',
+      {}
+    ),
   addgroupname: (name: string) =>
     api.post<Record<string, unknown>>('/customer/addgroupname', { name }),
   fetchgroupMembers: (groupId: string) =>
-    api.post<{ mtype: string; fetchgroupMembers?: unknown[]; list?: unknown[] }>('/customer/fetchgroupMembers', { groupId }),
+    api.post<{ mtype: string; fetchgroupMembers?: unknown[]; list?: unknown[] }>(
+      '/customer/fetchgroupMembers',
+      { groupId }
+    ),
   addgroupmember: (groupId: string, userId: string) =>
     api.post<Record<string, unknown>>('/customer/addgroupmember', { groupId, userId }),
   updategroupmember: (groupId: string, memberId: string) =>
@@ -118,26 +154,51 @@ export const customerApi = {
   deletegrouplist: (groupId: string) =>
     api.post<Record<string, unknown>>('/customer/deletegrouplist', { groupId }),
   fetchSoloMembers: (groupId: string) =>
-    api.post<{ mtype: string; fetchSoloMembers?: unknown[]; list?: unknown[] }>('/customer/fetchSoloMembers', { groupId }),
+    api.post<{ mtype: string; fetchSoloMembers?: unknown[]; list?: unknown[] }>(
+      '/customer/fetchSoloMembers',
+      { groupId }
+    ),
 
   // Referrals
   ReferralList: () =>
-    api.post<{ mtype: string; ReferralList?: unknown[]; list?: unknown[] }>('/customer/ReferralList', {}),
+    api.post<{ mtype: string; ReferralList?: unknown[]; list?: unknown[] }>(
+      '/customer/ReferralList',
+      {}
+    ),
 
   // Locations (saved addresses)
   customerServiceList: () =>
-    api.post<{ mtype: string; customerServiceList?: unknown[]; list?: unknown[] }>('/customer/customerServiceList', {}),
-  addCustomerService: (body: { label: string; address?: string | null; latitude?: number | null; longitude?: number | null }) =>
-    api.post<Record<string, unknown>>('/customer/addCustomerService', body),
-  editCustomerService: (body: { locationId: string; label?: string; address?: string | null; latitude?: number | null; longitude?: number | null }) =>
-    api.post<Record<string, unknown>>('/customer/editCustomerService', body),
+    api.post<{ mtype: string; customerServiceList?: unknown[]; list?: unknown[] }>(
+      '/customer/customerServiceList',
+      {}
+    ),
+  addCustomerService: (body: {
+    label: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  }) => api.post<Record<string, unknown>>('/customer/addCustomerService', body),
+  editCustomerService: (body: {
+    locationId: string;
+    label?: string;
+    address?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  }) => api.post<Record<string, unknown>>('/customer/editCustomerService', body),
   deleteCustomerService: (locationId: string) =>
     api.post<Record<string, unknown>>('/customer/deleteCustomerService', { locationId }),
 
   faqlist: () =>
-    api.post<{ mtype: string; faqlist?: { id: string; question: string; answer: string }[]; list?: unknown[] }>('/customer/faqlist', {}),
+    api.post<{
+      mtype: string;
+      faqlist?: { id: string; question: string; answer: string }[];
+      list?: unknown[];
+    }>('/customer/faqlist', {}),
   fetchContactLink: () =>
-    api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>('/customer/fetchContactLink', {}),
+    api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>(
+      '/customer/fetchContactLink',
+      {}
+    ),
   raiseSupport: (body: { subject?: string; message?: string }) =>
     api.post<Record<string, unknown>>('/customer/raiseSupport', body),
   /** Assistant chat (JWT). Body: message, conversationId (optional). Returns message + conversationId. */

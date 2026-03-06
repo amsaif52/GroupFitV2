@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { getApiErrorMessage } from '@groupfit/shared';
 import { customerApi } from '../../lib/api';
+import { useDefaultLocation } from '../../contexts/DefaultLocationContext';
 
 type LocationItem = {
   id: string;
@@ -25,6 +26,7 @@ type LocationItem = {
 
 export default function MyLocationsScreen() {
   const router = useRouter();
+  const { defaultLocation, setDefaultLocation, clearDefaultLocation } = useDefaultLocation();
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState<LocationItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -150,8 +152,10 @@ export default function MyLocationsScreen() {
             .deleteCustomerService(id)
             .then((res) => {
               const data = res?.data as Record<string, unknown>;
-              if (data?.mtype === 'success') fetchList();
-              else setError(String(data?.message ?? 'Delete failed'));
+              if (data?.mtype === 'success') {
+                if (defaultLocation?.id === id) clearDefaultLocation();
+                fetchList();
+              } else setError(String(data?.message ?? 'Delete failed'));
             })
             .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
             .finally(() => setActionId(null));
@@ -243,7 +247,12 @@ export default function MyLocationsScreen() {
         ) : (
           list.map((row) => (
             <View key={row.id} style={styles.card}>
-              <Text style={styles.cardTitle}>{row.label}</Text>
+              <View style={styles.cardTitleRow}>
+                <Text style={styles.cardTitle}>{row.label}</Text>
+                {defaultLocation?.id === row.id ? (
+                  <Text style={styles.defaultBadge}>Default</Text>
+                ) : null}
+              </View>
               {row.address ? <Text style={styles.cardAddress}>{row.address}</Text> : null}
               {(row.latitude != null || row.longitude != null) && (
                 <Text style={styles.cardCoords}>
@@ -251,6 +260,25 @@ export default function MyLocationsScreen() {
                 </Text>
               )}
               <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={[
+                    styles.secondaryButton,
+                    defaultLocation?.id === row.id && styles.buttonMuted,
+                  ]}
+                  onPress={() =>
+                    setDefaultLocation({
+                      id: row.id,
+                      label: row.label,
+                      address: row.address,
+                      latitude: row.latitude,
+                      longitude: row.longitude,
+                    })
+                  }
+                >
+                  <Text style={styles.secondaryButtonText}>
+                    {defaultLocation?.id === row.id ? 'Default address' : 'Set as default'}
+                  </Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => openEdit(row)}>
                   <Text style={styles.secondaryButtonText}>Edit</Text>
                 </TouchableOpacity>
@@ -338,7 +366,9 @@ const styles = StyleSheet.create({
     borderColor: colors.borderLight,
     borderRadius: 8,
   },
-  cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  cardTitle: { fontSize: 16, fontWeight: '700', flex: 1 },
+  defaultBadge: { fontSize: 12, fontWeight: '600', color: colors.secondary },
   cardAddress: { fontSize: 14, color: colors.grey, marginBottom: 4 },
   cardCoords: { fontSize: 12, color: colors.grey, marginBottom: 8 },
   cardActions: { flexDirection: 'row', gap: 8 },
@@ -350,6 +380,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   secondaryButtonText: { color: colors.secondary, fontSize: 13 },
+  buttonMuted: { opacity: 0.8 },
   dangerButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,

@@ -84,7 +84,7 @@ export class CustomerController {
   @ApiOperation({ summary: 'Add member to group' })
   addgroupmember(
     @CurrentUser('sub') userId: string,
-    @Body() body: { groupId?: string; userId?: string },
+    @Body() body: { groupId?: string; userId?: string }
   ) {
     return this.customerService.addgroupmember(userId, body?.groupId ?? '', body?.userId ?? '');
   }
@@ -92,10 +92,7 @@ export class CustomerController {
   @Post('fetchgroupMembers')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Fetch group members' })
-  fetchgroupMembers(
-    @CurrentUser('sub') userId: string,
-    @Body() body: { groupId?: string },
-  ) {
+  fetchgroupMembers(@CurrentUser('sub') userId: string, @Body() body: { groupId?: string }) {
     return this.customerService.fetchgroupMembers(userId, body?.groupId ?? '');
   }
 
@@ -104,18 +101,19 @@ export class CustomerController {
   @ApiOperation({ summary: 'Remove member from group (by member id)' })
   updategroupmember(
     @CurrentUser('sub') userId: string,
-    @Body() body: { groupId?: string; memberId?: string },
+    @Body() body: { groupId?: string; memberId?: string }
   ) {
-    return this.customerService.updategroupmember(userId, body?.groupId ?? '', body?.memberId ?? '');
+    return this.customerService.updategroupmember(
+      userId,
+      body?.groupId ?? '',
+      body?.memberId ?? ''
+    );
   }
 
   @Post('deletegrouplist')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete group' })
-  deletegrouplist(
-    @CurrentUser('sub') userId: string,
-    @Body() body: { groupId?: string },
-  ) {
+  deletegrouplist(@CurrentUser('sub') userId: string, @Body() body: { groupId?: string }) {
     return this.customerService.deletegrouplist(userId, body?.groupId ?? '');
   }
 
@@ -152,7 +150,10 @@ export class CustomerController {
   @Post('customerSessionCompletedList')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Customer completed sessions' })
-  customerSessionCompletedList(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  customerSessionCompletedList(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.customerService.customerSessionCompletedList(userId);
   }
 
@@ -180,15 +181,25 @@ export class CustomerController {
   @Post('cancelSession')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Cancel session' })
-  cancelSession(@CurrentUser('sub') userId: string, @Body() body: { sessionId?: string; cancelReason?: string }) {
+  cancelSession(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { sessionId?: string; cancelReason?: string }
+  ) {
     return this.customerService.cancelSession(userId, body?.sessionId ?? '', body?.cancelReason);
   }
 
   @Post('rescheduleSession')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Reschedule session' })
-  rescheduleSession(@CurrentUser('sub') userId: string, @Body() body: { sessionId?: string; newScheduledAt?: string }) {
-    return this.customerService.rescheduleSession(userId, body?.sessionId ?? '', body?.newScheduledAt ?? '');
+  rescheduleSession(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { sessionId?: string; newScheduledAt?: string }
+  ) {
+    return this.customerService.rescheduleSession(
+      userId,
+      body?.sessionId ?? '',
+      body?.newScheduledAt ?? ''
+    );
   }
 
   @Post('fetchcancelreason')
@@ -198,15 +209,22 @@ export class CustomerController {
   }
 
   @Post('SessionTrainersList')
-  @ApiOperation({ summary: 'List trainers (for session booking)' })
-  SessionTrainersList(@Body() _body: Record<string, unknown>) {
-    return this.customerService.SessionTrainersList();
+  @ApiOperation({
+    summary:
+      'List trainers (for session booking). Optional body: latitude, longitude, radiusKm to filter by location.',
+  })
+  SessionTrainersList(@Body() body: { latitude?: number; longitude?: number; radiusKm?: number }) {
+    return this.customerService.SessionTrainersList(body);
   }
 
   @Post('CheckTrainerAvailability')
   @ApiOperation({ summary: 'Check if trainer is available at date/time' })
   CheckTrainerAvailability(@Body() body: { trainerId?: string; date?: string; time?: string }) {
-    return this.customerService.CheckTrainerAvailability(body?.trainerId ?? '', body?.date, body?.time);
+    return this.customerService.CheckTrainerAvailability(
+      body?.trainerId ?? '',
+      body?.date,
+      body?.time
+    );
   }
 
   @Post('SessionAvailabilityDateList')
@@ -218,14 +236,25 @@ export class CustomerController {
   @Post('SessionAvailabilityTimeList')
   @ApiOperation({ summary: 'Time slots available for trainer on a date' })
   SessionAvailabilityTimeList(@Body() body: { trainerId?: string; date?: string }) {
-    return this.customerService.SessionAvailabilityTimeList(body?.trainerId ?? '', body?.date ?? '');
+    return this.customerService.SessionAvailabilityTimeList(
+      body?.trainerId ?? '',
+      body?.date ?? ''
+    );
   }
 
   @Post('addSession')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Book a session' })
-  addSession(@CurrentUser('sub') userId: string, @Body() body: { trainerId?: string; scheduledAt?: string; activityName?: string }) {
-    return this.customerService.addSession(userId, body?.trainerId ?? '', body?.scheduledAt ?? '', body?.activityName);
+  addSession(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { trainerId?: string; scheduledAt?: string; activityName?: string }
+  ) {
+    return this.customerService.addSession(
+      userId,
+      body?.trainerId ?? '',
+      body?.scheduledAt ?? '',
+      body?.activityName
+    );
   }
 
   // Activities
@@ -236,9 +265,18 @@ export class CustomerController {
   }
 
   @Post('fetchAllActivity')
-  @ApiOperation({ summary: 'Fetch all activities (stub)' })
+  @ApiOperation({ summary: 'Fetch all activities' })
   fetchAllActivity(@Body() _body: Record<string, unknown>) {
     return this.customerService.fetchAllActivity();
+  }
+
+  @Post('activitiesAtLocation')
+  @ApiOperation({
+    summary:
+      'Activities offered by trainers at location. Body: latitude, longitude, radiusKm (optional).',
+  })
+  activitiesAtLocation(@Body() body: { latitude?: number; longitude?: number; radiusKm?: number }) {
+    return this.customerService.activitiesAtLocation(body);
   }
 
   @Post('viewActivity')
@@ -250,21 +288,30 @@ export class CustomerController {
   @Post('fetchFavouriteActivities')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Fetch favourite activities' })
-  fetchFavouriteActivities(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  fetchFavouriteActivities(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.customerService.fetchFavouriteActivities(userId);
   }
 
   @Post('addFavouriteActivity')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add favourite activity' })
-  addFavouriteActivity(@CurrentUser('sub') userId: string, @Body() body: { activityCode?: string }) {
+  addFavouriteActivity(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { activityCode?: string }
+  ) {
     return this.customerService.addFavouriteActivity(userId, body?.activityCode ?? '');
   }
 
   @Post('removeFavouriteActivity')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Remove favourite activity' })
-  removeFavouriteActivity(@CurrentUser('sub') userId: string, @Body() body: { activityCode?: string }) {
+  removeFavouriteActivity(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { activityCode?: string }
+  ) {
     return this.customerService.removeFavouriteActivity(userId, body?.activityCode ?? '');
   }
 
@@ -288,22 +335,31 @@ export class CustomerController {
   }
 
   @Post('topratedTrainersList')
-  @ApiOperation({ summary: 'Top rated trainers (stub)' })
-  topratedTrainersList(@Body() _body: Record<string, unknown>) {
-    return this.customerService.topratedTrainersList();
+  @ApiOperation({
+    summary:
+      'Top rated trainers. Optional body: latitude, longitude, radiusKm to filter by location.',
+  })
+  topratedTrainersList(@Body() body: { latitude?: number; longitude?: number; radiusKm?: number }) {
+    return this.customerService.topratedTrainersList(body);
   }
 
   @Post('favouriteTrainersList')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Favourite trainers list' })
-  favouriteTrainersList(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  favouriteTrainersList(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.customerService.favouriteTrainersList(userId);
   }
 
   @Post('fetchFavouriteTrainers')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Fetch favourite trainers' })
-  fetchFavouriteTrainers(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  fetchFavouriteTrainers(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.customerService.fetchFavouriteTrainers(userId);
   }
 
@@ -346,14 +402,20 @@ export class CustomerController {
   @ApiOperation({ summary: 'Add saved location; body: label, address?, latitude?, longitude?' })
   addCustomerService(
     @CurrentUser('sub') userId: string,
-    @Body() body: { label?: string; address?: string | null; latitude?: number | null; longitude?: number | null },
+    @Body()
+    body: {
+      label?: string;
+      address?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
+    }
   ) {
     return this.customerService.addCustomerService(
       userId,
       body?.label ?? '',
       body?.address,
       body?.latitude,
-      body?.longitude,
+      body?.longitude
     );
   }
 
@@ -366,16 +428,19 @@ export class CustomerController {
 
   @Post('editCustomerService')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Edit location; body: locationId, label?, address?, latitude?, longitude?' })
+  @ApiOperation({
+    summary: 'Edit location; body: locationId, label?, address?, latitude?, longitude?',
+  })
   editCustomerService(
     @CurrentUser('sub') userId: string,
-    @Body() body: {
+    @Body()
+    body: {
       locationId?: string;
       label?: string;
       address?: string | null;
       latitude?: number | null;
       longitude?: number | null;
-    },
+    }
   ) {
     return this.customerService.editCustomerService(
       userId,
@@ -383,7 +448,7 @@ export class CustomerController {
       body?.label,
       body?.address,
       body?.latitude,
-      body?.longitude,
+      body?.longitude
     );
   }
 
@@ -403,13 +468,18 @@ export class CustomerController {
   }
 
   @Post('PaymentStatus')
-  @ApiOperation({ summary: 'Payment status; body: paymentIntentId (Stripe when STRIPE_SECRET_KEY set)' })
+  @ApiOperation({
+    summary: 'Payment status; body: paymentIntentId (Stripe when STRIPE_SECRET_KEY set)',
+  })
   PaymentStatus(@Body() body: { paymentIntentId?: string }) {
     return this.customerService.PaymentStatus(body?.paymentIntentId);
   }
 
   @Post('PaymentSheet')
-  @ApiOperation({ summary: 'Create PaymentIntent; body: amountCents?, currency? (Stripe when STRIPE_SECRET_KEY set)' })
+  @ApiOperation({
+    summary:
+      'Create PaymentIntent; body: amountCents?, currency? (Stripe when STRIPE_SECRET_KEY set)',
+  })
   PaymentSheet(@Body() body: { amountCents?: number; currency?: string }) {
     return this.customerService.PaymentSheet(body?.amountCents, body?.currency);
   }
@@ -438,14 +508,20 @@ export class CustomerController {
   @Post('UpdateNotificationReadStatus')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark notification(s) as read' })
-  UpdateNotificationReadStatus(@CurrentUser('sub') userId: string, @Body() body: { notificationId?: string }) {
+  UpdateNotificationReadStatus(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { notificationId?: string }
+  ) {
     return this.customerService.UpdateNotificationReadStatus(userId, body?.notificationId);
   }
 
   @Post('deleteNotification')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete notification' })
-  deleteNotification(@CurrentUser('sub') userId: string, @Body() body: { notificationId?: string }) {
+  deleteNotification(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { notificationId?: string }
+  ) {
     return this.customerService.deleteNotification(userId, body?.notificationId ?? '');
   }
 
@@ -468,14 +544,20 @@ export class CustomerController {
   @ApiOperation({ summary: 'Submit review for a trainer' })
   customerreview(
     @CurrentUser('sub') userId: string,
-    @Body() body: { trainerId?: string; rating?: number; comment?: string | null; sessionId?: string | null },
+    @Body()
+    body: {
+      trainerId?: string;
+      rating?: number;
+      comment?: string | null;
+      sessionId?: string | null;
+    }
   ) {
     return this.customerService.customerreview(
       userId,
       body?.trainerId ?? '',
       Number(body?.rating ?? 0),
       body?.comment,
-      body?.sessionId,
+      body?.sessionId
     );
   }
 
@@ -519,7 +601,7 @@ export class CustomerController {
   @ApiOperation({ summary: 'Invite user to group; body: groupId, userId (same as addgroupmember)' })
   GroupInvite(
     @CurrentUser('sub') userId: string,
-    @Body() body: { groupId?: string; userId?: string },
+    @Body() body: { groupId?: string; userId?: string }
   ) {
     return this.customerService.GroupInvite(userId, body?.groupId, body?.userId);
   }
@@ -527,7 +609,10 @@ export class CustomerController {
   @Post('raiseSupport')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create support ticket' })
-  raiseSupport(@CurrentUser('sub') userId: string, @Body() body: { subject?: string; message?: string }) {
+  raiseSupport(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { subject?: string; message?: string }
+  ) {
     return this.customerService.raiseSupport(userId, body?.subject ?? '', body?.message ?? '');
   }
 
@@ -536,7 +621,7 @@ export class CustomerController {
   @ApiOperation({ summary: 'Submit other concern as support ticket; body: subject?, message' })
   otherConcern(
     @CurrentUser('sub') userId: string,
-    @Body() body: { subject?: string; message?: string },
+    @Body() body: { subject?: string; message?: string }
   ) {
     return this.customerService.otherConcern(userId, body?.subject, body?.message);
   }

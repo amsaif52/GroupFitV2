@@ -28,6 +28,45 @@ interface UserSelect {
   phone: string | null;
 }
 
+/** Default radius in km when service area has no radiusKm set. */
+const DEFAULT_LOCATION_RADIUS_KM = 25;
+
+/** Approximate distance in km between two points (Haversine). */
+function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/** Returns trainer IDs that have at least one active service area containing (lat, lon). */
+async function getTrainerIdsAtLocation(
+  prisma: PrismaService,
+  latitude: number,
+  longitude: number,
+  radiusKm: number
+): Promise<string[]> {
+  const areas = await prisma.trainerServiceArea.findMany({
+    where: { isActive: true, latitude: { not: null }, longitude: { not: null } },
+    select: { trainerId: true, latitude: true, longitude: true, radiusKm: true },
+  });
+  const ids = new Set<string>();
+  for (const a of areas) {
+    const lat = a.latitude as number;
+    const lon = a.longitude as number;
+    const r = a.radiusKm != null ? a.radiusKm : DEFAULT_LOCATION_RADIUS_KM;
+    if (distanceKm(latitude, longitude, lat, lon) <= r) ids.add(a.trainerId);
+  }
+  return [...ids];
+}
+
 /** Stripe module name (variable avoids TS resolving it in test env where types may be missing) */
 const STRIPE_MODULE = 'stripe';
 
@@ -413,10 +452,28 @@ export class CustomerService {
     return { mtype: 'success', message: 'OK', list: CANCEL_REASONS };
   }
 
-  /** List of trainers (for session booking). Same shape as topratedTrainersList. */
-  async SessionTrainersList() {
+  /** List of trainers (for session booking). Optional latitude/longitude/radiusKm filter by service area. */
+  async SessionTrainersList(body?: { latitude?: number; longitude?: number; radiusKm?: number }) {
+    const lat = body?.latitude;
+    const lon = body?.longitude;
+    const radiusKm = body?.radiusKm ?? DEFAULT_LOCATION_RADIUS_KM;
+    let trainerIds: string[] | null = null;
+    if (
+      typeof lat === 'number' &&
+      typeof lon === 'number' &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lon)
+    ) {
+      trainerIds = await getTrainerIdsAtLocation(this.prisma, lat, lon, radiusKm);
+    }
+    const where =
+      trainerIds !== null && trainerIds.length > 0
+        ? { role: 'trainer' as const, id: { in: trainerIds } }
+        : trainerIds !== null && trainerIds.length === 0
+          ? { role: 'trainer' as const, id: { in: [] } }
+          : { role: 'trainer' as const };
     const users = await this.prisma.user.findMany({
-      where: { role: 'trainer' },
+      where,
       select: { id: true, name: true, email: true, phone: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -600,6 +657,48 @@ export class CustomerService {
     return { mtype: 'success', message: 'OK', activityList };
   }
 
+  /** Activities offered by trainers who serve the given location. Same activityList shape. Optional lat/lon/radiusKm. */
+  async activitiesAtLocation(body?: { latitude?: number; longitude?: number; radiusKm?: number }) {
+    const lat = body?.latitude;
+    const lon = body?.longitude;
+    const radiusKm = body?.radiusKm ?? DEFAULT_LOCATION_RADIUS_KM;
+    if (
+      typeof lat !== 'number' ||
+      typeof lon !== 'number' ||
+      Number.isNaN(lat) ||
+      Number.isNaN(lon)
+    ) {
+      return this.fetchAllActivity();
+    }
+    const trainerIds = await getTrainerIdsAtLocation(this.prisma, lat, lon, radiusKm);
+    if (trainerIds.length === 0) {
+      return { mtype: 'success', message: 'OK', activityList: [] };
+    }
+    const trainerActivities = await this.prisma.trainerActivity.findMany({
+      where: { trainerId: { in: trainerIds } },
+      select: { activityCode: true },
+      distinct: ['activityCode'],
+    });
+    const codes = trainerActivities.map((r: { activityCode: string }) => r.activityCode);
+    if (codes.length === 0) {
+      return { mtype: 'success', message: 'OK', activityList: [] };
+    }
+    const rows = await this.prisma.activity.findMany({
+      where: { code: { in: codes } },
+      orderBy: { code: 'asc' },
+    });
+    const activityList = rows.map(
+      (a: { id: string; code: string; name: string; description: string | null }) => ({
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        activityName: a.name,
+        description: a.description ?? '',
+      })
+    );
+    return { mtype: 'success', message: 'OK', activityList };
+  }
+
   async viewActivity(activityId?: string) {
     if (activityId) {
       const code = String(activityId).toLowerCase();
@@ -733,9 +832,28 @@ export class CustomerService {
     };
   }
 
-  async topratedTrainersList() {
+  /** Top rated trainers. Optional latitude/longitude/radiusKm filter by service area. */
+  async topratedTrainersList(body?: { latitude?: number; longitude?: number; radiusKm?: number }) {
+    const lat = body?.latitude;
+    const lon = body?.longitude;
+    const radiusKm = body?.radiusKm ?? DEFAULT_LOCATION_RADIUS_KM;
+    let trainerIds: string[] | null = null;
+    if (
+      typeof lat === 'number' &&
+      typeof lon === 'number' &&
+      !Number.isNaN(lat) &&
+      !Number.isNaN(lon)
+    ) {
+      trainerIds = await getTrainerIdsAtLocation(this.prisma, lat, lon, radiusKm);
+    }
+    const where =
+      trainerIds !== null && trainerIds.length > 0
+        ? { role: 'trainer' as const, id: { in: trainerIds } }
+        : trainerIds !== null && trainerIds.length === 0
+          ? { role: 'trainer' as const, id: { in: [] } }
+          : { role: 'trainer' as const };
     const users = await this.prisma.user.findMany({
-      where: { role: 'trainer' },
+      where,
       select: { id: true, name: true, email: true, phone: true },
       orderBy: { createdAt: 'desc' },
     });

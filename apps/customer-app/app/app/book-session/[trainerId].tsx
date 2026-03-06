@@ -14,10 +14,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { getApiErrorMessage } from '@groupfit/shared';
 import { customerApi } from '../../../lib/api';
+import { useDefaultLocation } from '../../../contexts/DefaultLocationContext';
 
 export default function BookSessionScreen() {
   const { trainerId } = useLocalSearchParams<{ trainerId: string }>();
   const router = useRouter();
+  const { defaultLocation } = useDefaultLocation();
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [activity, setActivity] = useState('');
@@ -72,6 +74,16 @@ export default function BookSessionScreen() {
           <Text style={styles.link}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Book a session</Text>
+        {defaultLocation ? (
+          <View style={styles.defaultAddressRow}>
+            <Text style={styles.defaultAddressText}>
+              📍 Using default address: {defaultLocation.label}
+            </Text>
+            <TouchableOpacity onPress={() => router.push('/app/locations')}>
+              <Text style={styles.changeLocationLink}>Change location</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
         <View style={styles.card}>
           <Text style={styles.label}>Date (YYYY-MM-DD)</Text>
           <TextInput
@@ -123,6 +135,18 @@ const styles = StyleSheet.create({
   backRow: { marginBottom: 8 },
   link: { fontSize: 14, fontWeight: '600', color: colors.secondary },
   title: { fontSize: 22, fontWeight: '700', color: colors.black, marginBottom: 16 },
+  defaultAddressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+    padding: 10,
+    backgroundColor: colors.borderLight,
+    borderRadius: 8,
+    gap: 8,
+  },
+  defaultAddressText: { fontSize: 14, color: colors.black, flex: 1 },
+  changeLocationLink: { fontSize: 13, fontWeight: '600', color: colors.secondary },
   card: {
     backgroundColor: colors.white,
     borderRadius: 13,
