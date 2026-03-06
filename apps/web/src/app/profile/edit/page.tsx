@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { getStoredUser } from '@/lib/auth';
 import { customerApi, trainerApi } from '@/lib/api';
 import { ROLES } from '@groupfit/shared';
-import { ApiClientError } from '@groupfit/shared';
+import { getApiErrorMessage } from '@groupfit/shared';
 
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -67,7 +67,7 @@ export default function ProfileEditPage() {
         setError('Update failed');
       }
     } catch (e) {
-      setError(e instanceof ApiClientError ? e.message : 'Failed to save');
+      setError(getApiErrorMessage(e, 'Failed to save'));
     } finally {
       setSaving(false);
     }

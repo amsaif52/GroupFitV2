@@ -3,6 +3,7 @@ import './globals.css';
 import './auth.css';
 import { TamaguiProvider } from './TamaguiProvider';
 import { QueryProvider } from './QueryProvider';
+import { GlobalErrorBoundary } from './GlobalErrorBoundary';
 
 export const metadata: Metadata = {
   title: 'GroupFit',
@@ -17,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <QueryProvider>
-          <TamaguiProvider>{children}</TamaguiProvider>
-        </QueryProvider>
+        <GlobalErrorBoundary>
+          <QueryProvider>
+            <TamaguiProvider>{children}</TamaguiProvider>
+          </QueryProvider>
+        </GlobalErrorBoundary>
       </body>
     </html>
   );

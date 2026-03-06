@@ -17,6 +17,13 @@ export class ApiClientError extends Error {
   }
 }
 
+/** Use in catch blocks to show a consistent message: API message if available, else generic. */
+export function getApiErrorMessage(err: unknown, fallback = 'Something went wrong.'): string {
+  if (err instanceof ApiClientError && err.message) return err.message;
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}
+
 /**
  * Create a fetch-based API client. Use from web (get baseUrl from env) or RN apps.
  */

@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { VerifyNumberScreen } from '@groupfit/shared/components/native';
 import { api, setStoredToken } from '../../lib/api';
 import type { LoginResponse } from '@groupfit/shared';
-import { ApiClientError } from '@groupfit/shared';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { colors } from '@groupfit/shared/theme';
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -51,7 +51,7 @@ export default function VerifyScreen() {
       });
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err: unknown) {
-      setError(err instanceof ApiClientError ? err.message : 'Could not resend code.');
+      setError(getApiErrorMessage(err, 'Could not resend code.'));
     }
   }
 

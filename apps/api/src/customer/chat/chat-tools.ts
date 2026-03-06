@@ -50,12 +50,12 @@ export const CHAT_TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'book_session',
-      description: 'Book a session with a trainer at a specific slot.',
+      description: 'Book a session with a trainer at a specific slot. slotId must be the full datetime from get_availability (e.g. 2025-03-02T10:00:00).',
       parameters: {
         type: 'object',
         properties: {
           trainerId: { type: 'string', description: 'Trainer id' },
-          slotId: { type: 'string', description: 'Slot id from get_availability' },
+          slotId: { type: 'string', description: 'Full datetime from get_availability, e.g. 2025-03-02T10:00:00' },
         },
         required: ['trainerId', 'slotId'],
         additionalProperties: false,

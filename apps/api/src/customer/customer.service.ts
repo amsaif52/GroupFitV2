@@ -22,6 +22,9 @@ interface UserSelect {
   phone: string | null;
 }
 
+/** Stripe module name (variable avoids TS resolving it in test env where types may be missing) */
+const STRIPE_MODULE = 'stripe';
+
 /** Stub response shape matching legacy C# API (mtype, message, etc.) */
 export function stubSuccess(message = 'OK', data?: Record<string, unknown>) {
   return { mtype: 'success', message, ...data };
@@ -881,7 +884,8 @@ export class CustomerService {
       return { mtype: 'success', message: 'OK', status: 'pending' };
     }
     try {
-      const Stripe = (await import('stripe')).default;
+      const stripeMod = await import(STRIPE_MODULE);
+      const Stripe = (stripeMod as { default: new (key: string, opts?: { apiVersion: string }) => { paymentIntents: { retrieve: (id: string) => Promise<{ status: string }> } } }).default;
       const stripe = new Stripe(key, { apiVersion: '2023-10-16' });
       const pi = await stripe.paymentIntents.retrieve(paymentIntentId.trim());
       return { mtype: 'success', message: 'OK', status: pi.status };
@@ -898,7 +902,8 @@ export class CustomerService {
     const amount = Math.max(0, Math.round(Number(amountCents ?? 0) || 0));
     const cur = (currency ?? 'usd').toLowerCase();
     try {
-      const Stripe = (await import('stripe')).default;
+      const stripeMod = await import(STRIPE_MODULE);
+      const Stripe = (stripeMod as { default: new (key: string, opts?: { apiVersion: string }) => { paymentIntents: { create: (opts: unknown) => Promise<{ client_secret: string | null }> } } }).default;
       const stripe = new Stripe(key, { apiVersion: '2023-10-16' });
       const pi = await stripe.paymentIntents.create({
         amount: amount || 100, // minimum 100 cents if 0
@@ -917,7 +922,8 @@ export class CustomerService {
       return { mtype: 'success', message: 'OK' };
     }
     try {
-      const Stripe = (await import('stripe')).default;
+      const stripeMod = await import(STRIPE_MODULE);
+      const Stripe = (stripeMod as { default: new (key: string, opts?: { apiVersion: string }) => { paymentIntents: { retrieve: (id: string) => Promise<{ status: string; amount?: number }> } } }).default;
       const stripe = new Stripe(key, { apiVersion: '2023-10-16' });
       const pi = await stripe.paymentIntents.retrieve(paymentIntentId.trim());
       if (pi.status === 'succeeded') {

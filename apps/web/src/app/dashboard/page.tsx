@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { getTranslations } from '@groupfit/shared';
-import { getStoredUser, clearStoredToken } from '@/lib/auth';
+import { getStoredUser, getStoredViewAs, clearStoredToken } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ROUTES, getProfileLink } from '../routes';
 import { CustomerLayout } from '../CustomerLayout';
 import { TrainerLayout } from '../TrainerLayout';
-import { customerApi, trainerApi } from '@/lib/api';
+import { api, customerApi, trainerApi } from '@/lib/api';
 
 function CustomerDashboardContent() {
   const [loading, setLoading] = useState(true);
@@ -156,13 +156,45 @@ export default function DashboardPage() {
   const router = useRouter();
   const t = getTranslations('en');
   const user = getStoredUser();
-  const isTrainer = user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN;
+  const viewAs = getStoredViewAs();
+  const isAdmin = user?.role === ROLES.ADMIN;
+
+  // Admin without a chosen experience must choose first
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return;
+    if (user.role === ROLES.ADMIN && !viewAs) {
+      router.replace(ROUTES.chooseExperience);
+    }
+  }, [user, viewAs, router]);
+
+  // When logged-in user hits dashboard, ensure API is reachable; else show server-unavailable
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    api.get('/health').catch(() => {
+      if (!cancelled) router.replace(ROUTES.serverUnavailable);
+    });
+    return () => { cancelled = true; };
+  }, [user, router]);
 
   function handleLogout() {
     clearStoredToken();
     router.push('/login');
     router.refresh();
   }
+
+  // Admin must have chosen an experience; redirect is in useEffect
+  if (user?.role === ROLES.ADMIN && !viewAs) {
+    return null;
+  }
+
+  // Effective view: admin uses viewAs (customer/trainer); others use role
+  const effectiveView = viewAs ?? (user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN ? 'trainer' : 'customer');
+  const isTrainer = effectiveView === 'trainer';
+
+  const switchExperienceLink = isAdmin ? (
+    <Link href={ROUTES.chooseExperience} style={{ marginRight: 12, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>Switch experience</Link>
+  ) : null;
 
   if (isTrainer) {
     return (
@@ -181,6 +213,7 @@ export default function DashboardPage() {
         )}
         <TrainerDashboardContent />
         <div className="gf-home__nav-links" style={{ marginTop: 16 }}>
+          {switchExperienceLink}
           <Link href={ROUTES.profile}>{t.nav.profile}</Link>
           <Link href={ROUTES.account}>Account</Link>
           <button type="button" onClick={handleLogout} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'var(--groupfit-secondary)', cursor: 'pointer', fontWeight: 600 }}>Log out</button>
@@ -205,6 +238,7 @@ export default function DashboardPage() {
       )}
       <CustomerDashboardContent />
       <div className="gf-home__nav-links" style={{ marginTop: 16 }}>
+        {switchExperienceLink}
         <Link href={ROUTES.profile}>{t.nav.profile}</Link>
         <Link href={ROUTES.account}>Account</Link>
         <button type="button" onClick={handleLogout} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'var(--groupfit-secondary)', cursor: 'pointer', fontWeight: 600 }}>Log out</button>

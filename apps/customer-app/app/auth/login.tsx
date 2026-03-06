@@ -5,7 +5,7 @@ import { getTranslations, ROLES } from '@groupfit/shared';
 import type { LoginResponse } from '@groupfit/shared';
 import { LoginScreen } from '@groupfit/shared/components/native';
 import { api, setStoredToken } from '../../lib/api';
-import { ApiClientError } from '@groupfit/shared';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 
@@ -25,7 +25,7 @@ export default function LoginScreenRoute() {
       await setStoredToken(data.accessToken);
       router.replace('/app/home');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
+      setError(getApiErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ export default function LoginScreenRoute() {
       await setStoredToken(res.data.accessToken);
       router.replace('/app/home');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Google sign-in failed');
+      setError(getApiErrorMessage(err, 'Google sign-in failed'));
     }
   }
 
@@ -80,7 +80,7 @@ export default function LoginScreenRoute() {
       if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'ERR_REQUEST_CANCELED') {
         return;
       }
-      setError(err instanceof ApiClientError ? err.message : 'Apple sign-in failed');
+      setError(getApiErrorMessage(err, 'Apple sign-in failed'));
     }
   }
 

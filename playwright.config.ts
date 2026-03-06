@@ -1,5 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/**
+ * E2E runs web (Next.js :3000) and api (Nest :3001) by default.
+ * To run with servers already up: start `npm run dev:web` and `npm run dev:api` then run `npm run e2e`.
+ * CI: if you see "EMFILE: too many open files", increase limit: ulimit -n 10240 (or similar).
+ */
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -7,6 +12,8 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
+  timeout: 30000,
+  expect: { timeout: 10000 },
   projects: [
     {
       name: 'web',

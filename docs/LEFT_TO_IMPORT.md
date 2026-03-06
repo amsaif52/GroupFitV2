@@ -17,6 +17,14 @@ This doc lists what still needs to be brought over from the desktop projects (**
 
 ---
 
+### Remaining summary (as of last update)
+
+- **Screens (need product specs):** Fitness, DateTimeSchedule, TrainerActivityList (customer/trainer); PublicProfile, Specializations, AddLocation/EditLocation/ServiceLocation (trainer); VerifyNumberW, BankDetailW, CertificateW widgets. Implement when specs are defined.
+- **Optional/legacy:** File GETs (GetReducedImage, BaseUrl, GetAllFilesByType, GetFilesByType, GetFilesByCode, requestLog); Stripe webhooks/refunds; push notifications; trainer **convertRequiredTimeFormat** (stub added for legacy clients).
+- **Tests:** More e2e as needed; payment/Stripe models if flows expand.
+
+---
+
 ## Already in GroupFitV2
 
 - **Customer:** Tab bar (Home, My Sessions, Activities, My Trainers, Account) + screens on RN and Web; customer API with real session lists, session detail, activity list/detail, trainer list/detail; reference data.
@@ -38,13 +46,13 @@ This doc lists what still needs to be brought over from the desktop projects (**
 | Group: AddMember, CreateGroup, ContactReader | ✅ list, create, add member (fetchSoloMembers), remove member, delete group | ✅ list, create, add member (fetchSoloMembers), remove member, delete group |
 | ReferralList (list of referrals) | ✅ list on Refer page (people you've referred) | ✅ list on Refer page (people you've referred) |
 | ScheduledSessions, UpComingSession, CompleteSession | ✅ lists + detail | ✅ lists + detail |
-| Payment: Invoice, CheckPaymentStatus, PaymentList (full) | payment list from DB (payments.tsx) | payment-history (list from DB) |
+| Payment: Invoice, CheckPaymentStatus, PaymentList (full) | ✅ Payment History (payments.tsx; list from DB, activity name) | ✅ payment-history (list from DB) |
 | Location: AddLocation, PickLocation, MyLocations, SearchLocation, EditLocation | ✅ list + add/edit/delete (no map picker) | ✅ list + add/edit/delete (no map picker yet) |
 | Notifications (full UI) | ✅ list, mark read, delete | ✅ list, mark all read, mark read, delete |
 | Support, OtherConcerns, WriteReview, HelpCentre, Review | ✅ Help (FAQ + contact from API; Contact support tab, raiseSupport) | ✅ Help (FAQ + contact from API; Contact support tab for ticket) |
 | PrivacyPolicy, TermsCondition | ✅ (optional) | ✅ privacy, terms pages (static content) |
 | Fitness, DateTimeSchedule, TrainerActivityList | ❌ | ❌ |
-| ServerOff, AccountActivation | ❌ | ❌ |
+| ServerOff, AccountActivation | ✅ Server Off (server-off + healthCheck); ✅ Account activation (placeholder screen) | ✅ Server unavailable (/server-unavailable); ✅ Account activation (placeholder page) |
 
 ### Customer API (Nest) – remaining stubs / missing
 
@@ -125,11 +133,25 @@ This doc lists what still needs to be brought over from the desktop projects (**
 
 ## 4. Optional / legacy (all projects)
 
-- **Version / health:** `APIVersionCheck` (customerApi, trainerApi).
+- **Version / health:** `APIVersionCheck` (customerApi, trainerApi). ✅ Done.
 - **File/asset GETs:** GetReducedImage, BaseUrl, GetAllFilesByType, GetFilesByType, GetFilesByCode, requestLog (customerApi, trainerApi).
 - **Payments / Stripe:** RefundPaymentIntentAsync, WebHook, UserUse100PercentCouponCode (customerApi).
 - **Notifications / push:** CustomerNotification, TrainerNotification, CreateTrainerBranchLink, getImgPath, getSavePath, DeleteNotifications, ReadAllNotification, AccessToken (customerApi / trainerApi).
-- **Trainer:** convertRequiredTimeFormat (trainerApi).
+- **Trainer:** convertRequiredTimeFormat (trainerApi). Stub in Nest returns normalized time (HH:mm) for legacy clients.
+
+---
+
+## Specs needed (blocked until product defines)
+
+| Item | Context |
+|------|--------|
+| **Fitness** | Customer/trainer screen; exact flows and data model TBD. |
+| **DateTimeSchedule** | Customer/trainer; scheduling UI/UX and rules TBD. |
+| **TrainerActivityList** (as a distinct screen) | May overlap with existing “My activities”; clarify vs trainerActivityList API. |
+| **PublicProfile / Specializations / AdditionalImages** | Trainer profile enhancements; fields and storage TBD. |
+| **AddLocation / EditLocation / ServiceLocation** | Trainer location flows; clarify vs existing service-area API. |
+
+Use the above when prioritising or scoping; implement when specs are available.
 
 ---
 
@@ -140,5 +162,14 @@ This doc lists what still needs to be brought over from the desktop projects (**
 3. **Trainer:** ✅ Notifications (API + RN UI). ✅ Availability (DB + API + Web/RN). ✅ Certificates (API + Web/RN: list, add, edit, delete). ✅ Bank details (API + Web/RN: view, add/update). ✅ Service areas (API + Web/RN: list, add, edit, delete, on/off). ✅ My activities (API + Web/RN: list, add from master, edit, delete). ✅ Reviews (API + Web: list + avg rating for trainer).
 4. **Admin:** ✅ Activity CRUD (API + UI). ✅ User role update (API + Users page role dropdown). ✅ List + detail pages (session, user, trainer, customer, support, discount). ✅ Discount CRUD (add, edit, delete). ✅ DeleteAccount (API + user detail “Delete account” button with confirm; button hidden when viewing self). ✅ Master data UI (FAQ, Contact Us, Customize dashboard). ✅ CustomizeDashboard (get/set JSON).
 5. **Optional:** ✅ Privacy/Terms pages (Web). ✅ APIVersionCheck (customer + trainer). Remaining: file/asset endpoints, push notifications, Plaid/Stripe admin.
+
+---
+
+## Remaining (low priority)
+
+- **Customer/Trainer screens:** Fitness, DateTimeSchedule, TrainerActivityList — see **Specs needed (blocked until product defines)** above.
+- **Edge cases:** ✅ ServerOff (Web: /server-unavailable; RN: server-off + healthCheck). ✅ AccountActivation (placeholder screens; backend can redirect when account is pending).
+- **Tests / schema:** e2e web: server-unavailable and account-activation pages covered; more e2e as needed; payment-related models if Stripe flows expand.
+- **Optional/legacy:** Section 4 — file GETs, Stripe webhooks/refunds, push notifications; ✅ trainer **convertRequiredTimeFormat** (stub implemented).
 
 Use `docs/API_MAPPING.md` for C# → Nest route mapping when implementing endpoints.

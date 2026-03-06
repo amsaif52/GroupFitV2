@@ -1,6 +1,7 @@
 import { decodeJwtPayload } from '@groupfit/shared';
 
 const TOKEN_KEY = 'groupfit_token';
+const VIEW_AS_KEY = 'groupfit_view_as';
 
 export function getStoredToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -15,6 +16,27 @@ export function setStoredToken(token: string): void {
 export function clearStoredToken(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(VIEW_AS_KEY);
+}
+
+/** Which dashboard experience to show (for users who can be both customer and trainer, e.g. admin). */
+export type ViewAs = 'customer' | 'trainer';
+
+export function getStoredViewAs(): ViewAs | null {
+  if (typeof window === 'undefined') return null;
+  const v = localStorage.getItem(VIEW_AS_KEY);
+  if (v === 'customer' || v === 'trainer') return v;
+  return null;
+}
+
+export function setStoredViewAs(viewAs: ViewAs): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(VIEW_AS_KEY, viewAs);
+}
+
+export function clearStoredViewAs(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(VIEW_AS_KEY);
 }
 
 /** Decode the stored JWT to read user info (for UI only; API verifies the token). */

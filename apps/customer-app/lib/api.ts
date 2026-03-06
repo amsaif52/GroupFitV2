@@ -32,14 +32,17 @@ const baseURL =
   (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_API_URL) ??
   'http://localhost:3001/api';
 
+/** Session is kept until the user explicitly logs out (no 401-triggered logout). */
 export const api = createAxiosApiClient({
   baseURL,
   getAccessToken: () => memoryToken,
-  onUnauthorized: () => {
-    memoryToken = null;
-    void AsyncStorage.removeItem(TOKEN_KEY);
-  },
+  // Intentionally no onUnauthorized: we do not force logout on 401.
 });
+
+/** Root API health (GET). Use to detect server availability. */
+export function healthCheck() {
+  return api.get<{ status: string; timestamp?: string }>('/health');
+}
 
 /** Customer division: POST /api/customer/<action>. Use for customer-app. */
 export const customerApi = {
@@ -137,4 +140,7 @@ export const customerApi = {
     api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>('/customer/fetchContactLink', {}),
   raiseSupport: (body: { subject?: string; message?: string }) =>
     api.post<Record<string, unknown>>('/customer/raiseSupport', body),
+  /** Assistant chat (JWT). Body: message, conversationId (optional). Returns message + conversationId. */
+  chat: (body: { message: string; conversationId?: string }) =>
+    api.post<{ message: string; conversationId: string }>('/customer/chat', body),
 };

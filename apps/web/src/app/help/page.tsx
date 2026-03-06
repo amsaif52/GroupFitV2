@@ -5,37 +5,33 @@ import Link from 'next/link';
 import { ROUTES } from '../routes';
 import { customerApi, trainerApi } from '@/lib/api';
 import { getStoredUser } from '@/lib/auth';
-import { ROLES } from '@groupfit/shared';
-
-const DEFAULT_FAQS = [
-  { id: '1', question: 'How do I book a session?', description: 'Go to Activities or find a trainer, choose a time slot, and confirm your booking. You can also join existing groups from the Groups section.' },
-  { id: '2', question: 'How do I cancel or reschedule?', description: 'Open your session from Upcoming Sessions or My Sessions and use the cancel or reschedule option. Please check the cancellation policy for your booking.' },
-  { id: '3', question: 'Where can I see my payment history?', description: 'Go to Account or Profile and tap Payment History to see all your past payments and invoices.' },
-];
-
-const FALLBACK_CONTACT_LINKS = [
-  { heading: 'Customer service', link: 'https://groupfit.edifybiz.com' },
-  { heading: 'Facebook', link: 'https://www.facebook.com' },
-  { heading: 'Instagram', link: 'https://www.instagram.com' },
-  { heading: 'Twitter', link: 'https://twitter.com' },
-];
-
-type FaqDisplay = { id: string; question: string; description: string };
-type ContactItem = { heading: string; link: string };
+import { ROLES, getApiErrorMessage } from '@groupfit/shared';
+import type { FaqDisplay, ContactItem } from '@groupfit/shared';
+import {
+  DEFAULT_FAQS_CUSTOMER,
+  FALLBACK_CONTACT_CUSTOMER,
+  HELP_CHAT_HINT_CUSTOMER,
+  HELP_CHAT_HINT_TRAINER,
+} from '@groupfit/shared';
+import { HelpChat } from '@groupfit/shared/components';
 
 export default function HelpPage() {
   const user = getStoredUser();
   const isTrainer = user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN;
-  const [tab, setTab] = useState<'FAQs' | 'Contactus' | 'Support'>('FAQs');
+  const [tab, setTab] = useState<'FAQs' | 'Contactus' | 'Support' | 'Assistant'>('FAQs');
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
-  const [faqs, setFaqs] = useState<FaqDisplay[]>(DEFAULT_FAQS);
-  const [contactLinks, setContactLinks] = useState<ContactItem[]>(FALLBACK_CONTACT_LINKS);
+  const [faqs, setFaqs] = useState<FaqDisplay[]>(DEFAULT_FAQS_CUSTOMER);
+  const [contactLinks, setContactLinks] = useState<ContactItem[]>(FALLBACK_CONTACT_CUSTOMER);
   const [loading, setLoading] = useState(true);
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportSuccess, setSupportSuccess] = useState(false);
   const [supportError, setSupportError] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [chatConversationId, setChatConversationId] = useState<string | undefined>();
+  const [chatSending, setChatSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,9 +46,9 @@ export default function HelpPage() {
         }
         const email = contactData?.contactEmail as string | undefined;
         if (email) {
-          setContactLinks([{ heading: 'Email support', link: `mailto:${email}` }, ...FALLBACK_CONTACT_LINKS]);
+          setContactLinks([{ heading: 'Email support', link: `mailto:${email}` }, ...FALLBACK_CONTACT_CUSTOMER]);
         } else {
-          setContactLinks(FALLBACK_CONTACT_LINKS);
+          setContactLinks(FALLBACK_CONTACT_CUSTOMER);
         }
       })
       .catch(() => {})
@@ -91,6 +87,15 @@ export default function HelpPage() {
             onClick={() => { setTab('Support'); setSupportSuccess(false); setSupportError(null); }}
           >
             Contact support
+          </button>
+        )}
+        {user && (
+          <button
+            type="button"
+            className={`gf-help__tab ${tab === 'Assistant' ? 'gf-help__tab--active' : ''}`}
+            onClick={() => { setTab('Assistant'); setChatError(null); }}
+          >
+            Assistant
           </button>
         )}
       </div>
@@ -202,6 +207,32 @@ export default function HelpPage() {
               </button>
             </form>
           )}
+        </div>
+      )}
+
+      {tab === 'Assistant' && user && (
+        <div className="gf-help__contact-list" style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', height: 360 }}>
+          <HelpChat
+            messages={chatMessages}
+            onSend={(text) => {
+              setChatSending(true);
+              setChatError(null);
+              setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
+              (isTrainer ? trainerApi.chat : customerApi.chat)({ message: text, conversationId: chatConversationId })
+                .then((res) => {
+                  setChatConversationId(res?.data?.conversationId);
+                  setChatMessages((prev) => [...prev, { role: 'assistant', content: res?.data?.message ?? 'No reply.' }]);
+                })
+                .catch((err: unknown) => {
+                  setChatError(getApiErrorMessage(err, 'Failed to send. Check your connection or try again.'));
+                  setChatMessages((prev) => prev.slice(0, -1));
+                })
+                .finally(() => setChatSending(false));
+            }}
+            sending={chatSending}
+            error={chatError}
+            hintText={isTrainer ? HELP_CHAT_HINT_TRAINER : HELP_CHAT_HINT_CUSTOMER}
+          />
         </div>
       )}
     </main>

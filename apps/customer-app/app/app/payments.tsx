@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator }
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { customerApi } from '../../lib/api';
-import { ApiClientError } from '@groupfit/shared';
+import { getApiErrorMessage } from '@groupfit/shared';
 
-type PaymentItem = { id?: string; amount?: number; date?: string; status?: string; [key: string]: unknown };
+type PaymentItem = { id?: string; amount?: number; date?: string; status?: string; activityName?: string; [key: string]: unknown };
 
 export default function PaymentHistoryScreen() {
   const router = useRouter();
@@ -18,12 +18,13 @@ export default function PaymentHistoryScreen() {
     (async () => {
       try {
         const res = await customerApi.paymentList();
-        const data = res.data as { mtype?: string; list?: PaymentItem[] };
-        if (!cancelled && data?.mtype === 'success' && Array.isArray(data.list)) {
-          setList(data.list);
+        const data = res.data as { mtype?: string; list?: PaymentItem[]; PaymentList?: PaymentItem[] };
+        const items = data?.PaymentList ?? data?.list;
+        if (!cancelled && data?.mtype === 'success' && Array.isArray(items)) {
+          setList(items);
         }
       } catch (e) {
-        if (!cancelled) setError(e instanceof ApiClientError ? e.message : 'Failed to load');
+        if (!cancelled) setError(getApiErrorMessage(e, 'Failed to load'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -61,7 +62,10 @@ export default function PaymentHistoryScreen() {
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View style={styles.row}>
-              <Text style={styles.rowDate}>{String(item.date ?? item.createdAt ?? '—')}</Text>
+              <View style={styles.rowLeft}>
+                <Text style={styles.rowDate}>{String(item.date ?? item.createdAt ?? '—')}</Text>
+                {item.activityName ? <Text style={styles.rowActivity}>{String(item.activityName)}</Text> : null}
+              </View>
               <Text style={styles.rowAmount}>{item.amount != null ? `£${Number(item.amount).toFixed(2)}` : '—'}</Text>
               <Text style={styles.rowStatus}>{String(item.status ?? '—')}</Text>
             </View>
@@ -90,8 +94,10 @@ const styles = StyleSheet.create({
   errorText: { color: colors.secondary, textAlign: 'center' },
   emptyText: { color: colors.grey, textAlign: 'center' },
   listContent: { padding: 20, paddingBottom: 40 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  rowDate: { flex: 1, fontSize: 14, color: colors.black },
-  rowAmount: { flex: 1, fontSize: 14, color: colors.black, textAlign: 'center' },
-  rowStatus: { flex: 1, fontSize: 14, color: colors.grey, textAlign: 'right' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  rowLeft: { flex: 1 },
+  rowDate: { fontSize: 14, color: colors.black, fontWeight: '500' },
+  rowActivity: { fontSize: 12, color: colors.grey, marginTop: 2 },
+  rowAmount: { flex: 0, minWidth: 70, fontSize: 14, color: colors.black, textAlign: 'right' },
+  rowStatus: { flex: 0, minWidth: 72, fontSize: 14, color: colors.grey, textAlign: 'right' },
 });

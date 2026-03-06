@@ -8,7 +8,7 @@ import { ROUTES } from '../routes';
 import { api } from '@/lib/api';
 import { setStoredToken } from '@/lib/auth';
 import type { LoginResponse } from '@groupfit/shared';
-import { ApiClientError } from '@groupfit/shared';
+import { getApiErrorMessage } from '@groupfit/shared';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -47,11 +47,7 @@ export default function VerifyPage() {
       router.push(ROUTES.dashboard);
       router.refresh();
     } catch (err: unknown) {
-      const message =
-        err instanceof ApiClientError
-          ? err.message
-          : 'Verification failed. Please try again.';
-      setError(message);
+      setError(getApiErrorMessage(err, 'Verification failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -66,11 +62,7 @@ export default function VerifyPage() {
       });
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err: unknown) {
-      setError(
-        err instanceof ApiClientError
-          ? err.message
-          : 'Could not resend code. Try again later.',
-      );
+      setError(getApiErrorMessage(err, 'Could not resend code. Try again later.'));
     }
   }
 

@@ -25,16 +25,16 @@ test.describe('Login page', () => {
       page.getByText('Login to your account').or(page.getByText('Enter your email and password'))
     ).toBeVisible();
     await expect(page.getByPlaceholder(/email|Enter your email here/i)).toBeVisible();
-    await expect(page.getByPlaceholder('Password')).toBeVisible();
+    await expect(page.getByPlaceholder(/password|Enter your password here/i)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
   });
 
   test('login form submit shows error with invalid credentials', async ({ page }) => {
     await page.goto('/login');
-    await page.getByPlaceholder('Email').fill('wrong@example.com');
-    await page.getByPlaceholder('Password').fill('wrongpassword');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill('wrong@example.com');
+    await page.getByPlaceholder(/password|Enter your password here/i).fill('wrongpassword');
     await page.getByRole('button', { name: 'Login' }).click();
-    await expect(page.getByText(/invalid|failed|credentials|error/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/invalid|failed|credentials|error|Login failed/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('login has sign up link', async ({ page }) => {
@@ -60,6 +60,14 @@ test.describe('Login page', () => {
     await page.getByRole('button', { name: 'Continue with Apple' }).click();
     await expect(page.getByText(/Apple sign-in is not configured yet/i)).toBeVisible({ timeout: 5000 });
   });
+
+  test('login has connection issues link to server-unavailable', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('link', { name: /Having connection issues/i })).toBeVisible();
+    await page.getByRole('link', { name: /Having connection issues/i }).click();
+    await expect(page).toHaveURL(/\/server-unavailable/);
+    await expect(page.getByRole('heading', { name: 'Server unavailable' })).toBeVisible();
+  });
 });
 
 test.describe('Signup page', () => {
@@ -68,19 +76,19 @@ test.describe('Signup page', () => {
     await expect(
       page.getByText('Set Up Your Account').or(page.getByText('Sign Up'))
     ).toBeVisible();
-    await expect(page.getByPlaceholder('Name')).toBeVisible();
-    await expect(page.getByPlaceholder('Email')).toBeVisible();
-    await expect(page.getByPlaceholder('Password')).toBeVisible();
-    await expect(page.getByPlaceholder('Confirm password')).toBeVisible();
+    await expect(page.getByPlaceholder(/name|Full name/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/email|Enter your email here/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/Enter your password here|Password/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/Confirm your password|Confirm password/i)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
   });
 
   test('signup form shows validation when passwords do not match', async ({ page }) => {
     await page.goto('/signup');
-    await page.getByPlaceholder('Name').fill('Test User');
-    await page.getByPlaceholder('Email').fill('test@example.com');
-    await page.getByPlaceholder('Password').fill('secret123');
-    await page.getByPlaceholder('Confirm password').fill('different');
+    await page.getByPlaceholder(/name|Full name/i).first().fill('Test User');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill('test@example.com');
+    await page.getByPlaceholder(/Enter your password here|Password/i).first().fill('secret123');
+    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('different');
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page.getByText(/passwords do not match/i)).toBeVisible({ timeout: 5000 });
   });
@@ -175,11 +183,34 @@ test.describe('Help page', () => {
     await page.goto('/help');
     await expect(page.getByRole('link', { name: /Dashboard/i })).toBeVisible();
   });
+
+  test('when logged in, Help shows Assistant tab and chat UI', async ({ page }) => {
+    const email = `e2e-help-${Date.now()}@groupfit.test`;
+    await page.goto('/signup');
+    await page.getByPlaceholder(/name|Full name/i).first().fill('E2E Help User');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page.getByPlaceholder(/Enter your password here|Password/i).first().fill('password123');
+    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await page.goto('/help');
+    await expect(page.getByRole('button', { name: 'Assistant' })).toBeVisible();
+    await page.getByRole('button', { name: 'Assistant' }).click();
+    await expect(page.getByPlaceholder(/Type a message/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Ask about your sessions|upcoming sessions/i)).toBeVisible();
+  });
 });
 
 test.describe('Account page', () => {
   test('account page redirects to login when not authenticated', async ({ page }) => {
     await page.goto('/account');
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+  });
+});
+
+test.describe('Payment history page', () => {
+  test('payment-history redirects to login when not authenticated', async ({ page }) => {
+    await page.goto('/payment-history');
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
 });
@@ -199,6 +230,17 @@ test.describe('Dashboard (home screen)', () => {
     ).toBeVisible({ timeout: 5000 });
   });
 
+  test('login with credentials then dashboard (when E2E_TEST_EMAIL set)', async ({ page }) => {
+    const email = process.env.E2E_TEST_EMAIL;
+    const password = process.env.E2E_TEST_PASSWORD;
+    test.skip(!email || !password, 'Set E2E_TEST_EMAIL and E2E_TEST_PASSWORD to run this test');
+    await page.goto('/login');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page.getByPlaceholder(/password|Enter your password here/i).fill(password);
+    await page.getByRole('button', { name: 'Login' }).click();
+    await expect(page).toHaveURL(/\/(dashboard|choose-experience)/, { timeout: 15000 });
+    await expect(page.getByText('GroupFit').first()).toBeVisible({ timeout: 5000 });
+  });
 });
 
 test.describe('Privacy Policy', () => {
@@ -236,5 +278,24 @@ test.describe('Terms and Conditions', () => {
   test('terms page has link to help centre', async ({ page }) => {
     await page.goto('/terms');
     await expect(page.getByRole('link', { name: /Help Centre/i })).toBeVisible();
+  });
+});
+
+test.describe('Server unavailable page', () => {
+  test('server-unavailable page shows message and retry', async ({ page }) => {
+    await page.goto('/server-unavailable');
+    await expect(page.getByRole('heading', { name: 'Server unavailable' })).toBeVisible();
+    await expect(page.getByText(/couldn't reach the server/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Retry' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Back to login/i })).toBeVisible();
+  });
+});
+
+test.describe('Account activation page', () => {
+  test('account-activation page shows message and login link', async ({ page }) => {
+    await page.goto('/account-activation');
+    await expect(page.getByRole('heading', { name: 'Account activation' })).toBeVisible();
+    await expect(page.getByText(/pending activation/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Back to login/i })).toBeVisible();
   });
 });

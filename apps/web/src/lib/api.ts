@@ -1,21 +1,19 @@
 import { createAxiosApiClient } from '@groupfit/shared';
-import { getStoredToken, clearStoredToken } from './auth';
+import { getStoredToken } from './auth';
 
 const baseURL =
   typeof window !== 'undefined'
     ? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api'
     : process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
-/** Axios instance for calling the API. Use api.get(), api.post(), etc. */
+/**
+ * Axios instance for calling the API. Use api.get(), api.post(), etc.
+ * Session is kept until the user explicitly logs out (no 401-triggered logout).
+ */
 export const api = createAxiosApiClient({
   baseURL,
   getAccessToken: getStoredToken,
-  onUnauthorized: () => {
-    if (typeof window !== 'undefined') {
-      clearStoredToken();
-      window.location.href = '/login';
-    }
-  },
+  // Intentionally no onUnauthorized: we do not force logout on 401.
 });
 
 /** Customer division: POST /api/customer/<action>. */
@@ -112,6 +110,9 @@ export const customerApi = {
     api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>('/customer/fetchContactLink', {}),
   raiseSupport: (body: { subject?: string; message?: string }) =>
     api.post<{ mtype: string; message?: string }>('/customer/raiseSupport', body),
+  /** Assistant chat (JWT). Body: message, conversationId (optional). Returns message + conversationId. */
+  chat: (body: { message: string; conversationId?: string }) =>
+    api.post<{ message: string; conversationId: string }>('/customer/chat', body),
 };
 
 /** Trainer division: POST /api/trainer/<action>. */
@@ -201,6 +202,9 @@ export const trainerApi = {
     api.post<{ mtype: string; rating?: number; reviewCount?: number }>('/trainer/getTrainerAvgRating', body ?? {}),
   raiseSupport: (body: { subject?: string; message?: string }) =>
     api.post<{ mtype: string; message?: string }>('/trainer/raiseSupport', body),
+  /** Trainer assistant chat (JWT; trainer or admin only). Body: message, conversationId (optional). */
+  chat: (body: { message: string; conversationId?: string }) =>
+    api.post<{ message: string; conversationId: string }>('/trainer/chat', body),
 };
 
 /** Admin division: POST /api/admin/<action>. */

@@ -13,3 +13,6 @@ export type { OnboardingScreenNativeProps as OnboardingScreenProps, OnboardingSl
 export { ONBOARDING_SLIDES_CUSTOMER, ONBOARDING_SLIDES_TRAINER } from '../OnboardingScreen/onboardingSlides';
 export { ProfileScreenNative } from '../ProfileScreen/ProfileScreen.native';
 export type { ProfileScreenNativeProps, ProfileVariant } from '../ProfileScreen/ProfileScreen.native';
+export { HelpChatNative as HelpChat } from '../HelpChat/HelpChat.native';
+export type { HelpChatProps } from '../HelpChat';
+export { ErrorBoundaryNative } from '../ErrorBoundary/ErrorBoundary.native';

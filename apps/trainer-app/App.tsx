@@ -11,6 +11,7 @@ import {
   OnboardingScreen,
   ONBOARDING_SLIDES_TRAINER,
   ProfileScreenNative,
+  ErrorBoundaryNative,
 } from '@groupfit/shared/components/native';
 
 const ONBOARDING_COMPLETED_KEY = 'OnBoardingCompleted';
@@ -45,6 +46,7 @@ export default function App() {
 
   if (showOnboarding) {
     return (
+      <ErrorBoundaryNative>
       <TamaguiProvider config={config} defaultTheme="light">
         <OnboardingScreen
           slides={ONBOARDING_SLIDES_TRAINER}
@@ -53,11 +55,13 @@ export default function App() {
         />
         <StatusBar style="light" />
       </TamaguiProvider>
+      </ErrorBoundaryNative>
     );
   }
 
   if (isLoggedIn) {
     return (
+      <ErrorBoundaryNative>
       <TamaguiProvider config={config} defaultTheme="light">
         <ProfileScreenNative
           variant="trainer"
@@ -79,11 +83,13 @@ export default function App() {
         />
         <StatusBar style="dark" />
       </TamaguiProvider>
+      </ErrorBoundaryNative>
     );
   }
 
   if (showSignup) {
     return (
+      <ErrorBoundaryNative>
       <QueryClientProvider client={queryClient}>
         <TamaguiProvider config={config} defaultTheme="light">
           <SignupScreen
@@ -116,10 +122,12 @@ export default function App() {
           <StatusBar style="dark" />
         </TamaguiProvider>
       </QueryClientProvider>
+      </ErrorBoundaryNative>
     );
   }
 
   return (
+    <ErrorBoundaryNative>
     <QueryClientProvider client={queryClient}>
       <TamaguiProvider config={config} defaultTheme="light">
         <LoginScreen
@@ -150,5 +158,6 @@ export default function App() {
         <StatusBar style="dark" />
       </TamaguiProvider>
     </QueryClientProvider>
+    </ErrorBoundaryNative>
   );
 }

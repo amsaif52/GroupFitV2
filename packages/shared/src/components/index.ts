@@ -19,3 +19,5 @@ export { VerifyNumberScreenWeb as VerifyNumberScreen } from './VerifyNumberScree
 export type { VerifyNumberScreenWebProps as VerifyNumberScreenProps } from './VerifyNumberScreen';
 export { SplashScreenWeb as SplashScreen } from './SplashScreen';
 export type { SplashScreenWebProps as SplashScreenProps } from './SplashScreen';
+export { HelpChatWeb as HelpChat } from './HelpChat';
+export type { HelpChatProps } from './HelpChat';

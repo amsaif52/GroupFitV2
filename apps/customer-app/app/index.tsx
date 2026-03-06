@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SplashScreen } from '@groupfit/shared/components/native';
+import { healthCheck } from '../lib/api';
 
 const ONBOARDING_COMPLETED_KEY = 'OnBoardingCompleted';
 const TOKEN_KEY = 'groupfit_token';
@@ -29,7 +30,12 @@ export default function Index() {
         router.replace('/auth/login');
         return;
       }
-      router.replace('/app');
+      try {
+        await healthCheck();
+        if (!cancelled) router.replace('/app');
+      } catch {
+        if (!cancelled) router.replace('/server-off');
+      }
     }
 
     run().then(() => {

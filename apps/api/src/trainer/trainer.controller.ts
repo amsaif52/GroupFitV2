@@ -68,6 +68,12 @@ export class TrainerController {
     return this.trainerService.getSocialLinks();
   }
 
+  @Post('convertRequiredTimeFormat')
+  @ApiOperation({ summary: 'Legacy: normalize time string to HH:mm' })
+  convertRequiredTimeFormat(@Body() body: { time?: string; timeStr?: string }) {
+    return this.trainerService.convertRequiredTimeFormat(body ?? {});
+  }
+
   @Post('countryList')
   @ApiOperation({ summary: 'Country list (stub)' })
   countryList() {

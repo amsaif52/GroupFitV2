@@ -195,6 +195,7 @@ Legacy base: `TrainerApi`. NestJS base: `POST /api/trainer/<Route>`.
 | getAdditionalImageCodes | `POST /api/trainer/getAdditionalImageCodes` | Returns getAdditionalImageCodes, codes, list (empty by default). |
 | addAdditionalImageCodes | `POST /api/trainer/addAdditionalImageCodes` | Success no-op (extend when storage exists). |
 | removeAdditionalImageCodes | `POST /api/trainer/removeAdditionalImageCodes` | Success no-op (extend when storage exists). |
+| convertRequiredTimeFormat | `POST /api/trainer/convertRequiredTimeFormat` | Legacy. Body: `time` or `timeStr` (e.g. "9:00", "09:00"). Returns mtype, convertedTime (HH:mm). |
 
 ---
 

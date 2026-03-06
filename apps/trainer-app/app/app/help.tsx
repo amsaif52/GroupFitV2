@@ -1,40 +1,28 @@
 import { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Linking,
-  TextInput,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
+import type { ContactItem } from '@groupfit/shared';
+import { DEFAULT_FAQS_TRAINER, FALLBACK_CONTACT_TRAINER, HELP_CHAT_HINT_TRAINER } from '@groupfit/shared';
+import { HelpChat } from '@groupfit/shared/components/native';
 import { trainerApi } from '../../lib/api';
-
-const DEFAULT_FAQS: { id: string; question: string; description: string }[] = [
-  { id: '1', question: 'How do I create a session?', description: 'Go to Sessions and tap Create. Choose activity, date, time, and location.' },
-  { id: '2', question: 'How do I get paid?', description: 'Add your bank details in Account → Bank Details to receive payments.' },
-  { id: '3', question: 'Where can I see my reviews?', description: 'Go to Account or Profile and open Reviews to see feedback from customers.' },
-];
-
-const FALLBACK_CONTACT = [{ heading: 'Customer service', link: 'https://trainer.groupfitapp.com' }];
-
-type ContactItem = { heading: string; link: string };
 
 export default function HelpCentreScreen() {
   const router = useRouter();
-  const [tab, setTab] = useState<'FAQs' | 'Contactus' | 'Support'>('FAQs');
+  const [tab, setTab] = useState<'FAQs' | 'Contactus' | 'Support' | 'Assistant'>('FAQs');
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
-  const [faqs, setFaqs] = useState(DEFAULT_FAQS);
-  const [contactLinks, setContactLinks] = useState<ContactItem[]>(FALLBACK_CONTACT);
+  const [faqs, setFaqs] = useState(DEFAULT_FAQS_TRAINER);
+  const [contactLinks, setContactLinks] = useState<ContactItem[]>(FALLBACK_CONTACT_TRAINER);
   const [loading, setLoading] = useState(true);
   const [supportSubject, setSupportSubject] = useState('');
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportSuccess, setSupportSuccess] = useState(false);
   const [supportError, setSupportError] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [chatConversationId, setChatConversationId] = useState<string | undefined>();
+  const [chatSending, setChatSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,9 +37,9 @@ export default function HelpCentreScreen() {
         }
         const email = contactData?.contactEmail as string | undefined;
         if (email) {
-          setContactLinks([{ heading: 'Email support', link: `mailto:${email}` }, ...FALLBACK_CONTACT]);
+          setContactLinks([{ heading: 'Email support', link: `mailto:${email}` }, ...FALLBACK_CONTACT_TRAINER]);
         } else {
-          setContactLinks(FALLBACK_CONTACT);
+          setContactLinks(FALLBACK_CONTACT_TRAINER);
         }
       })
       .catch(() => {})
@@ -103,6 +91,12 @@ export default function HelpCentreScreen() {
           onPress={() => { setTab('Support'); setSupportSuccess(false); setSupportError(null); }}
         >
           <Text style={[styles.tabText, tab === 'Support' && styles.tabTextActive]}>Support</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, tab === 'Assistant' && styles.tabActive]}
+          onPress={() => { setTab('Assistant'); setChatError(null); }}
+        >
+          <Text style={[styles.tabText, tab === 'Assistant' && styles.tabTextActive]}>Assistant</Text>
         </TouchableOpacity>
       </View>
 
@@ -195,6 +189,33 @@ export default function HelpCentreScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
+
+      {tab === 'Assistant' && (
+        <View style={styles.chatContainer}>
+          <HelpChat
+            messages={chatMessages}
+            onSend={(text) => {
+              setChatSending(true);
+              setChatError(null);
+              setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
+              trainerApi
+                .chat({ message: text, conversationId: chatConversationId })
+                .then((res) => {
+                  setChatConversationId(res?.data?.conversationId);
+                  setChatMessages((prev) => [...prev, { role: 'assistant', content: res?.data?.message ?? 'No reply.' }]);
+                })
+                .catch(() => {
+                  setChatError('Failed to send. Try again.');
+                  setChatMessages((prev) => prev.slice(0, -1));
+                })
+                .finally(() => setChatSending(false));
+            }}
+            sending={chatSending}
+            error={chatError}
+            hintText={HELP_CHAT_HINT_TRAINER}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -230,4 +251,5 @@ const styles = StyleSheet.create({
   primaryButton: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.secondary, alignSelf: 'flex-start' },
   primaryButtonText: { color: '#fff', fontWeight: '600' },
   buttonDisabled: { opacity: 0.7 },
+  chatContainer: { flex: 1 },
 });

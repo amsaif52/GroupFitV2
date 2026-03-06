@@ -1,21 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import type { JwtPayload } from '../../auth/jwt.strategy';
 import { ConversationService } from './conversation.service';
 import { CHAT_TOOLS, type ChatToolName } from './chat-tools';
+import { CustomerService } from '../customer.service';
 
 const SYSTEM_PROMPT = `You are the GroupFit assistant. You help customers with:
 - Viewing their upcoming sessions (use get_upcoming_sessions when they ask)
-- Discovering activities and trainers near their location (use get_trainers_near_me)
-- Choosing a trainer and checking availability (use get_availability)
-- Booking sessions via the chat (use book_session)
+- Listing trainers (use get_trainers_near_me; location filter is not yet supported, so return all trainers)
+- Checking a trainer's available time slots for a date (use get_availability; then tell the user to pass the slotId to book)
+- Booking a session (use book_session with trainerId and slotId; slotId must be the full datetime from get_availability, e.g. 2025-03-02T10:00:00)
 
-Use the tools when the user asks for sessions, trainers, availability, or booking. Be concise and friendly.`;
+You can also suggest: viewing payment history in the app, updating their profile, or contacting support via Help. Be concise and friendly.`;
 
 /**
- * Customer chatbot: conversation history, JWT user context, and OpenAI tools (stubbed).
- * Replace runTool implementations with real services when sessions/trainers/booking exist.
+ * Customer chatbot: conversation history, JWT user context, and OpenAI tools (wired to CustomerService).
  */
 @Injectable()
 export class ChatService {
@@ -24,6 +23,7 @@ export class ChatService {
   constructor(
     private readonly config: ConfigService,
     private readonly conversation: ConversationService,
+    @Inject(forwardRef(() => CustomerService)) private readonly customerService: CustomerService,
   ) {
     const apiKey = this.config.get<string>('OPENAI_API_KEY');
     if (apiKey) this.openai = new OpenAI({ apiKey });
@@ -48,7 +48,7 @@ export class ChatService {
     const history = await this.conversation.getRecentMessages(cid);
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...history.map((m) => ({ role: m.role, content: m.content })),
+      ...history.map((m: { role: 'user' | 'assistant' | 'system'; content: string }) => ({ role: m.role, content: m.content })),
     ];
 
     const model = this.config.get('OPENAI_CHAT_MODEL') ?? 'gpt-4o-mini';
@@ -90,29 +90,59 @@ export class ChatService {
     return { message: content, conversationId: cid };
   }
 
-  /**
-   * Stub implementations. Replace with real service calls when you have:
-   * - SessionService.getUpcomingForUser(userId)
-   * - TrainerService.getNearby(userId, lat?, lon?, radiusKm?, activityType?)
-   * - AvailabilityService.getSlots(trainerId, date)
-   * - BookingService.book(userId, trainerId, slotId)
-   */
+  /** Calls CustomerService for sessions, trainers, availability, and booking. */
   private async runTool(
     userId: string,
     name: ChatToolName,
     args: Record<string, unknown>,
   ): Promise<string | Record<string, unknown>> {
-    switch (name) {
-      case 'get_upcoming_sessions':
-        return { message: 'No upcoming sessions yet.', sessions: [] };
-      case 'get_trainers_near_me':
-        return { message: 'Trainer search not available yet.', trainers: [] };
-      case 'get_availability':
-        return { message: 'Availability not available yet.', slots: [] };
-      case 'book_session':
-        return { message: 'Booking not available yet. Please use the app to book.' };
-      default:
-        return { error: 'Unknown tool' };
+    try {
+      switch (name) {
+        case 'get_upcoming_sessions': {
+          const res = await this.customerService.customerSessionList(userId);
+          const list = (res.customerSessionList ?? []) as { sessionName?: string; trainerName?: string; scheduledAt?: string; id?: string }[];
+          const sessions = list.map((s) => ({
+            id: s.id,
+            activity: s.sessionName,
+            trainerName: s.trainerName,
+            scheduledAt: s.scheduledAt,
+          }));
+          return { message: sessions.length ? `You have ${sessions.length} upcoming session(s).` : 'You have no upcoming sessions.', sessions };
+        }
+        case 'get_trainers_near_me': {
+          const res = await this.customerService.SessionTrainersList();
+          const list = (res.SessionTrainersList ?? res.list ?? []) as { id?: string; trainerName?: string; name?: string; email?: string }[];
+          const activityType = typeof args.activityType === 'string' ? args.activityType : undefined;
+          let trainers = list.map((t) => ({ id: t.id, name: t.trainerName ?? t.name ?? t.email }));
+          if (activityType) {
+            const lower = activityType.toLowerCase();
+            trainers = trainers.filter((t) => (t.name ?? '').toLowerCase().includes(lower));
+          }
+          return { message: trainers.length ? `Found ${trainers.length} trainer(s).` : 'No trainers found.', trainers };
+        }
+        case 'get_availability': {
+          const trainerId = String(args.trainerId ?? '').trim();
+          const dateStr = String(args.date ?? '').trim();
+          if (!trainerId || !dateStr) return { message: 'Trainer ID and date (YYYY-MM-DD) are required.', slots: [] };
+          const res = await this.customerService.SessionAvailabilityTimeList(trainerId, dateStr);
+          const list = (res.SessionAvailabilityTimeList ?? res.list ?? []) as string[];
+          const slots = list.map((time) => ({ slotId: `${dateStr}T${time}:00`, time }));
+          return { message: slots.length ? `Available slots on ${dateStr}: ${list.join(', ')}. Use slotId (e.g. ${dateStr}T${list[0]}:00) to book.` : `No available slots on ${dateStr}.`, slots };
+        }
+        case 'book_session': {
+          const trainerId = String(args.trainerId ?? '').trim();
+          const slotId = String(args.slotId ?? '').trim();
+          if (!trainerId || !slotId) return { message: 'Trainer ID and slotId (from get_availability) are required.' };
+          const res = await this.customerService.addSession(userId, trainerId, slotId, undefined);
+          if (res.mtype === 'error') return { message: res.message ?? 'Booking failed.' };
+          return { message: res.message ?? 'Session booked successfully!', sessionId: (res as { sessionId?: string }).sessionId };
+        }
+        default:
+          return { error: 'Unknown tool' };
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Request failed';
+      return { message: msg, error: true };
     }
   }
 }

@@ -107,6 +107,38 @@ export class TrainerService {
     };
   }
 
+  /**
+   * Legacy: normalize a time string to HH:mm for legacy clients.
+   * Body: time or timeStr (e.g. "9:00", "09:00", "9:00 AM"). Returns convertedTime in HH:mm.
+   */
+  convertRequiredTimeFormat(body: { time?: string; timeStr?: string }) {
+    const raw = String(body?.time ?? body?.timeStr ?? '').trim();
+    if (!raw) {
+      return { mtype: 'success', message: 'OK', convertedTime: '00:00' };
+    }
+    // Match HH or H and optional :mm and optional AM/PM
+    const match = raw.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+    let h = 0;
+    let m = 0;
+    if (match) {
+      h = parseInt(match[1], 10);
+      m = match[2] != null ? parseInt(match[2], 10) : 0;
+      const pm = (match[3] ?? '').toLowerCase() === 'pm';
+      const am = (match[3] ?? '').toLowerCase() === 'am';
+      if (pm && h < 12) h += 12;
+      if (am && h === 12) h = 0;
+      if (!am && !pm && h <= 12 && raw.length <= 5) {
+        // Assume 24h if no AM/PM and short string
+      } else if (!am && !pm && h < 24) {
+        // Already 24h
+      }
+      h = h % 24;
+      m = Math.min(59, Math.max(0, m));
+    }
+    const convertedTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    return { mtype: 'success', message: 'OK', convertedTime };
+  }
+
   // Reference data
   countryList() {
     return { mtype: 'success', message: 'OK', list: COUNTRIES };

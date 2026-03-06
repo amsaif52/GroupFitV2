@@ -1,15 +1,17 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useState, useCallback } from 'react';
 import { getTranslations, ROLES, type Role } from '@groupfit/shared';
 import { LoginScreen, Button } from '@groupfit/shared/components';
 import type { Locale } from '@groupfit/shared';
 import { api } from '@/lib/api';
+import { ROUTES } from '../routes';
 import { setStoredToken } from '@/lib/auth';
 import type { LoginResponse } from '@groupfit/shared';
 import { decodeJwtPayload } from '@groupfit/shared';
-import { ApiClientError } from '@groupfit/shared';
+import { getApiErrorMessage } from '@groupfit/shared';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? undefined;
@@ -30,10 +32,10 @@ export default function LoginPage() {
       const { data } = await api.post<LoginResponse>('/auth/login', { email, password });
       setStoredToken(data.accessToken);
       const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
-      router.push(role === ROLES.ADMIN ? '/admin/dashboard' : '/dashboard');
+      router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof ApiClientError ? err.message : 'Login failed');
+      setError(getApiErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -49,10 +51,10 @@ export default function LoginPage() {
         });
         setStoredToken(data.accessToken);
         const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
-        router.push(role === ROLES.ADMIN ? '/admin/dashboard' : '/dashboard');
+        router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
         router.refresh();
       } catch (err: unknown) {
-        setError(err instanceof ApiClientError ? err.message : 'Google sign-in failed');
+        setError(getApiErrorMessage(err, 'Google sign-in failed'));
       }
     },
     [roleParam, router],
@@ -111,6 +113,11 @@ export default function LoginPage() {
         continueWithAppleLabel={t.auth.continueWithApple}
         orLabel={t.auth.or}
       />
+      <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
+        <Link href={ROUTES.serverUnavailable} style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}>
+          Having connection issues?
+        </Link>
+      </p>
       <div className="gf-locale">
         <Button
           type="button"
