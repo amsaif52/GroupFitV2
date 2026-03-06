@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { customerApi } from '../../../lib/api';
+
+function toDatePart(d: Date) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function toTimePart(d: Date) {
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
 
 export default function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -11,6 +18,10 @@ export default function SessionDetailScreen() {
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
 
   const fetchDetail = () => {
     if (!id) return;
@@ -61,6 +72,53 @@ export default function SessionDetailScreen() {
     ]);
   };
 
+  const openReschedule = () => {
+    setRescheduleError(null);
+    if (detail?.scheduledAt) {
+      const d = new Date(String(detail.scheduledAt));
+      setRescheduleDate(toDatePart(d));
+      setRescheduleTime(toTimePart(d));
+    } else {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      setRescheduleDate(toDatePart(d));
+      setRescheduleTime('09:00');
+    }
+    setShowReschedule(true);
+  };
+
+  const handleReschedule = () => {
+    if (!id) return;
+    const dateStr = rescheduleDate.trim();
+    const timeStr = rescheduleTime.trim();
+    if (!dateStr || !timeStr) {
+      setRescheduleError('Enter date (YYYY-MM-DD) and time (HH:MM)');
+      return;
+    }
+    const iso = new Date(dateStr + 'T' + timeStr + ':00').toISOString();
+    if (Number.isNaN(Date.parse(iso))) {
+      setRescheduleError('Invalid date or time');
+      return;
+    }
+    setActionLoading(true);
+    setRescheduleError(null);
+    customerApi
+      .rescheduleSession(id, iso)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown>;
+        if (data?.mtype === 'success') {
+          setShowReschedule(false);
+          setRescheduleDate('');
+          setRescheduleTime('');
+          fetchDetail();
+        } else {
+          setRescheduleError(String(data?.message ?? 'Failed to reschedule'));
+        }
+      })
+      .catch(() => setRescheduleError('Failed to reschedule session'))
+      .finally(() => setActionLoading(false));
+  };
+
   const canAct = detail && String(detail.status) === 'scheduled';
 
   if (!id) {
@@ -106,12 +164,52 @@ export default function SessionDetailScreen() {
             </>
           )}
           {canAct && (
-            <TouchableOpacity onPress={handleCancel} disabled={actionLoading} style={[styles.buttonDanger, actionLoading && styles.buttonDisabled]}>
-              <Text style={styles.buttonDangerText}>{actionLoading ? 'Please wait…' : 'Cancel session'}</Text>
-            </TouchableOpacity>
+            <View style={styles.actions}>
+              <TouchableOpacity onPress={handleCancel} disabled={actionLoading} style={[styles.buttonDanger, actionLoading && styles.buttonDisabled]}>
+                <Text style={styles.buttonDangerText}>{actionLoading ? 'Please wait…' : 'Cancel session'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={openReschedule} disabled={actionLoading} style={[styles.buttonPrimary, actionLoading && styles.buttonDisabled]}>
+                <Text style={styles.buttonPrimaryText}>Reschedule</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       ) : null}
+
+      <Modal visible={showReschedule} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Reschedule session</Text>
+            <Text style={styles.inputLabel}>Date (YYYY-MM-DD)</Text>
+            <TextInput
+              style={styles.input}
+              value={rescheduleDate}
+              onChangeText={setRescheduleDate}
+              placeholder="2025-03-15"
+              placeholderTextColor={colors.grey}
+              editable={!actionLoading}
+            />
+            <Text style={styles.inputLabel}>Time (HH:MM)</Text>
+            <TextInput
+              style={styles.input}
+              value={rescheduleTime}
+              onChangeText={setRescheduleTime}
+              placeholder="14:30"
+              placeholderTextColor={colors.grey}
+              editable={!actionLoading}
+            />
+            {rescheduleError ? <Text style={styles.rescheduleError}>{rescheduleError}</Text> : null}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity onPress={handleReschedule} disabled={actionLoading} style={[styles.buttonPrimary, actionLoading && styles.buttonDisabled]}>
+                <Text style={styles.buttonPrimaryText}>{actionLoading ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setShowReschedule(false); setRescheduleError(null); }} disabled={actionLoading} style={styles.buttonSecondary}>
+                <Text style={styles.buttonSecondaryText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -135,7 +233,19 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, color: colors.grey, marginTop: 12, marginBottom: 2 },
   value: { fontSize: 16, color: colors.black },
   error: { fontSize: 14, color: colors.grey },
-  buttonDanger: { marginTop: 20, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#c00', alignItems: 'center' },
+  actions: { marginTop: 20, gap: 12 },
+  buttonDanger: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#c00', alignItems: 'center' },
+  buttonPrimary: { padding: 12, borderRadius: 8, backgroundColor: colors.secondary, alignItems: 'center' },
+  buttonPrimaryText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   buttonDisabled: { opacity: 0.6 },
   buttonDangerText: { fontSize: 16, fontWeight: '600', color: '#c00' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '100%', maxWidth: 340 },
+  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 16 },
+  inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  input: { borderWidth: 1, borderColor: colors.borderLight, borderRadius: 6, padding: 10, marginBottom: 12, fontSize: 16, color: colors.black },
+  rescheduleError: { color: '#c00', fontSize: 14, marginBottom: 12 },
+  modalButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  buttonSecondary: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.grey, alignItems: 'center' },
+  buttonSecondaryText: { fontSize: 16, fontWeight: '600', color: colors.grey },
 });

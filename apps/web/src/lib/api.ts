@@ -66,6 +66,37 @@ export const customerApi = {
   viewTrainer: (trainerId: string) =>
     api.post<{ mtype: string; id?: string; trainerName?: string; name?: string; email?: string; phone?: string }>('/customer/viewTrainer', { trainerId }),
 
+  customerServiceList: () =>
+    api.post<{ mtype: string; customerServiceList?: { id: string; label: string; address?: string; latitude?: number; longitude?: number; createdAt: string }[] }>('/customer/customerServiceList', {}),
+  addCustomerService: (body: { label: string; address?: string | null; latitude?: number | null; longitude?: number | null }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/customer/addCustomerService', body),
+  viewServiceArea: (locationId: string) =>
+    api.post<{ mtype: string; id?: string; label?: string; address?: string; latitude?: number; longitude?: string }>('/customer/viewServiceArea', { locationId }),
+  editCustomerService: (body: { locationId: string; label?: string; address?: string | null; latitude?: number | null; longitude?: number | null }) =>
+    api.post<{ mtype: string; message?: string }>('/customer/editCustomerService', body),
+  deleteCustomerService: (locationId: string) =>
+    api.post<{ mtype: string; message?: string }>('/customer/deleteCustomerService', { locationId }),
+
+  fetchallgroupslist: () =>
+    api.post<{ mtype: string; list?: { id: string; name: string; ownerId: string; memberCount?: number; createdAt: string }[] }>('/customer/fetchallgroupslist', {}),
+  addgroupname: (name: string) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/customer/addgroupname', { name }),
+  addgroupmember: (groupId: string, userId: string) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/customer/addgroupmember', { groupId, userId }),
+  fetchgroupMembers: (groupId: string) =>
+    api.post<{ mtype: string; list?: { id: string; userId: string; userName?: string; userEmail?: string; createdAt: string }[] }>('/customer/fetchgroupMembers', { groupId }),
+  updategroupmember: (groupId: string, memberId: string) =>
+    api.post<{ mtype: string; message?: string }>('/customer/updategroupmember', { groupId, memberId }),
+  deletegrouplist: (groupId: string) =>
+    api.post<{ mtype: string; message?: string }>('/customer/deletegrouplist', { groupId }),
+  fetchSoloMembers: (groupId: string) =>
+    api.post<{ mtype: string; list?: { id: string; name?: string; email: string }[] }>('/customer/fetchSoloMembers', { groupId }),
+
+  ReferralList: () =>
+    api.post<{ mtype: string; ReferralList?: { id: string; referredUserId: string; referredUserName?: string; referredUserEmail?: string; referredUserJoinedAt?: string; createdAt: string }[] }>('/customer/ReferralList', {}),
+  referraldetails: (referralId: string) =>
+    api.post<{ mtype: string; id?: string; referredUserId?: string; referredUserName?: string; referredUserEmail?: string; referredUserJoinedAt?: string; createdAt?: string }>('/customer/referraldetails', { referralId }),
+
   getNotificationList: () =>
     api.post<{ mtype: string; notificationList?: { id: string; title: string; body?: string; read: boolean; createdAt: string }[] }>('/customer/GetNotificationList', {}),
   getNotificationFlag: () =>
@@ -74,6 +105,13 @@ export const customerApi = {
     api.post<{ mtype: string; message?: string }>('/customer/UpdateNotificationReadStatus', { notificationId }),
   deleteNotification: (notificationId: string) =>
     api.post<{ mtype: string; message?: string }>('/customer/deleteNotification', { notificationId }),
+
+  faqlist: () =>
+    api.post<{ mtype: string; faqlist?: { id: string; question: string; answer: string }[] }>('/customer/faqlist', {}),
+  fetchContactLink: () =>
+    api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>('/customer/fetchContactLink', {}),
+  raiseSupport: (body: { subject?: string; message?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/customer/raiseSupport', body),
 };
 
 /** Trainer division: POST /api/trainer/<action>. */
@@ -104,12 +142,65 @@ export const trainerApi = {
   referralSummary: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; referralSummary?: unknown }>('/trainer/referralSummary', body ?? {}),
 
-  viewServiceArea: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; address?: string; city?: string; country?: string }>('/trainer/viewServiceArea', body ?? {}),
+  viewServiceArea: (body?: { id?: string }) =>
+    api.post<{ mtype: string; trainerServiceList?: { id: string; label: string; address?: string | null; latitude?: number | null; longitude?: number | null; radiusKm?: number | null; isActive: boolean; createdAt: string }[]; id?: string; label?: string; address?: string | null; latitude?: number | null; longitude?: number | null; radiusKm?: number | null; isActive?: boolean }>('/trainer/viewServiceArea', body ?? {}),
+  trainerServiceList: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; trainerServiceList?: { id: string; label: string; address?: string | null; latitude?: number | null; longitude?: number | null; radiusKm?: number | null; isActive: boolean; createdAt: string }[] }>('/trainer/trainerServiceList', body ?? {}),
+  addTrainerService: (body: { label: string; address?: string | null; latitude?: number | null; longitude?: number | null; radiusKm?: number | null }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/trainer/addTrainerService', body),
+  editTrainerService: (body: { id: string; label?: string; address?: string | null; latitude?: number | null; longitude?: number | null; radiusKm?: number | null }) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/editTrainerService', body),
+  deleteTrainerService: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/deleteTrainerService', { id }),
+  serviceAreaOnOff: (id: string, isActive?: boolean) =>
+    api.post<{ mtype: string; isActive?: boolean; message?: string }>('/trainer/serviceAreaOnOff', { id, isActive }),
   viewListAllAvailabilty: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; availabilityList?: unknown[] }>('/trainer/viewListAllAvailabilty', body ?? {}),
+    api.post<{ mtype: string; availabilityList?: { id: string; dayOfWeek: number; startTime: string; endTime: string; createdAt: string }[] }>('/trainer/viewListAllAvailabilty', body ?? {}),
+  trainerAvailabilityList: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; availabilityList?: { id: string; dayOfWeek: number; startTime: string; endTime: string; createdAt: string }[] }>('/trainer/trainerAvailabilityList', body ?? {}),
+  addTrainerAvailability: (body: { dayOfWeek: number; startTime: string; endTime: string }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/trainer/addTrainerAvailability', body),
+  editTrainerAvailability: (body: { id: string; dayOfWeek?: number; startTime?: string; endTime?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/editTrainerAvailability', body),
+  viewAvailabilty: (id?: string) =>
+    api.post<{ mtype: string; availabilityList?: { id: string; dayOfWeek: number; startTime: string; endTime: string }[]; id?: string; startTime?: string; endTime?: string }>('/trainer/viewAvailabilty', id != null ? { id } : {}),
+  deleteAvaibilitySlot: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/deleteAvaibilitySlot', { id }),
   trainerActivityList: (body?: Record<string, unknown>) =>
-    api.post<{ mtype: string; trainerActivityList?: unknown[] }>('/trainer/trainerActivityList', body ?? {}),
+    api.post<{ mtype: string; trainerActivityList?: { id: string; trainerId: string; activityCode: string; activityName?: string; activityDescription?: string; createdAt: string }[] }>('/trainer/trainerActivityList', body ?? {}),
+  allActivityList: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; allActivityList?: { id: string; code: string; name: string; description?: string; createdAt: string }[] }>('/trainer/allActivityList', body ?? {}),
+  addTrainerActivity: (activityCode: string) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/trainer/addTrainerActivity', { activityCode }),
+  editTrainerActivity: (id: string, activityCode: string) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/editTrainerActivity', { id, activityCode }),
+  viewActivity: (id: string) =>
+    api.post<{ mtype: string; id?: string; activityCode?: string; activityName?: string; activityDescription?: string }>('/trainer/viewActivity', { id }),
+  deleteActivity: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/deleteActivity', { id }),
+
+  trainerCertificateList: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; trainerCertificateList?: { id: string; name: string; issuingOrganization?: string | null; issuedAt?: string | null; credentialId?: string | null; documentUrl?: string | null; createdAt: string }[] }>('/trainer/trainerCertificateList', body ?? {}),
+  addTrainerCertificate: (body: { name: string; issuingOrganization?: string | null; issuedAt?: string | null; credentialId?: string | null; documentUrl?: string | null }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/trainer/addTrainerCertificate', body),
+  editTrainerCertificate: (body: { id: string; name?: string; issuingOrganization?: string | null; issuedAt?: string | null; credentialId?: string | null; documentUrl?: string | null }) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/editTrainerCertificate', body),
+  viewCertification: (id: string) =>
+    api.post<{ mtype: string; id?: string; name?: string; issuingOrganization?: string | null; issuedAt?: string | null; credentialId?: string | null; documentUrl?: string | null }>('/trainer/viewCertification', { id }),
+  deleteCertification: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/deleteCertification', { id }),
+
+  viewTrainerBankDetails: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; id?: string; accountHolderName?: string; bankName?: string | null; last4?: string; routingLast4?: string | null; createdAt?: string }>('/trainer/viewTrainerBankDetails', body ?? {}),
+  addTrainerBankDetails: (body: { accountHolderName: string; bankName?: string | null; last4?: string | null; routingLast4?: string | null }) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/addTrainerBankDetails', body),
+
+  FetchReviews: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; FetchReviews?: { id: string; trainerId: string; customerId: string; customerName?: string; sessionId?: string | null; rating: number; comment?: string | null; createdAt: string }[] }>('/trainer/FetchReviews', body ?? {}),
+  getTrainerAvgRating: (body?: { trainerId?: string }) =>
+    api.post<{ mtype: string; rating?: number; reviewCount?: number }>('/trainer/getTrainerAvgRating', body ?? {}),
+  raiseSupport: (body: { subject?: string; message?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/raiseSupport', body),
 };
 
 /** Admin division: POST /api/admin/<action>. */

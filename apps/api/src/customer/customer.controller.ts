@@ -396,9 +396,10 @@ export class CustomerController {
 
   // Payments
   @Post('PaymentList')
-  @ApiOperation({ summary: 'Payment list (stub)' })
-  PaymentList(@Body() _body: Record<string, unknown>) {
-    return this.customerService.PaymentList();
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Payment list (sessions with payment; requires JWT)' })
+  PaymentList(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+    return this.customerService.PaymentList(userId);
   }
 
   @Post('PaymentStatus')

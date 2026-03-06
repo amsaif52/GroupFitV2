@@ -9,10 +9,10 @@ This doc lists what still needs to be brought over from the desktop projects (**
 | Area | Done | Remaining |
 |------|------|-----------|
 | **Admin API** | Dashboard; usersList, trainerList, customerList; sessionList, supportList, discountList, earningReport; Activity CRUD; **updateUserRole** (admin-only); **faqList** (DB), **contactUs** (DB/env); **createFaq**, **updateFaq**, **deleteFaq**; **updateContactUs**; **getCustomizeDashboard**, **setCustomizeDashboard**; **AdminGuard** (all POST routes require role=admin) | — |
-| **Customer API** | Reference data; session lists + detail + cancel/reschedule/addSession; fetchAllActivity, viewActivity, **GetTrendingActivities**; topratedTrainersList, viewTrainer; Favourites; Notifications; **raiseSupport**; **customerServiceList** (CustomerLocation DB); **addCustomerService**, **viewServiceArea**, **editCustomerService**, **deleteCustomerService** (JWT); **PaymentSheet** (Stripe when STRIPE_SECRET_KEY), **PaymentStatus**, **sessionPayment**; **faqlist** (Faq DB), **fetchContactLink** (ContactSetting/env); **fileUpload** (JWT stub) | Optional: PaymentList from DB |
+| **Customer API** | Reference data; session lists + detail + cancel/reschedule/addSession; fetchAllActivity, viewActivity, **GetTrendingActivities**; topratedTrainersList, viewTrainer; Favourites; Notifications; **raiseSupport**; **customerServiceList** (CustomerLocation DB); **addCustomerService**, **viewServiceArea**, **editCustomerService**, **deleteCustomerService** (JWT); **PaymentSheet** (Stripe when STRIPE_SECRET_KEY), **PaymentStatus**, **sessionPayment**; **PaymentList** (JWT; from DB – sessions with amountCents); **faqlist** (Faq DB), **fetchContactLink** (ContactSetting/env); **fileUpload** (JWT stub) | — |
 | **Trainer API** | Reference data; trainerSessionList, trainerSessionNewList, trainerSessionCompletedList, todaySession, fetchSessionDetails; Notifications; Earnings (real); raiseSupport; **Availability (DB);** **Certificates (DB);** **Services/Bank (DB);** **Reviews (DB);** **basicdetails, saveSocialLinks, getSocialLinks**; **fileUpload**, **AddDocument** (JWT stubs); **deletetrainer** (JWT; same as deleteProfile) | — |
 | **Admin Web** | Dashboard; table UI + search for users/trainers/customers; Sessions (table + session detail); Support/Discount (table + ticket/discount detail); Earning; Activity CRUD; Users (role dropdown + user detail + **Delete account** button); Trainer/Customer detail pages; **Master data** page (Activity, **FAQ**, **Contact Us**, **Customize dashboard** links); **FAQ** (list + add/edit/delete); **Contact Us** (edit contact email); **Customize dashboard** (edit JSON config) | — |
-| **Detail screens** | Session detail (Web + RN) with **Cancel** and **Reschedule** (Web: datetime picker; RN: cancel only); Activity/Trainer detail + list links; **Book session** (Web: trainer detail form; RN: book-session screen from trainer detail) | — |
+| **Detail screens** | Session detail (Web + RN) with **Cancel** and **Reschedule** (Web: datetime picker; RN: date/time modal); Activity/Trainer detail + list links; **Book session** (Web: trainer detail form; RN: book-session screen from trainer detail) | — |
 | **Schema / tests** | Prisma: User, Session, SupportTicket, Discount, Notification, CustomerFavourite*, Activity, **TrainerAvailability**, **Referral**, **TrainerCertificate**, **Review**, **TrainerActivity**, **Group**, **GroupMember**, **TrainerBankDetail**, **TrainerServiceArea**; API specs; Web spec; Storybook; e2e: auth, customer (ReferralList, groups, avialableDiscountList, checkDiscount, otherConcern, fetchSoloMembers, **GroupInvite**), trainer (GetTrainerLocation, referralSummary), admin (DeleteAccount) | More e2e, payment models if needed |
 
 ---
@@ -32,16 +32,16 @@ This doc lists what still needs to be brought over from the desktop projects (**
 
 | From newCustomer | RN | Web |
 |------------------|----|-----|
-| SessionDetail, CancelSession, RescheduleSession | ✅ view + cancel (reschedule on web) | ✅ view + cancel + reschedule |
+| SessionDetail, CancelSession, RescheduleSession | ✅ view + cancel + reschedule (date/time modal) | ✅ view + cancel + reschedule |
 | ActivityDetail, ActivityList (full) | ✅ view | ✅ view |
 | Trainer (detail), TrainerList, TrainerLocation | ✅ view | ✅ view |
-| Group: AddMember, CreateGroup, ContactReader | ❌ | ❌ |
-| ReferralList (list of referrals) | ❌ | ❌ |
+| Group: AddMember, CreateGroup, ContactReader | ✅ list, create, add member (fetchSoloMembers), remove member, delete group | ✅ list, create, add member (fetchSoloMembers), remove member, delete group |
+| ReferralList (list of referrals) | ✅ list on Refer page (people you've referred) | ✅ list on Refer page (people you've referred) |
 | ScheduledSessions, UpComingSession, CompleteSession | ✅ lists + detail | ✅ lists + detail |
-| Payment: Invoice, CheckPaymentStatus, PaymentList (full) | payments stub | payment-history exists |
-| Location: AddLocation, PickLocation, MyLocations, SearchLocation, EditLocation | locations stub | locations placeholder |
+| Payment: Invoice, CheckPaymentStatus, PaymentList (full) | payment list from DB (payments.tsx) | payment-history (list from DB) |
+| Location: AddLocation, PickLocation, MyLocations, SearchLocation, EditLocation | ✅ list + add/edit/delete (no map picker) | ✅ list + add/edit/delete (no map picker yet) |
 | Notifications (full UI) | ✅ list, mark read, delete | ✅ list, mark all read, mark read, delete |
-| Support, OtherConcerns, WriteReview, HelpCentre, Review | help exists | help exists |
+| Support, OtherConcerns, WriteReview, HelpCentre, Review | ✅ Help (FAQ + contact from API; Contact support tab, raiseSupport) | ✅ Help (FAQ + contact from API; Contact support tab for ticket) |
 | PrivacyPolicy, TermsCondition | ✅ (optional) | ✅ privacy, terms pages (static content) |
 | Fitness, DateTimeSchedule, TrainerActivityList | ❌ | ❌ |
 | ServerOff, AccountActivation | ❌ | ❌ |
@@ -52,7 +52,7 @@ This doc lists what still needs to be brought over from the desktop projects (**
 - **Groups:** ✅ `fetchallgroupslist`, `addgroupname`, `addgroupmember`, `fetchgroupMembers`, `updategroupmember` (remove member), `deletegrouplist` (JWT; Group + GroupMember tables). ✅ **fetchSoloMembers** (JWT; body: groupId; returns customers not in that group for add-member picker).
 - **Activities:** ✅ `fetchAllActivity`, `fetchactivitytype`, `viewActivity`, `fetchFavouriteActivities`, `addFavouriteActivity`, `removeFavouriteActivity`, `GetTrendingActivities` (from Activity table). ✅ **customerActivityList** (returns activity list, same shape as fetchAllActivity).
 - **Trainers:** ✅ `topratedTrainersList`, `viewTrainer`, `favouriteTrainersList`, `fetchFavouriteTrainers`, `addFavouriteTrainer`, `deletefavouriteTrainer`, `getTrainerAvgRating` (body: trainerId), `fetchTrainerRelatedReviews` (body: trainerId). ✅ **customerreview** (JWT; body: trainerId, rating 1–5, comment?, sessionId?) creates Review.
-- **Payments:** ✅ **PaymentList** (stub list). ✅ **PaymentSheet** (body: amountCents?, currency?; creates Stripe PaymentIntent when STRIPE_SECRET_KEY set; returns clientSecret). ✅ **PaymentStatus** (body: paymentIntentId; retrieves Stripe status). ✅ **sessionPayment** (body: sessionId?, paymentIntentId?; links/confirms payment, updates Session.amountCents when paid). Set STRIPE_SECRET_KEY in env for live payments.
+- **Payments:** ✅ **PaymentList** (JWT; from DB – sessions where customer paid, amountCents set). ✅ **PaymentSheet** (body: amountCents?, currency?; creates Stripe PaymentIntent when STRIPE_SECRET_KEY set; returns clientSecret). ✅ **PaymentStatus** (body: paymentIntentId; retrieves Stripe status). ✅ **sessionPayment** (body: sessionId?, paymentIntentId?; links/confirms payment, updates Session.amountCents when paid). Set STRIPE_SECRET_KEY in env for live payments.
 - **Locations / services:** ✅ **customerServiceList** (JWT; returns CustomerLocation list). ✅ **addCustomerService** (JWT; body: label, address?, latitude?, longitude?). ✅ **viewServiceArea** (JWT; body: locationId). ✅ **editCustomerService** (JWT; body: locationId, label?, address?, latitude?, longitude?). ✅ **deleteCustomerService** (JWT; body: locationId).
 - **Referrals:** ✅ `ReferralList` (JWT; returns people referred by current user from Referral table), ✅ `referraldetails` (JWT; body: `referralId`). ✅ **GroupInvite** (JWT; body: groupId, userId; same as addgroupmember).
 - **Notifications:** ✅ `GetNotificationList`, `GetNotificationFlag`, `UpdateNotificationReadStatus`, `deleteNotification` (DB-backed; created on session book).
@@ -66,16 +66,16 @@ This doc lists what still needs to be brought over from the desktop projects (**
 
 | From newTrainer | RN | Web |
 |-----------------|----|-----|
-| Availability: NewAvail, EditAvail, AvailabilityView | ✅ list, add, edit, delete | placeholder |
-| Certificate list/add/view, CertificateList, CertificationView | certificates stub | placeholder |
-| Bank details (full) | bank-details stub | placeholder |
-| Services: ServiceArea, ServiceView, service area on/off | ❌ | ❌ |
-| Activities: SelectActivites, ActivityView, add/edit/delete activity | activities stub | ❌ |
-| Session detail: UpcomingSession, CompletedSession, CancelSession, RescheduleSession | ✅ view + cancel | ✅ view + cancel + reschedule |
-| RateUS, Trendings, Support, OtherConcerns | ❌ | ❌ |
+| Availability: NewAvail, EditAvail, AvailabilityView | ✅ list, add, edit, delete | ✅ list, add, edit, delete |
+| Certificate list/add/view, CertificateList, CertificationView | ✅ list, add, edit, delete | ✅ list, add, edit, delete |
+| Bank details (full) | ✅ view + add/update (last4, routingLast4, accountHolderName, bankName) | ✅ view + add/update (last4, routingLast4, accountHolderName, bankName) |
+| Services: ServiceArea, ServiceView, service area on/off | ✅ list, add, edit, delete, activate/deactivate (activity-area) | ✅ list, add, edit, delete, activate/deactivate (activity-area) |
+| Activities: SelectActivites, ActivityView, add/edit/delete activity | ✅ list, add from master, edit, delete (activities) | ✅ list, add from master, edit, delete (my-activities) |
+| Session detail: UpcomingSession, CompletedSession, CancelSession, RescheduleSession | ✅ view + cancel + reschedule (date/time modal) | ✅ view + cancel + reschedule |
+| RateUS, Trendings, Support, OtherConcerns | ✅ Help (FAQs + contact from API; Contact support tab, raiseSupport) | ✅ Support (Help → Contact support form; raiseSupport) |
 | PublicProfile, Specializations, AddActivity, AdditionalImages, SocialMediaLinks | ❌ | ❌ |
 | AddLocation, EditLocation, ServiceLocation, AddLocationInfo, SearchPage | ❌ | ❌ |
-| HelpCentre, TodaysSession, Demo | ❌ | ❌ |
+| HelpCentre, TodaysSession, Demo | ✅ Help (FAQs, contact, Contact support) | ✅ Help (FAQs, contact, Contact support) |
 | Notifications (list, mark read, delete) | ✅ RN | (use customer notifications route if trainer web shares app) |
 | VerifyNumberW, BankDetailW, CertificateW (widgets) | ❌ | ❌ |
 
@@ -102,8 +102,8 @@ This doc lists what still needs to be brought over from the desktop projects (**
 
 | From adminApi | Web | API |
 |---------------|-----|-----|
-| CustomizeDashboard, CustomizeDashboardForm | ❌ | ❌ |
-| Master (country/state/city/language/activitytype/misc/contactus/faq) | ❌ | ❌ |
+| CustomizeDashboard, CustomizeDashboardForm | ✅ edit JSON config | ✅ getCustomizeDashboard, setCustomizeDashboard |
+| Master (country/state/city/language/activitytype/misc/contactus/faq) | ✅ Activity, FAQ, Contact Us, Customize dashboard | ✅ API for FAQ, contactUs, CustomizeDashboard |
 | DeleteAccount | ✅ user detail “Delete account” + confirm | ✅ DeleteAccount (admin only; body: userId) |
 | Activity (CRUD / list) – real UI | ✅ list, add, edit, delete | ✅ activityList, createActivity, updateActivity, deleteActivity |
 | Customer (list/detail/actions) – real UI | ✅ list + search + **detail page** (by id) | ✅ list (detail uses userDetail) |
@@ -114,7 +114,7 @@ This doc lists what still needs to be brought over from the desktop projects (**
 | Support (tickets) – real UI | ✅ list (table) + **ticket detail** (by id) | ✅ list, ✅ supportDetail |
 | Users, Userroles – real UI | ✅ list + search + **update role** (dropdown) | ✅ usersList, ✅ updateUserRole |
 | Login (admin-specific) | use main login | N/A |
-| Plaid, Identity (Stripe), DMS, Dropzone, FAQ, ContactUs, Language | ❌ | ❌ |
+| Plaid, Identity (Stripe), DMS, Dropzone, FAQ, ContactUs, Language | ✅ FAQ CRUD, Contact Us edit | ✅ API done |
 
 ### Admin API (Nest) – remaining
 
@@ -136,9 +136,9 @@ This doc lists what still needs to be brought over from the desktop projects (**
 ## Suggested order of work (remaining)
 
 1. **Session booking UI:** ✅ addSession API; ✅ “Book session” flow on Web (trainer detail form) and RN (book-session screen from trainer detail).
-2. **Customer:** ✅ Favourites (DB + API). ✅ Notifications (DB + API + Web/RN UI). Remaining: payments (Stripe/payment status), groups, locations, referrals.
-3. **Trainer:** ✅ Notifications (API + RN UI). ✅ Availability (DB + API). Remaining: certificates, services, bank details; activity CRUD; reviews.
-4. **Admin:** ✅ Activity CRUD (API + UI). ✅ User role update (API + Users page role dropdown). ✅ List + detail pages (session, user, trainer, customer, support, discount). ✅ Discount CRUD (add, edit, delete). ✅ DeleteAccount (API + user detail “Delete account” button with confirm; button hidden when viewing self). Remaining: Master data UI; CustomizeDashboard.
+2. **Customer:** ✅ Favourites (DB + API). ✅ Notifications (DB + API + Web/RN UI). ✅ Locations (API + Web/RN: list, add, edit, delete). ✅ Groups (API + Web/RN: list, create, add/remove member, delete group). ✅ Referral list (API + Web/RN: list on Refer page). ✅ PaymentList (API from DB; Web/RN payment-history/payments). Remaining: payments (Stripe/payment status in UI if needed).
+3. **Trainer:** ✅ Notifications (API + RN UI). ✅ Availability (DB + API + Web/RN). ✅ Certificates (API + Web/RN: list, add, edit, delete). ✅ Bank details (API + Web/RN: view, add/update). ✅ Service areas (API + Web/RN: list, add, edit, delete, on/off). ✅ My activities (API + Web/RN: list, add from master, edit, delete). ✅ Reviews (API + Web: list + avg rating for trainer).
+4. **Admin:** ✅ Activity CRUD (API + UI). ✅ User role update (API + Users page role dropdown). ✅ List + detail pages (session, user, trainer, customer, support, discount). ✅ Discount CRUD (add, edit, delete). ✅ DeleteAccount (API + user detail “Delete account” button with confirm; button hidden when viewing self). ✅ Master data UI (FAQ, Contact Us, Customize dashboard). ✅ CustomizeDashboard (get/set JSON).
 5. **Optional:** ✅ Privacy/Terms pages (Web). ✅ APIVersionCheck (customer + trainer). Remaining: file/asset endpoints, push notifications, Plaid/Stripe admin.
 
 Use `docs/API_MAPPING.md` for C# → Nest route mapping when implementing endpoints.

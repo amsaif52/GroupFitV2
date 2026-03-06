@@ -100,4 +100,41 @@ export const customerApi = {
     api.post<Record<string, unknown>>('/customer/UpdateNotificationReadStatus', { notificationId }),
   deleteNotification: (notificationId: string) =>
     api.post<Record<string, unknown>>('/customer/deleteNotification', { notificationId }),
+
+  // Groups
+  fetchallgroupslist: () =>
+    api.post<{ mtype: string; fetchallgroupslist?: unknown[]; list?: unknown[] }>('/customer/fetchallgroupslist', {}),
+  addgroupname: (name: string) =>
+    api.post<Record<string, unknown>>('/customer/addgroupname', { name }),
+  fetchgroupMembers: (groupId: string) =>
+    api.post<{ mtype: string; fetchgroupMembers?: unknown[]; list?: unknown[] }>('/customer/fetchgroupMembers', { groupId }),
+  addgroupmember: (groupId: string, userId: string) =>
+    api.post<Record<string, unknown>>('/customer/addgroupmember', { groupId, userId }),
+  updategroupmember: (groupId: string, memberId: string) =>
+    api.post<Record<string, unknown>>('/customer/updategroupmember', { groupId, memberId }),
+  deletegrouplist: (groupId: string) =>
+    api.post<Record<string, unknown>>('/customer/deletegrouplist', { groupId }),
+  fetchSoloMembers: (groupId: string) =>
+    api.post<{ mtype: string; fetchSoloMembers?: unknown[]; list?: unknown[] }>('/customer/fetchSoloMembers', { groupId }),
+
+  // Referrals
+  ReferralList: () =>
+    api.post<{ mtype: string; ReferralList?: unknown[]; list?: unknown[] }>('/customer/ReferralList', {}),
+
+  // Locations (saved addresses)
+  customerServiceList: () =>
+    api.post<{ mtype: string; customerServiceList?: unknown[]; list?: unknown[] }>('/customer/customerServiceList', {}),
+  addCustomerService: (body: { label: string; address?: string | null; latitude?: number | null; longitude?: number | null }) =>
+    api.post<Record<string, unknown>>('/customer/addCustomerService', body),
+  editCustomerService: (body: { locationId: string; label?: string; address?: string | null; latitude?: number | null; longitude?: number | null }) =>
+    api.post<Record<string, unknown>>('/customer/editCustomerService', body),
+  deleteCustomerService: (locationId: string) =>
+    api.post<Record<string, unknown>>('/customer/deleteCustomerService', { locationId }),
+
+  faqlist: () =>
+    api.post<{ mtype: string; faqlist?: { id: string; question: string; answer: string }[]; list?: unknown[] }>('/customer/faqlist', {}),
+  fetchContactLink: () =>
+    api.post<{ mtype: string; contactEmail?: string; contactLink?: string }>('/customer/fetchContactLink', {}),
+  raiseSupport: (body: { subject?: string; message?: string }) =>
+    api.post<Record<string, unknown>>('/customer/raiseSupport', body),
 };

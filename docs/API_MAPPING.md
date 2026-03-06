@@ -103,7 +103,7 @@ NestJS base: `POST /api/customer/<Route>`.
 | PaymentSheet | `POST /api/customer/PaymentSheet` | Body: amountCents?, currency?. Creates Stripe PaymentIntent when STRIPE_SECRET_KEY set; returns clientSecret. |
 | sessionPayment | `POST /api/customer/sessionPayment` | Body: sessionId?, paymentIntentId?. Confirms/links payment; updates Session.amountCents when paid. |
 | PaymentStatus | `POST /api/customer/PaymentStatus` | Body: paymentIntentId. Returns Stripe PaymentIntent status (or pending if no key). |
-| PaymentList | `POST /api/customer/PaymentList` | Returns PaymentList, list (empty). |
+| PaymentList | `POST /api/customer/PaymentList` | JWT. Returns PaymentList, list (sessions with amountCents paid, from DB). |
 | fileUpload | `POST /api/customer/fileUpload` | JWT. Stub: profilepath, filecode (empty). |
 | GetNotificationList | `POST /api/customer/GetNotificationList` | JWT, returns list from DB |
 | GetNotificationFlag | `POST /api/customer/GetNotificationFlag` | JWT, returns unreadCount |

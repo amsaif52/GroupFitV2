@@ -61,6 +61,8 @@ describe('CustomerService', () => {
       findUnique: jest.fn(),
     },
     supportTicket: { create: jest.fn() },
+    faq: { findMany: jest.fn() },
+    contactSetting: { findUnique: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -597,12 +599,52 @@ describe('CustomerService', () => {
     });
   });
 
+  describe('PaymentList', () => {
+    it('returns paid sessions for the customer from DB', async () => {
+      const paidSession = {
+        id: 'sess-1',
+        scheduledAt: new Date('2025-03-10T14:00:00Z'),
+        amountCents: 2500,
+        status: 'completed',
+        createdAt: new Date(),
+        activityName: 'Yoga',
+      };
+      mockPrisma.session.findMany.mockResolvedValue([paidSession]);
+      const result = await service.PaymentList('cust-1');
+      expect(result.mtype).toBe('success');
+      expect(Array.isArray(result.PaymentList)).toBe(true);
+      expect(result.list).toEqual(result.PaymentList);
+      expect((result.PaymentList as Record<string, unknown>[]).length).toBe(1);
+      expect((result.PaymentList as Record<string, unknown>[])[0].date).toBe('2025-03-10');
+      expect((result.PaymentList as Record<string, unknown>[])[0].amount).toBe(25);
+      expect((result.PaymentList as Record<string, unknown>[])[0].amountCents).toBe(2500);
+      expect(mockPrisma.session.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { customerId: 'cust-1', amountCents: { not: null } },
+          orderBy: { scheduledAt: 'desc' },
+        }),
+      );
+    });
+
+    it('returns empty list when customer has no paid sessions', async () => {
+      mockPrisma.session.findMany.mockResolvedValue([]);
+      const result = await service.PaymentList('cust-1');
+      expect(result.mtype).toBe('success');
+      expect(result.PaymentList).toEqual([]);
+      expect(result.list).toEqual([]);
+    });
+  });
+
   describe('faqlist', () => {
-    it('returns success with faqlist and list', () => {
-      const result = service.faqlist();
+    it('returns success with faqlist and list from DB', async () => {
+      (mockPrisma.faq.findMany as jest.Mock).mockResolvedValue([
+        { id: 'f1', question: 'Q1', answer: 'A1' },
+      ]);
+      const result = await service.faqlist();
       expect(result.mtype).toBe('success');
       expect(Array.isArray(result.faqlist)).toBe(true);
       expect(result.list).toEqual(result.faqlist);
+      expect(mockPrisma.faq.findMany).toHaveBeenCalled();
     });
   });
 
@@ -616,10 +658,12 @@ describe('CustomerService', () => {
   });
 
   describe('fetchContactLink', () => {
-    it('returns success with contactEmail', () => {
-      const result = service.fetchContactLink();
+    it('returns success with contactEmail from DB or env', async () => {
+      (mockPrisma.contactSetting.findUnique as jest.Mock).mockResolvedValue({ value: 'support@test.com' });
+      const result = await service.fetchContactLink();
       expect(result.mtype).toBe('success');
-      expect(typeof (result as Record<string, unknown>).contactEmail).toBe('string');
+      expect((result as Record<string, unknown>).contactEmail).toBe('support@test.com');
+      expect(mockPrisma.contactSetting.findUnique).toHaveBeenCalledWith({ where: { key: 'contact_email' } });
     });
   });
 

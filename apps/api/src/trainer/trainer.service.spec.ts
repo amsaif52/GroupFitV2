@@ -44,6 +44,8 @@ describe('TrainerService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    faq: { findMany: jest.fn() },
+    contactSetting: { findUnique: jest.fn() },
   };
 
   beforeEach(async () => {
@@ -620,19 +622,26 @@ describe('TrainerService', () => {
   });
 
   describe('faqlist', () => {
-    it('returns success with faqlist and list', () => {
-      const result = service.faqlist();
+    it('returns success with faqlist and list from DB', async () => {
+      (mockPrisma.faq.findMany as jest.Mock).mockResolvedValue([
+        { id: 'f1', question: 'Q1', answer: 'A1' },
+      ]);
+      const result = await service.faqlist();
       expect(result.mtype).toBe('success');
       expect(Array.isArray(result.faqlist)).toBe(true);
       expect(result.list).toEqual(result.faqlist);
+      expect((result.faqlist as { id: string }[]).length).toBe(1);
+      expect(mockPrisma.faq.findMany).toHaveBeenCalled();
     });
   });
 
   describe('fetchContactLink', () => {
-    it('returns success with contactEmail', () => {
-      const result = service.fetchContactLink();
+    it('returns success with contactEmail from DB or env', async () => {
+      (mockPrisma.contactSetting.findUnique as jest.Mock).mockResolvedValue({ value: 'help@test.com' });
+      const result = await service.fetchContactLink();
       expect(result.mtype).toBe('success');
-      expect(typeof (result as Record<string, unknown>).contactEmail).toBe('string');
+      expect((result as Record<string, unknown>).contactEmail).toBe('help@test.com');
+      expect(mockPrisma.contactSetting.findUnique).toHaveBeenCalledWith({ where: { key: 'contact_email' } });
     });
   });
 

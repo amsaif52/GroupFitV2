@@ -861,19 +861,26 @@ export class TrainerService {
     return { mtype: 'success', message: 'OK', rating, reviewCount: agg._count };
   }
 
-  // FAQ / Help (static list; can be replaced by master data later)
-  faqlist() {
-    const faqlist: { id?: string; question?: string; answer?: string }[] = [];
+  // FAQ / Help (same as customer: from Faq table and ContactSetting)
+  async faqlist() {
+    const rows = await this.prisma.faq.findMany({
+      orderBy: { sortOrder: 'asc' },
+      select: { id: true, question: true, answer: true },
+    });
+    const faqlist = rows.map((r: { id: string; question: string; answer: string }) => ({
+      id: r.id,
+      question: r.question,
+      answer: r.answer,
+    }));
     return { mtype: 'success', message: 'OK', faqlist, list: faqlist };
   }
 
-  fetchContactLink() {
-    return {
-      mtype: 'success',
-      message: 'OK',
-      contactLink: '',
-      contactEmail: process.env.CONTACT_EMAIL ?? 'support@groupfit.example.com',
-    };
+  async fetchContactLink() {
+    const row = await this.prisma.contactSetting.findUnique({
+      where: { key: 'contact_email' },
+    });
+    const contactEmail = row?.value ?? process.env.CONTACT_EMAIL ?? 'support@groupfit.example.com';
+    return { mtype: 'success', message: 'OK', contactLink: '', contactEmail };
   }
 
   async raiseSupport(userId: string, subject: string, message: string) {

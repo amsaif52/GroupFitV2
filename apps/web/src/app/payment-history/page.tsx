@@ -31,9 +31,10 @@ export default function PaymentHistoryPage() {
     (async () => {
       try {
         const res = await customerApi.paymentList();
-        const data = res.data as { mtype?: string; list?: PaymentItem[] };
-        if (!cancelled && data?.mtype === 'success' && Array.isArray(data.list)) {
-          setList(data.list);
+        const data = res.data as { mtype?: string; list?: PaymentItem[]; PaymentList?: PaymentItem[] };
+        if (!cancelled && data?.mtype === 'success') {
+          const items = Array.isArray(data.list) ? data.list : (Array.isArray(data.PaymentList) ? data.PaymentList : []);
+          setList(items);
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof ApiClientError ? e.message : 'Failed to load payments');
@@ -62,6 +63,7 @@ export default function PaymentHistoryPage() {
           <thead>
             <tr style={{ borderBottom: '2px solid #eee' }}>
               <th style={{ textAlign: 'left', padding: '0.5rem' }}>Date</th>
+              <th style={{ textAlign: 'left', padding: '0.5rem' }}>Activity</th>
               <th style={{ textAlign: 'left', padding: '0.5rem' }}>Amount</th>
               <th style={{ textAlign: 'left', padding: '0.5rem' }}>Status</th>
             </tr>
@@ -70,6 +72,7 @@ export default function PaymentHistoryPage() {
             {list.map((item, i) => (
               <tr key={item.id ?? i} style={{ borderBottom: '1px solid #eee' }}>
                 <td style={{ padding: '0.5rem' }}>{String(item.date ?? item.createdAt ?? '—')}</td>
+                <td style={{ padding: '0.5rem' }}>{String(item.activityName ?? '—')}</td>
                 <td style={{ padding: '0.5rem' }}>{item.amount != null ? `£${Number(item.amount).toFixed(2)}` : '—'}</td>
                 <td style={{ padding: '0.5rem' }}>{String(item.status ?? '—')}</td>
               </tr>

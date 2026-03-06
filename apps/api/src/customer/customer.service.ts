@@ -855,9 +855,24 @@ export class CustomerService {
     return { mtype: 'success', message: 'OK' };
   }
 
-  // Payments (Stripe when STRIPE_SECRET_KEY set; otherwise stub)
-  PaymentList() {
-    return { mtype: 'success', message: 'OK', PaymentList: [], list: [] };
+  // Payments: list sessions where customer paid (amountCents set)
+  async PaymentList(userId: string) {
+    const sessions = await this.prisma.session.findMany({
+      where: { customerId: userId, amountCents: { not: null } },
+      orderBy: { scheduledAt: 'desc' },
+      select: { id: true, scheduledAt: true, amountCents: true, status: true, createdAt: true, activityName: true },
+    });
+    const list = sessions.map((s: { id: string; scheduledAt: Date; amountCents: number | null; status: string; createdAt: Date; activityName: string | null }) => ({
+      id: s.id,
+      sessionId: s.id,
+      date: s.scheduledAt.toISOString().slice(0, 10),
+      createdAt: s.createdAt.toISOString(),
+      amount: s.amountCents != null ? s.amountCents / 100 : 0,
+      amountCents: s.amountCents,
+      status: s.status,
+      activityName: s.activityName ?? undefined,
+    }));
+    return { mtype: 'success', message: 'OK', PaymentList: list, list };
   }
 
   async PaymentStatus(paymentIntentId?: string) {
