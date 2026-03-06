@@ -1,7 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { EditProfileDto } from '../common/dto/edit-profile.dto';
-import { COUNTRIES, STATES, CITIES, ACTIVITY_TYPES, CANCEL_REASONS } from '../common/reference-data';
+import {
+  COUNTRIES,
+  STATES,
+  CITIES,
+  ACTIVITY_TYPES,
+  CANCEL_REASONS,
+} from '../common/reference-data';
 
 /** Session row with trainer (for customer session list map callback typing) */
 interface SessionWithTrainer {
@@ -43,7 +49,13 @@ export class CustomerService {
   }
 
   APIVersionCheck() {
-    return { mtype: 'success', message: 'OK', version: '1.0', division: 'customer', timestamp: new Date().toISOString() };
+    return {
+      mtype: 'success',
+      message: 'OK',
+      version: '1.0',
+      division: 'customer',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /** Get profile for the current user (JWT sub). Returns legacy-shaped object. */
@@ -87,7 +99,10 @@ export class CustomerService {
 
   /** Request account deletion (JWT). Returns success; actual deletion can be admin/support flow. */
   deleteProfile() {
-    return { mtype: 'success', message: 'Account deletion requested. Contact support to complete.' };
+    return {
+      mtype: 'success',
+      message: 'Account deletion requested. Contact support to complete.',
+    };
   }
 
   // Reference data (legacy customerApi)
@@ -110,13 +125,21 @@ export class CustomerService {
       include: { _count: { select: { members: true } } },
       orderBy: { createdAt: 'desc' },
     });
-    const list = groups.map((g: { id: string; name: string; ownerId: string; createdAt: Date; _count: { members: number } }) => ({
-      id: g.id,
-      name: g.name,
-      ownerId: g.ownerId,
-      memberCount: g._count.members,
-      createdAt: g.createdAt.toISOString(),
-    }));
+    const list = groups.map(
+      (g: {
+        id: string;
+        name: string;
+        ownerId: string;
+        createdAt: Date;
+        _count: { members: number };
+      }) => ({
+        id: g.id,
+        name: g.name,
+        ownerId: g.ownerId,
+        memberCount: g._count.members,
+        createdAt: g.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', list, fetchallgroupslist: list };
   }
 
@@ -151,16 +174,25 @@ export class CustomerService {
   async fetchgroupMembers(userId: string, groupId: string) {
     const group = await this.prisma.group.findFirst({
       where: { id: groupId, ownerId: userId },
-      include: { members: { include: { user: { select: { id: true, name: true, email: true } } } } },
+      include: {
+        members: { include: { user: { select: { id: true, name: true, email: true } } } },
+      },
     });
     if (!group) return { mtype: 'error', message: 'Group not found' };
-    const list = group.members.map((m: { id: string; userId: string; createdAt: Date; user: { id: string; name: string | null; email: string } }) => ({
-      id: m.id,
-      userId: m.userId,
-      userName: m.user.name,
-      userEmail: m.user.email,
-      createdAt: m.createdAt.toISOString(),
-    }));
+    const list = group.members.map(
+      (m: {
+        id: string;
+        userId: string;
+        createdAt: Date;
+        user: { id: string; name: string | null; email: string };
+      }) => ({
+        id: m.id,
+        userId: m.userId,
+        userName: m.user.name,
+        userEmail: m.user.email,
+        createdAt: m.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', list, fetchgroupMembers: list };
   }
 
@@ -184,7 +216,8 @@ export class CustomerService {
 
   /** Returns customers not in the given group (for "add member" picker). Owner only. */
   async fetchSoloMembers(userId: string, groupId?: string) {
-    if (!groupId?.trim()) return { mtype: 'success', message: 'OK', list: [], fetchSoloMembers: [] };
+    if (!groupId?.trim())
+      return { mtype: 'success', message: 'OK', list: [], fetchSoloMembers: [] };
     const group = await this.prisma.group.findFirst({
       where: { id: groupId.trim(), ownerId: userId },
       include: { members: { select: { userId: true } } },
@@ -213,14 +246,21 @@ export class CustomerService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    const list = referrals.map((r: { id: string; referredUserId: string; createdAt: Date; referredUser: { name: string | null; email: string; createdAt: Date } }) => ({
-      id: r.id,
-      referredUserId: r.referredUserId,
-      referredUserName: r.referredUser.name,
-      referredUserEmail: r.referredUser.email,
-      referredUserJoinedAt: r.referredUser.createdAt.toISOString(),
-      createdAt: r.createdAt.toISOString(),
-    }));
+    const list = referrals.map(
+      (r: {
+        id: string;
+        referredUserId: string;
+        createdAt: Date;
+        referredUser: { name: string | null; email: string; createdAt: Date };
+      }) => ({
+        id: r.id,
+        referredUserId: r.referredUserId,
+        referredUserName: r.referredUser.name,
+        referredUserEmail: r.referredUser.email,
+        referredUserJoinedAt: r.referredUser.createdAt.toISOString(),
+        createdAt: r.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', ReferralList: list, list };
   }
 
@@ -229,7 +269,9 @@ export class CustomerService {
     const referral = await this.prisma.referral.findFirst({
       where: { id: referralId, referrerId: userId },
       include: {
-        referredUser: { select: { id: true, email: true, name: true, phone: true, createdAt: true } },
+        referredUser: {
+          select: { id: true, email: true, name: true, phone: true, createdAt: true },
+        },
       },
     });
     if (!referral) return { mtype: 'error', message: 'Referral not found' };
@@ -342,7 +384,8 @@ export class CustomerService {
       where: { id: sessionId, customerId: userId },
     });
     if (!session) return { mtype: 'error', message: 'Session not found' };
-    if (session.status !== 'scheduled') return { mtype: 'error', message: 'Session cannot be cancelled' };
+    if (session.status !== 'scheduled')
+      return { mtype: 'error', message: 'Session cannot be cancelled' };
     await this.prisma.session.update({
       where: { id: sessionId },
       data: { status: 'cancelled' },
@@ -355,7 +398,8 @@ export class CustomerService {
       where: { id: sessionId, customerId: userId },
     });
     if (!session) return { mtype: 'error', message: 'Session not found' };
-    if (session.status !== 'scheduled') return { mtype: 'error', message: 'Session cannot be rescheduled' };
+    if (session.status !== 'scheduled')
+      return { mtype: 'error', message: 'Session cannot be rescheduled' };
     const date = new Date(newScheduledAt);
     if (Number.isNaN(date.getTime())) return { mtype: 'error', message: 'Invalid date/time' };
     await this.prisma.session.update({
@@ -401,9 +445,15 @@ export class CustomerService {
     if (slots.length === 0) return { mtype: 'success', message: 'OK', available: false };
 
     // Use UTC for default "now" time so conflict check matches scheduledAt (stored as UTC)
-    const time = timeStr ?? (dateStr ? null : `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`);
+    const time =
+      timeStr ??
+      (dateStr
+        ? null
+        : `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`);
     if (time) {
-      const inSlot = slots.some((s: { startTime: string; endTime: string }) => time >= s.startTime && time < s.endTime);
+      const inSlot = slots.some(
+        (s: { startTime: string; endTime: string }) => time >= s.startTime && time < s.endTime
+      );
       if (!inSlot) return { mtype: 'success', message: 'OK', available: false };
       const startOfDay = new Date(date);
       startOfDay.setUTCHours(0, 0, 0, 0);
@@ -412,13 +462,18 @@ export class CustomerService {
         where: {
           trainerId,
           status: 'scheduled',
-          scheduledAt: { gte: startOfDay, lt: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000) },
+          scheduledAt: {
+            gte: startOfDay,
+            lt: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000),
+          },
         },
         select: { scheduledAt: true },
       });
       const reqSlot = Math.floor((h * 60 + m) / 30);
       for (const s of existingSessions) {
-        const existingSlot = Math.floor((s.scheduledAt.getUTCHours() * 60 + s.scheduledAt.getUTCMinutes()) / 30);
+        const existingSlot = Math.floor(
+          (s.scheduledAt.getUTCHours() * 60 + s.scheduledAt.getUTCMinutes()) / 30
+        );
         if (existingSlot === reqSlot) return { mtype: 'success', message: 'OK', available: false };
       }
     }
@@ -427,7 +482,8 @@ export class CustomerService {
 
   /** Next N days where trainer has at least one availability slot. */
   async SessionAvailabilityDateList(trainerId: string, limit = 30) {
-    if (!trainerId) return { mtype: 'success', message: 'OK', SessionAvailabilityDateList: [], list: [] };
+    if (!trainerId)
+      return { mtype: 'success', message: 'OK', SessionAvailabilityDateList: [], list: [] };
     const trainer = await this.prisma.user.findFirst({ where: { id: trainerId, role: 'trainer' } });
     if (!trainer) return { mtype: 'error', message: 'Trainer not found' };
     const slots = await this.prisma.trainerAvailability.findMany({
@@ -435,7 +491,8 @@ export class CustomerService {
       select: { dayOfWeek: true },
     });
     const availableDays = [...new Set(slots.map((s: { dayOfWeek: number }) => s.dayOfWeek))];
-    if (availableDays.length === 0) return { mtype: 'success', message: 'OK', SessionAvailabilityDateList: [], list: [] };
+    if (availableDays.length === 0)
+      return { mtype: 'success', message: 'OK', SessionAvailabilityDateList: [], list: [] };
 
     const out: string[] = [];
     const start = new Date();
@@ -449,7 +506,8 @@ export class CustomerService {
 
   /** Time slots (HH:mm) for a given date within trainer availability, excluding booked sessions. 30-min slots. */
   async SessionAvailabilityTimeList(trainerId: string, dateStr: string) {
-    if (!trainerId || !dateStr) return { mtype: 'success', message: 'OK', SessionAvailabilityTimeList: [], list: [] };
+    if (!trainerId || !dateStr)
+      return { mtype: 'success', message: 'OK', SessionAvailabilityTimeList: [], list: [] };
     const date = new Date(dateStr);
     if (Number.isNaN(date.getTime())) return { mtype: 'error', message: 'Invalid date' };
     const trainer = await this.prisma.user.findFirst({ where: { id: trainerId, role: 'trainer' } });
@@ -466,7 +524,10 @@ export class CustomerService {
       select: { scheduledAt: true },
     });
     const bookedMinutes = new Set(
-      existingSessions.map((s: { scheduledAt: Date }) => s.scheduledAt.getUTCHours() * 60 + Math.floor(s.scheduledAt.getUTCMinutes() / 30) * 30),
+      existingSessions.map(
+        (s: { scheduledAt: Date }) =>
+          s.scheduledAt.getUTCHours() * 60 + Math.floor(s.scheduledAt.getUTCMinutes() / 30) * 30
+      )
     );
 
     const timeSet = new Set<string>();
@@ -484,7 +545,12 @@ export class CustomerService {
       }
     }
     const SessionAvailabilityTimeList = [...timeSet].sort();
-    return { mtype: 'success', message: 'OK', SessionAvailabilityTimeList, list: SessionAvailabilityTimeList };
+    return {
+      mtype: 'success',
+      message: 'OK',
+      SessionAvailabilityTimeList,
+      list: SessionAvailabilityTimeList,
+    };
   }
 
   async addSession(userId: string, trainerId: string, scheduledAt: string, activityName?: string) {
@@ -538,7 +604,8 @@ export class CustomerService {
     if (activityId) {
       const code = String(activityId).toLowerCase();
       const byId = await this.prisma.activity.findUnique({ where: { id: activityId } });
-      const byCode = code !== activityId ? await this.prisma.activity.findUnique({ where: { code } }) : null;
+      const byCode =
+        code !== activityId ? await this.prisma.activity.findUnique({ where: { code } }) : null;
       const one = byId ?? byCode ?? null;
       if (one) {
         return {
@@ -554,20 +621,31 @@ export class CustomerService {
     }
     const list = await this.getActivityListFromDb();
     const first = list[0];
-    if (first) return { mtype: 'success', message: 'OK', ...first, description: first.description ?? '' };
-    return { mtype: 'success', message: 'OK', activityName: 'Activity', id: activityId, description: '' };
+    if (first)
+      return { mtype: 'success', message: 'OK', ...first, description: first.description ?? '' };
+    return {
+      mtype: 'success',
+      message: 'OK',
+      activityName: 'Activity',
+      id: activityId,
+      description: '',
+    };
   }
 
-  private async getActivityListFromDb(): Promise<{ id: string; code: string; name: string; activityName: string; description?: string }[]> {
+  private async getActivityListFromDb(): Promise<
+    { id: string; code: string; name: string; activityName: string; description?: string }[]
+  > {
     const rows = await this.prisma.activity.findMany({ orderBy: { code: 'asc' } });
     if (rows.length > 0) {
-      return rows.map((a: { id: string; code: string; name: string; description: string | null }) => ({
-        id: a.id,
-        code: a.code,
-        name: a.name,
-        activityName: a.name,
-        description: a.description ?? '',
-      }));
+      return rows.map(
+        (a: { id: string; code: string; name: string; description: string | null }) => ({
+          id: a.id,
+          code: a.code,
+          name: a.name,
+          activityName: a.name,
+          description: a.description ?? '',
+        })
+      );
     }
     return ACTIVITY_TYPES.map((a, i) => ({
       id: String(i),
@@ -737,22 +815,34 @@ export class CustomerService {
   }
 
   async fetchTrainerRelatedReviews(trainerId: string) {
-    if (!trainerId?.trim()) return { mtype: 'success', message: 'OK', list: [], fetchTrainerRelatedReviews: [] };
+    if (!trainerId?.trim())
+      return { mtype: 'success', message: 'OK', list: [], fetchTrainerRelatedReviews: [] };
     const reviews = await this.prisma.review.findMany({
       where: { trainerId: trainerId.trim() },
       include: { customer: { select: { id: true, name: true, email: true } } },
       orderBy: { createdAt: 'desc' },
     });
-    const list = reviews.map((r: { id: string; trainerId: string; customerId: string; sessionId: string | null; rating: number; comment: string | null; createdAt: Date; customer: { name: string | null; email: string } }) => ({
-      id: r.id,
-      trainerId: r.trainerId,
-      customerId: r.customerId,
-      customerName: r.customer.name ?? r.customer.email,
-      sessionId: r.sessionId,
-      rating: r.rating,
-      comment: r.comment,
-      createdAt: r.createdAt.toISOString(),
-    }));
+    const list = reviews.map(
+      (r: {
+        id: string;
+        trainerId: string;
+        customerId: string;
+        sessionId: string | null;
+        rating: number;
+        comment: string | null;
+        createdAt: Date;
+        customer: { name: string | null; email: string };
+      }) => ({
+        id: r.id,
+        trainerId: r.trainerId,
+        customerId: r.customerId,
+        customerName: r.customer.name ?? r.customer.email,
+        sessionId: r.sessionId,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', list, fetchTrainerRelatedReviews: list };
   }
 
@@ -777,7 +867,7 @@ export class CustomerService {
         latitude: r.latitude,
         longitude: r.longitude,
         createdAt: r.createdAt.toISOString(),
-      }),
+      })
     );
     return { mtype: 'success', message: 'OK', customerServiceList, list: customerServiceList };
   }
@@ -787,7 +877,7 @@ export class CustomerService {
     label: string,
     address?: string | null,
     latitude?: number | null,
-    longitude?: number | null,
+    longitude?: number | null
   ) {
     const labelNorm = String(label ?? '').trim();
     if (!labelNorm) return { mtype: 'error', message: 'Label is required' };
@@ -827,7 +917,7 @@ export class CustomerService {
     label?: string,
     address?: string | null,
     latitude?: number | null,
-    longitude?: number | null,
+    longitude?: number | null
   ) {
     if (!locationId?.trim()) return { mtype: 'error', message: 'Location id is required' };
     const loc = await this.prisma.customerLocation.findFirst({
@@ -835,7 +925,8 @@ export class CustomerService {
     });
     if (!loc) return { mtype: 'error', message: 'Location not found' };
     const labelNorm = label !== undefined ? String(label).trim() : undefined;
-    if (labelNorm !== undefined && !labelNorm) return { mtype: 'error', message: 'Label cannot be empty' };
+    if (labelNorm !== undefined && !labelNorm)
+      return { mtype: 'error', message: 'Label cannot be empty' };
     await this.prisma.customerLocation.update({
       where: { id: locationId.trim() },
       data: {
@@ -863,18 +954,34 @@ export class CustomerService {
     const sessions = await this.prisma.session.findMany({
       where: { customerId: userId, amountCents: { not: null } },
       orderBy: { scheduledAt: 'desc' },
-      select: { id: true, scheduledAt: true, amountCents: true, status: true, createdAt: true, activityName: true },
+      select: {
+        id: true,
+        scheduledAt: true,
+        amountCents: true,
+        status: true,
+        createdAt: true,
+        activityName: true,
+      },
     });
-    const list = sessions.map((s: { id: string; scheduledAt: Date; amountCents: number | null; status: string; createdAt: Date; activityName: string | null }) => ({
-      id: s.id,
-      sessionId: s.id,
-      date: s.scheduledAt.toISOString().slice(0, 10),
-      createdAt: s.createdAt.toISOString(),
-      amount: s.amountCents != null ? s.amountCents / 100 : 0,
-      amountCents: s.amountCents,
-      status: s.status,
-      activityName: s.activityName ?? undefined,
-    }));
+    const list = sessions.map(
+      (s: {
+        id: string;
+        scheduledAt: Date;
+        amountCents: number | null;
+        status: string;
+        createdAt: Date;
+        activityName: string | null;
+      }) => ({
+        id: s.id,
+        sessionId: s.id,
+        date: s.scheduledAt.toISOString().slice(0, 10),
+        createdAt: s.createdAt.toISOString(),
+        amount: s.amountCents != null ? s.amountCents / 100 : 0,
+        amountCents: s.amountCents,
+        status: s.status,
+        activityName: s.activityName ?? undefined,
+      })
+    );
     return { mtype: 'success', message: 'OK', PaymentList: list, list };
   }
 
@@ -885,7 +992,14 @@ export class CustomerService {
     }
     try {
       const stripeMod = await import(STRIPE_MODULE);
-      const Stripe = (stripeMod as { default: new (key: string, opts?: { apiVersion: string }) => { paymentIntents: { retrieve: (id: string) => Promise<{ status: string }> } } }).default;
+      const Stripe = (
+        stripeMod as {
+          default: new (
+            key: string,
+            opts?: { apiVersion: string }
+          ) => { paymentIntents: { retrieve: (id: string) => Promise<{ status: string }> } };
+        }
+      ).default;
       const stripe = new Stripe(key, { apiVersion: '2023-10-16' });
       const pi = await stripe.paymentIntents.retrieve(paymentIntentId.trim());
       return { mtype: 'success', message: 'OK', status: pi.status };
@@ -903,7 +1017,18 @@ export class CustomerService {
     const cur = (currency ?? 'usd').toLowerCase();
     try {
       const stripeMod = await import(STRIPE_MODULE);
-      const Stripe = (stripeMod as { default: new (key: string, opts?: { apiVersion: string }) => { paymentIntents: { create: (opts: unknown) => Promise<{ client_secret: string | null }> } } }).default;
+      const Stripe = (
+        stripeMod as {
+          default: new (
+            key: string,
+            opts?: { apiVersion: string }
+          ) => {
+            paymentIntents: {
+              create: (opts: unknown) => Promise<{ client_secret: string | null }>;
+            };
+          };
+        }
+      ).default;
       const stripe = new Stripe(key, { apiVersion: '2023-10-16' });
       const pi = await stripe.paymentIntents.create({
         amount: amount || 100, // minimum 100 cents if 0
@@ -923,7 +1048,18 @@ export class CustomerService {
     }
     try {
       const stripeMod = await import(STRIPE_MODULE);
-      const Stripe = (stripeMod as { default: new (key: string, opts?: { apiVersion: string }) => { paymentIntents: { retrieve: (id: string) => Promise<{ status: string; amount?: number }> } } }).default;
+      const Stripe = (
+        stripeMod as {
+          default: new (
+            key: string,
+            opts?: { apiVersion: string }
+          ) => {
+            paymentIntents: {
+              retrieve: (id: string) => Promise<{ status: string; amount?: number }>;
+            };
+          };
+        }
+      ).default;
       const stripe = new Stripe(key, { apiVersion: '2023-10-16' });
       const pi = await stripe.paymentIntents.retrieve(paymentIntentId.trim());
       if (pi.status === 'succeeded') {
@@ -935,7 +1071,7 @@ export class CustomerService {
           if (session)
             await this.prisma.session.update({
               where: { id: session.id },
-              data: { amountCents: session.amountCents ?? (pi.amount ?? 0) },
+              data: { amountCents: session.amountCents ?? pi.amount ?? 0 },
             });
         }
         return { mtype: 'success', message: 'OK', paid: true };
@@ -946,20 +1082,22 @@ export class CustomerService {
     }
   }
 
-  // Notifications
+  // Notifications*
   async GetNotificationList(userId: string) {
     const rows = await this.prisma.notification.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, body: true, read: true, createdAt: true },
     });
-    const notificationList = rows.map((r: { id: string; title: string; body: string | null; read: boolean; createdAt: Date }) => ({
-      id: r.id,
-      title: r.title,
-      body: r.body ?? '',
-      read: r.read,
-      createdAt: r.createdAt.toISOString(),
-    }));
+    const notificationList = rows.map(
+      (r: { id: string; title: string; body: string | null; read: boolean; createdAt: Date }) => ({
+        id: r.id,
+        title: r.title,
+        body: r.body ?? '',
+        read: r.read,
+        createdAt: r.createdAt.toISOString(),
+      })
+    );
     return { mtype: 'success', message: 'OK', notificationList };
   }
 
@@ -1011,8 +1149,7 @@ export class CustomerService {
     const row = await this.prisma.contactSetting.findUnique({
       where: { key: 'contact_email' },
     });
-    const contactEmail =
-      row?.value ?? process.env.CONTACT_EMAIL ?? 'support@groupfit.example.com';
+    const contactEmail = row?.value ?? process.env.CONTACT_EMAIL ?? 'support@groupfit.example.com';
     return {
       mtype: 'success',
       message: 'OK',
@@ -1027,7 +1164,7 @@ export class CustomerService {
     trainerId: string,
     rating: number,
     comment?: string | null,
-    sessionId?: string | null,
+    sessionId?: string | null
   ) {
     const trainerIdNorm = String(trainerId ?? '').trim();
     if (!trainerIdNorm) return { mtype: 'error', message: 'Trainer is required' };
@@ -1068,14 +1205,23 @@ export class CustomerService {
       },
       orderBy: { code: 'asc' },
     });
-    const list = rows.map((d: { id: string; code: string; type: string; value: unknown; validFrom: Date | null; validTo: Date | null }) => ({
-      id: d.id,
-      code: d.code,
-      type: d.type,
-      value: Number(d.value),
-      validFrom: d.validFrom?.toISOString() ?? null,
-      validTo: d.validTo?.toISOString() ?? null,
-    }));
+    const list = rows.map(
+      (d: {
+        id: string;
+        code: string;
+        type: string;
+        value: unknown;
+        validFrom: Date | null;
+        validTo: Date | null;
+      }) => ({
+        id: d.id,
+        code: d.code,
+        type: d.type,
+        value: Number(d.value),
+        validFrom: d.validFrom?.toISOString() ?? null,
+        validTo: d.validTo?.toISOString() ?? null,
+      })
+    );
     return { mtype: 'success', message: 'OK', avialableDiscountList: list, list };
   }
 
@@ -1086,8 +1232,10 @@ export class CustomerService {
     const discount = await this.prisma.discount.findUnique({ where: { code: c } });
     if (!discount) return { mtype: 'error', message: 'Invalid or expired code' };
     const now = new Date();
-    if (discount.validFrom && discount.validFrom > now) return { mtype: 'error', message: 'Code not yet valid' };
-    if (discount.validTo && discount.validTo < now) return { mtype: 'error', message: 'Code expired' };
+    if (discount.validFrom && discount.validFrom > now)
+      return { mtype: 'error', message: 'Code not yet valid' };
+    if (discount.validTo && discount.validTo < now)
+      return { mtype: 'error', message: 'Code expired' };
     return {
       mtype: 'success',
       message: 'OK',
@@ -1123,7 +1271,8 @@ export class CustomerService {
   }
 
   async raiseSupport(userId: string, subject: string, message: string) {
-    if (!subject?.trim() || !message?.trim()) return { mtype: 'error', message: 'Subject and message required' };
+    if (!subject?.trim() || !message?.trim())
+      return { mtype: 'error', message: 'Subject and message required' };
     const ticket = await this.prisma.supportTicket.create({
       data: { userId, subject: subject.trim(), message: message.trim(), status: 'open' },
     });
