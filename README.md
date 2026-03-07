@@ -62,6 +62,7 @@ cd apps/api && npx prisma migrate dev   # first-time DB setup
 - **E2E fails (timeouts):** Start API and web manually, then run `npm run e2e`; ensure no port conflicts. For login test, set `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD`.
 - **Chat assistant says “not configured”:** Set `OPENAI_API_KEY` in `.env` for the API.
 - **Session payment / Apple Pay / Google Pay:** Set `STRIPE_SECRET_KEY` on the API and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (web) or `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` (customer-app). Enable Apple Pay and Google Pay in the [Stripe Dashboard](https://dashboard.stripe.com/settings/payment_methods). For native Apple/Google Pay on RN, configure Apple Pay capability (iOS) and Google Pay in the Stripe Dashboard and app.
+- **Trainer location tracking (30 mins before session):** Ensure the migration that adds `trainer_session_location` has been applied (`cd apps/api && npx prisma migrate deploy` or `prisma migrate dev`). In the trainer app, run `npm install` so `expo-location` is installed. On web, trainers need browser location permission; on RN, the app will request foreground location permission when they tap “Share my location” on a session in the 30‑minute window.
 
 If you use **pnpm**, keep `pnpm-workspace.yaml` and run `pnpm install` then `pnpm build:shared`. Root scripts in `package.json` use npm; adjust for pnpm if needed (`pnpm --filter api dev`, etc.).
 

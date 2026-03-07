@@ -29,6 +29,8 @@ export default function SessionDetailPage() {
   const [payClientSecret, setPayClientSecret] = useState<string | null>(null);
   const [payLoading, setPayLoading] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
+  const [locationSharing, setLocationSharing] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   const fetchDetail = () => {
     if (!id) return;
@@ -59,6 +61,17 @@ export default function SessionDetailPage() {
     }
     fetchDetail();
   }, [id, isTrainer]);
+
+  // Poll session detail when customer is in the 30-min window (to see trainer location updates)
+  useEffect(() => {
+    if (!id || isTrainer || !detail?.scheduledAt) return;
+    const scheduledAtMs = new Date(String(detail.scheduledAt)).getTime();
+    const nowMs = Date.now();
+    const thirtyMinMs = 30 * 60 * 1000;
+    if (nowMs < scheduledAtMs - thirtyMinMs || nowMs > scheduledAtMs + thirtyMinMs) return;
+    const interval = setInterval(fetchDetail, 90 * 1000);
+    return () => clearInterval(interval);
+  }, [id, isTrainer, detail?.scheduledAt]);
 
   const handleCancel = () => {
     if (!id || !window.confirm('Cancel this session? This cannot be undone.')) return;
@@ -102,6 +115,44 @@ export default function SessionDetailPage() {
   const canAct = detail && String(detail.status) === 'scheduled';
   const canPay = !isTrainer && detail && String(detail.status) === 'scheduled';
   const amountCents = detail && detail.amountCents != null ? Number(detail.amountCents) : 0;
+  const scheduledAtMs = detail?.scheduledAt ? new Date(String(detail.scheduledAt)).getTime() : 0;
+  const nowMs = Date.now();
+  const thirtyMinMs = 30 * 60 * 1000;
+  const isWithin30MinBefore =
+    canAct && scheduledAtMs > 0 && nowMs >= scheduledAtMs - thirtyMinMs && nowMs <= scheduledAtMs;
+
+  const sendLocation = () => {
+    if (!id || !isTrainer) return;
+    if (!navigator.geolocation) {
+      setLocationError('Location is not supported by your browser');
+      return;
+    }
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        trainerApi
+          .updateSessionLocation(id, pos.coords.latitude, pos.coords.longitude)
+          .then((res) => {
+            const data = res?.data as Record<string, unknown>;
+            const msg = String(data?.message ?? '');
+            if (data?.mtype === 'success') setLocationError(null);
+            else {
+              setLocationError(msg || 'Failed to update location');
+              if (msg.includes('already started')) setLocationSharing(false);
+            }
+          })
+          .catch(() => setLocationError('Failed to send location'));
+      },
+      () => setLocationError('Could not get your location. Enable location access and try again.')
+    );
+  };
+
+  useEffect(() => {
+    if (!isTrainer || !id || !isWithin30MinBefore || !locationSharing) return;
+    sendLocation();
+    const interval = setInterval(sendLocation, 90 * 1000);
+    return () => clearInterval(interval);
+  }, [isTrainer, id, isWithin30MinBefore, locationSharing]);
   const trainerCurrency =
     detail && typeof (detail as { trainerCurrency?: string }).trainerCurrency === 'string'
       ? (detail as { trainerCurrency: string }).trainerCurrency
@@ -213,6 +264,69 @@ export default function SessionDetailPage() {
               <strong>Amount:</strong> {trainerCurrency.toUpperCase()}{' '}
               {(Number(detail.amountCents) / 100).toFixed(2)}
             </p>
+          )}
+          {!isTrainer && canAct && (
+            <p>
+              <strong>Payment:</strong> {detail.amountCents != null ? 'Paid' : 'Unpaid'}
+            </p>
+          )}
+          {isTrainer && isWithin30MinBefore && (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                border: '1px solid var(--groupfit-border-light)',
+                borderRadius: 8,
+              }}
+            >
+              <p style={{ fontSize: 14, marginBottom: 8 }}>
+                Share your location with the customer (within 30 mins before session).
+              </p>
+              {locationError && (
+                <p style={{ color: '#c00', fontSize: 13, marginBottom: 8 }}>{locationError}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => setLocationSharing((v) => !v)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: locationSharing ? 'var(--groupfit-secondary)' : '#eee',
+                  color: locationSharing ? '#fff' : '#333',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {locationSharing ? 'Sharing location…' : 'Share my location'}
+              </button>
+            </div>
+          )}
+          {!isTrainer && detail.trainerLatitude != null && detail.trainerLongitude != null && (
+            <div
+              style={{
+                marginTop: 16,
+                padding: 12,
+                border: '1px solid var(--groupfit-border-light)',
+                borderRadius: 8,
+              }}
+            >
+              <p style={{ fontSize: 14, marginBottom: 8 }}>Trainer is on the way.</p>
+              {detail.trainerLocationUpdatedAt && (
+                <p style={{ fontSize: 12, color: 'var(--groupfit-grey)', marginBottom: 8 }}>
+                  Last updated:{' '}
+                  {new Date(String(detail.trainerLocationUpdatedAt)).toLocaleTimeString()}
+                </p>
+              )}
+              <a
+                href={`https://www.google.com/maps?q=${Number(detail.trainerLatitude)},${Number(detail.trainerLongitude)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+              >
+                View on map →
+              </a>
+            </div>
           )}
           {canPay && (
             <div

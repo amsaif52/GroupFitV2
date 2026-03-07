@@ -513,6 +513,21 @@ export class TrainerController {
     );
   }
 
+  @Post('updateSessionLocation')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Share location for a session (within 30 mins before start)' })
+  updateSessionLocation(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { sessionId?: string; latitude?: number; longitude?: number }
+  ) {
+    return this.trainerService.updateSessionLocation(
+      userId,
+      body?.sessionId ?? '',
+      Number(body?.latitude ?? 0),
+      Number(body?.longitude ?? 0)
+    );
+  }
+
   @Post('fetchcancelreason')
   @ApiOperation({ summary: 'Cancel reasons list' })
   fetchcancelreason() {

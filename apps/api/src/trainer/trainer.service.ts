@@ -914,6 +914,41 @@ export class TrainerService {
     return { mtype: 'success', message: 'Session rescheduled' };
   }
 
+  /** Update trainer's location for a session. Allowed only within 30 minutes before scheduledAt. */
+  async updateSessionLocation(
+    userId: string,
+    sessionId: string,
+    latitude: number,
+    longitude: number
+  ) {
+    const session = await this.prisma.session.findFirst({
+      where: { id: sessionId, trainerId: userId },
+    });
+    if (!session) return { mtype: 'error', message: 'Session not found' };
+    if (session.status !== 'scheduled')
+      return { mtype: 'error', message: 'Session is not scheduled' };
+    const now = new Date();
+    const scheduledAt = session.scheduledAt;
+    const thirtyMinMs = 30 * 60 * 1000;
+    if (now.getTime() < scheduledAt.getTime() - thirtyMinMs)
+      return {
+        mtype: 'error',
+        message: 'Location can only be shared within 30 minutes before the session',
+      };
+    if (now.getTime() > scheduledAt.getTime())
+      return { mtype: 'error', message: 'Session has already started' };
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    if (Number.isNaN(lat) || Number.isNaN(lng))
+      return { mtype: 'error', message: 'Invalid latitude or longitude' };
+    await this.prisma.trainerSessionLocation.upsert({
+      where: { sessionId },
+      create: { sessionId, trainerId: userId, latitude: lat, longitude: lng },
+      update: { latitude: lat, longitude: lng, updatedAt: now },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
   fetchcancelreason() {
     return { mtype: 'success', message: 'OK', list: CANCEL_REASONS };
   }

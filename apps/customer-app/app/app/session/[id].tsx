@@ -10,6 +10,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePaymentSheet } from '@stripe/stripe-react-native';
@@ -74,6 +75,17 @@ export default function SessionDetailScreen() {
     }
     fetchDetail();
   }, [id]);
+
+  // Poll when in 30-min window to see trainer location updates
+  useEffect(() => {
+    if (!id || !detail?.scheduledAt) return;
+    const scheduledAtMs = new Date(String(detail.scheduledAt)).getTime();
+    const nowMs = Date.now();
+    const thirtyMinMs = 30 * 60 * 1000;
+    if (nowMs < scheduledAtMs - thirtyMinMs || nowMs > scheduledAtMs + thirtyMinMs) return;
+    const interval = setInterval(fetchDetail, 90 * 1000);
+    return () => clearInterval(interval);
+  }, [id, detail?.scheduledAt]);
 
   const handleCancel = () => {
     if (!id) return;
@@ -257,12 +269,39 @@ export default function SessionDetailScreen() {
           <Text style={styles.value}>
             {String(detail.trainerName ?? detail.trainerEmail ?? '')}
           </Text>
+          {detail.trainerLatitude != null && detail.trainerLongitude != null && (
+            <View style={[styles.card, { marginTop: 12 }]}>
+              <Text style={styles.label}>Trainer is on the way</Text>
+              {detail.trainerLocationUpdatedAt && (
+                <Text style={[styles.value, { fontSize: 12, color: colors.grey, marginBottom: 8 }]}>
+                  Last updated:{' '}
+                  {new Date(String(detail.trainerLocationUpdatedAt)).toLocaleTimeString()}
+                </Text>
+              )}
+              <TouchableOpacity
+                onPress={() =>
+                  Linking.openURL(
+                    `https://www.google.com/maps?q=${Number(detail.trainerLatitude)},${Number(detail.trainerLongitude)}`
+                  )
+                }
+                style={styles.buttonPrimary}
+              >
+                <Text style={styles.buttonPrimaryText}>View on map</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           {detail.amountCents != null && (
             <>
               <Text style={styles.label}>Amount</Text>
               <Text style={styles.value}>
                 {currencyDisplay} {(Number(detail.amountCents) / 100).toFixed(2)}
               </Text>
+            </>
+          )}
+          {canAct && (
+            <>
+              <Text style={styles.label}>Payment</Text>
+              <Text style={styles.value}>{detail.amountCents != null ? 'Paid' : 'Unpaid'}</Text>
             </>
           )}
           {canPay && (

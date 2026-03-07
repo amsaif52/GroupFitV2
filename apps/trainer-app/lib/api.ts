@@ -82,6 +82,12 @@ export const trainerApi = {
     api.post<Record<string, unknown>>('/trainer/cancelSession', { sessionId }),
   rescheduleSession: (sessionId: string, newScheduledAt: string) =>
     api.post<Record<string, unknown>>('/trainer/rescheduleSession', { sessionId, newScheduledAt }),
+  updateSessionLocation: (sessionId: string, latitude: number, longitude: number) =>
+    api.post<Record<string, unknown>>('/trainer/updateSessionLocation', {
+      sessionId,
+      latitude,
+      longitude,
+    }),
 
   currentEarning: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; currentEarning?: unknown }>('/trainer/currentEarning', body ?? {}),

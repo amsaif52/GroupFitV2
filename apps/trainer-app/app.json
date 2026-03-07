@@ -7,8 +7,17 @@
     "userInterfaceStyle": "automatic",
     "scheme": "groupfit-trainer",
     "assetBundlePatterns": ["**/*"],
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.groupfit.trainer" },
-    "android": { "package": "com.groupfit.trainer" },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.groupfit.trainer",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Share your location with the customer so they can see when you're on the way to the session."
+      }
+    },
+    "android": {
+      "package": "com.groupfit.trainer",
+      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
     "experiments": { "typedRoutes": true }
   }
 }

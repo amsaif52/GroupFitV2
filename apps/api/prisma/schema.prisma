@@ -139,6 +139,19 @@ model Session {
   amountCents Int?     @map("amount_cents") // paid amount for earnings
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  trainerSessionLocation TrainerSessionLocation?
+}
+
+// Trainer's last-reported location for a session (only valid within 30 mins before scheduledAt). Customer can view.
+model TrainerSessionLocation {
+  id         String   @id @default(cuid())
+  sessionId  String   @unique @map("session_id")
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  trainerId  String   @map("trainer_id")
+  latitude   Float
+  longitude  Float
+  updatedAt  DateTime @updatedAt
+  @@map("trainer_session_location")
 }
 
 model SupportTicket {

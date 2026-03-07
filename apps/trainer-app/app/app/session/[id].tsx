@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as Location from 'expo-location';
 import { colors } from '@groupfit/shared/theme';
 import { getApiErrorMessage } from '@groupfit/shared';
 import { trainerApi } from '../../../lib/api';
@@ -39,6 +40,9 @@ export default function TrainerSessionDetailScreen() {
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleTime, setRescheduleTime] = useState('');
   const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+  const [locationSharing, setLocationSharing] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchDetail = () => {
     if (!id) return;
@@ -142,6 +146,49 @@ export default function TrainerSessionDetailScreen() {
   };
 
   const canAct = detail && String(detail.status) === 'scheduled';
+  const scheduledAtMs = detail?.scheduledAt ? new Date(String(detail.scheduledAt)).getTime() : 0;
+  const nowMs = Date.now();
+  const thirtyMinMs = 30 * 60 * 1000;
+  const isWithin30MinBefore =
+    canAct && scheduledAtMs > 0 && nowMs >= scheduledAtMs - thirtyMinMs && nowMs <= scheduledAtMs;
+
+  const sendLocation = async () => {
+    if (!id) return;
+    setLocationError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Location permission is required to share your position.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({});
+      const res = await trainerApi.updateSessionLocation(
+        id,
+        pos.coords.latitude,
+        pos.coords.longitude
+      );
+      const data = res?.data as Record<string, unknown>;
+      const msg = String(data?.message ?? '');
+      if (data?.mtype !== 'success') {
+        setLocationError(msg || 'Failed to update location');
+        if (msg.includes('already started')) setLocationSharing(false);
+      }
+    } catch (err) {
+      setLocationError(getApiErrorMessage(err, 'Could not get location'));
+    }
+  };
+
+  useEffect(() => {
+    if (!locationSharing || !id || !isWithin30MinBefore) return;
+    sendLocation();
+    locationIntervalRef.current = setInterval(sendLocation, 90 * 1000);
+    return () => {
+      if (locationIntervalRef.current) {
+        clearInterval(locationIntervalRef.current);
+        locationIntervalRef.current = null;
+      }
+    };
+  }, [locationSharing, id, isWithin30MinBefore]);
 
   if (!id) {
     return (
@@ -190,6 +237,22 @@ export default function TrainerSessionDetailScreen() {
               <Text style={styles.label}>Amount</Text>
               <Text style={styles.value}>${(Number(detail.amountCents) / 100).toFixed(2)}</Text>
             </>
+          )}
+          {isWithin30MinBefore && (
+            <View style={[styles.card, { marginTop: 12 }]}>
+              <Text style={styles.label}>
+                Share your location with the customer (within 30 mins before session)
+              </Text>
+              {locationError ? <Text style={styles.rescheduleError}>{locationError}</Text> : null}
+              <TouchableOpacity
+                onPress={() => setLocationSharing((v) => !v)}
+                style={[styles.buttonPrimary, locationSharing && styles.buttonDisabled]}
+              >
+                <Text style={styles.buttonPrimaryText}>
+                  {locationSharing ? 'Sharing location…' : 'Share my location'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
           {canAct && (
             <View style={styles.actions}>

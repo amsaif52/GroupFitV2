@@ -333,6 +333,13 @@ export const trainerApi = {
       sessionId,
       newScheduledAt,
     }),
+  /** Share trainer location for a session (allowed only within 30 mins before start). */
+  updateSessionLocation: (sessionId: string, latitude: number, longitude: number) =>
+    api.post<{ mtype: string; message?: string }>('/trainer/updateSessionLocation', {
+      sessionId,
+      latitude,
+      longitude,
+    }),
 
   currentEarning: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; currentEarning?: unknown }>('/trainer/currentEarning', body ?? {}),

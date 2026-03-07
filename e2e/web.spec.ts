@@ -34,12 +34,18 @@ test.describe('Login page', () => {
     await page.getByPlaceholder(/email|Enter your email here/i).fill('wrong@example.com');
     await page.getByPlaceholder(/password|Enter your password here/i).fill('wrongpassword');
     await page.getByRole('button', { name: 'Login' }).click();
-    await expect(page.getByText(/invalid|failed|credentials|error|Login failed/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/invalid|failed|credentials|error|Login failed/i)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test('login has sign up link', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('link', { name: 'Sign up now' }).or(page.getByRole('button', { name: 'Sign up now' }))).toBeVisible();
+    await expect(
+      page
+        .getByRole('link', { name: 'Sign up now' })
+        .or(page.getByRole('button', { name: 'Sign up now' }))
+    ).toBeVisible();
   });
 
   test('login shows social login buttons and or divider', async ({ page }) => {
@@ -52,13 +58,17 @@ test.describe('Login page', () => {
   test('clicking Continue with Google on login shows placeholder message', async ({ page }) => {
     await page.goto('/login');
     await page.getByRole('button', { name: 'Continue with Google' }).click();
-    await expect(page.getByText(/Google sign-in is not configured yet/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Google sign-in is not configured yet/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test('clicking Continue with Apple on login shows placeholder message', async ({ page }) => {
     await page.goto('/login');
     await page.getByRole('button', { name: 'Continue with Apple' }).click();
-    await expect(page.getByText(/Apple sign-in is not configured yet/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Apple sign-in is not configured yet/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test('login has connection issues link to server-unavailable', async ({ page }) => {
@@ -73,9 +83,7 @@ test.describe('Login page', () => {
 test.describe('Signup page', () => {
   test('signup page shows title and form', async ({ page }) => {
     await page.goto('/signup');
-    await expect(
-      page.getByText('Set Up Your Account').or(page.getByText('Sign Up'))
-    ).toBeVisible();
+    await expect(page.getByText('Set Up Your Account').or(page.getByText('Sign Up'))).toBeVisible();
     await expect(page.getByPlaceholder(/name|Full name/i)).toBeVisible();
     await expect(page.getByPlaceholder(/email|Enter your email here/i)).toBeVisible();
     await expect(page.getByPlaceholder(/Enter your password here|Password/i)).toBeVisible();
@@ -85,9 +93,15 @@ test.describe('Signup page', () => {
 
   test('signup form shows validation when passwords do not match', async ({ page }) => {
     await page.goto('/signup');
-    await page.getByPlaceholder(/name|Full name/i).first().fill('Test User');
+    await page
+      .getByPlaceholder(/name|Full name/i)
+      .first()
+      .fill('Test User');
     await page.getByPlaceholder(/email|Enter your email here/i).fill('test@example.com');
-    await page.getByPlaceholder(/Enter your password here|Password/i).first().fill('secret123');
+    await page
+      .getByPlaceholder(/Enter your password here|Password/i)
+      .first()
+      .fill('secret123');
     await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('different');
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page.getByText(/passwords do not match/i)).toBeVisible({ timeout: 5000 });
@@ -95,21 +109,29 @@ test.describe('Signup page', () => {
 
   test('signup has login link', async ({ page }) => {
     await page.goto('/signup');
-    await expect(page.getByRole('link', { name: 'Log in' }).or(page.getByRole('button', { name: 'Log in' }))).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Log in' }).or(page.getByRole('button', { name: 'Log in' }))
+    ).toBeVisible();
   });
 
   test('can navigate from login to signup', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('link', { name: 'Sign up now' }).or(page.getByRole('button', { name: 'Sign up now' })).first().click();
+    await page
+      .getByRole('link', { name: 'Sign up now' })
+      .or(page.getByRole('button', { name: 'Sign up now' }))
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/signup/);
-    await expect(
-      page.getByText('Set Up Your Account').or(page.getByText('Sign Up'))
-    ).toBeVisible();
+    await expect(page.getByText('Set Up Your Account').or(page.getByText('Sign Up'))).toBeVisible();
   });
 
   test('can navigate from signup to login', async ({ page }) => {
     await page.goto('/signup');
-    await page.getByRole('link', { name: 'Log in' }).or(page.getByRole('button', { name: 'Log in' })).first().click();
+    await page
+      .getByRole('link', { name: 'Log in' })
+      .or(page.getByRole('button', { name: 'Log in' }))
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/login/);
     await expect(page.getByText('Get Together.').or(page.getByText('Sign In'))).toBeVisible();
   });
@@ -124,13 +146,17 @@ test.describe('Signup page', () => {
   test('clicking Continue with Google on signup shows placeholder message', async ({ page }) => {
     await page.goto('/signup');
     await page.getByRole('button', { name: 'Continue with Google' }).click();
-    await expect(page.getByText(/Google sign-up is not configured yet/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Google sign-up is not configured yet/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test('clicking Continue with Apple on signup shows placeholder message', async ({ page }) => {
     await page.goto('/signup');
     await page.getByRole('button', { name: 'Continue with Apple' }).click();
-    await expect(page.getByText(/Apple sign-up is not configured yet/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Apple sign-up is not configured yet/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 });
 
@@ -187,9 +213,15 @@ test.describe('Help page', () => {
   test('when logged in, Help shows Assistant tab and chat UI', async ({ page }) => {
     const email = `e2e-help-${Date.now()}@groupfit.test`;
     await page.goto('/signup');
-    await page.getByPlaceholder(/name|Full name/i).first().fill('E2E Help User');
+    await page
+      .getByPlaceholder(/name|Full name/i)
+      .first()
+      .fill('E2E Help User');
     await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
-    await page.getByPlaceholder(/Enter your password here|Password/i).first().fill('password123');
+    await page
+      .getByPlaceholder(/Enter your password here|Password/i)
+      .first()
+      .fill('password123');
     await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
     await page.getByRole('button', { name: 'Create account' }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
@@ -213,6 +245,59 @@ test.describe('Payment history page', () => {
     await page.goto('/payment-history');
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
+
+  test('when logged in as customer, payment-history shows title and content', async ({ page }) => {
+    const email = `e2e-payment-${Date.now()}@groupfit.test`;
+    await page.goto('/signup');
+    await page
+      .getByPlaceholder(/name|Full name/i)
+      .first()
+      .fill('E2E Payment User');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page
+      .getByPlaceholder(/Enter your password here|Password/i)
+      .first()
+      .fill('password123');
+    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await page.goto('/payment-history');
+    await expect(page.getByRole('heading', { name: 'Payment History' })).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(
+      page.getByText(/No payments yet|Payment History|Date|Amount|Status/i)
+    ).toBeVisible();
+  });
+});
+
+test.describe('Sessions page', () => {
+  test('sessions redirects to login when not authenticated', async ({ page }) => {
+    await page.goto('/sessions');
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+  });
+
+  test('when logged in as customer, sessions page shows title and content', async ({ page }) => {
+    const email = `e2e-sessions-${Date.now()}@groupfit.test`;
+    await page.goto('/signup');
+    await page
+      .getByPlaceholder(/name|Full name/i)
+      .first()
+      .fill('E2E Sessions User');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page
+      .getByPlaceholder(/Enter your password here|Password/i)
+      .first()
+      .fill('password123');
+    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await page.goto('/sessions');
+    await expect(page.getByText('My Sessions')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(/Upcoming|Completed|No upcoming sessions|No completed sessions/i)
+    ).toBeVisible();
+  });
 });
 
 test.describe('Dashboard (home screen)', () => {
@@ -226,7 +311,9 @@ test.describe('Dashboard (home screen)', () => {
   test('dashboard shows section titles', async ({ page }) => {
     await page.goto('/dashboard');
     await expect(
-      page.getByRole('heading', { name: 'Upcoming Sessions' }).or(page.getByRole('heading', { name: "Today's Sessions" }))
+      page
+        .getByRole('heading', { name: 'Upcoming Sessions' })
+        .or(page.getByRole('heading', { name: "Today's Sessions" }))
     ).toBeVisible({ timeout: 5000 });
   });
 

@@ -8,7 +8,13 @@ import { customerApi } from '@/lib/api';
 import { ROLES } from '@groupfit/shared';
 import { ApiClientError } from '@groupfit/shared';
 
-type PaymentItem = { id?: string; amount?: number; date?: string; status?: string; [key: string]: unknown };
+type PaymentItem = {
+  id?: string;
+  amount?: number;
+  date?: string;
+  status?: string;
+  [key: string]: unknown;
+};
 
 export default function PaymentHistoryPage() {
   const router = useRouter();
@@ -31,18 +37,29 @@ export default function PaymentHistoryPage() {
     (async () => {
       try {
         const res = await customerApi.paymentList();
-        const data = res.data as { mtype?: string; list?: PaymentItem[]; PaymentList?: PaymentItem[] };
+        const data = res.data as {
+          mtype?: string;
+          list?: PaymentItem[];
+          PaymentList?: PaymentItem[];
+        };
         if (!cancelled && data?.mtype === 'success') {
-          const items = Array.isArray(data.list) ? data.list : (Array.isArray(data.PaymentList) ? data.PaymentList : []);
+          const items = Array.isArray(data.list)
+            ? data.list
+            : Array.isArray(data.PaymentList)
+              ? data.PaymentList
+              : [];
           setList(items);
         }
       } catch (e) {
-        if (!cancelled) setError(e instanceof ApiClientError ? e.message : 'Failed to load payments');
+        if (!cancelled)
+          setError(e instanceof ApiClientError ? e.message : 'Failed to load payments');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   return (
@@ -56,7 +73,9 @@ export default function PaymentHistoryPage() {
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: 'var(--groupfit-secondary)' }}>{error}</p>}
       {!loading && !error && list.length === 0 && (
-        <p style={{ color: '#666' }}>No payments yet. When you book sessions, they will appear here.</p>
+        <p style={{ color: '#666' }}>
+          No payments yet. When you book sessions, they will appear here.
+        </p>
       )}
       {!loading && !error && list.length > 0 && (
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -73,8 +92,12 @@ export default function PaymentHistoryPage() {
               <tr key={item.id ?? i} style={{ borderBottom: '1px solid #eee' }}>
                 <td style={{ padding: '0.5rem' }}>{String(item.date ?? item.createdAt ?? '—')}</td>
                 <td style={{ padding: '0.5rem' }}>{String(item.activityName ?? '—')}</td>
-                <td style={{ padding: '0.5rem' }}>{item.amount != null ? `£${Number(item.amount).toFixed(2)}` : '—'}</td>
-                <td style={{ padding: '0.5rem' }}>{String(item.status ?? '—')}</td>
+                <td style={{ padding: '0.5rem' }}>
+                  {item.amount != null ? `£${Number(item.amount).toFixed(2)}` : '—'}
+                </td>
+                <td style={{ padding: '0.5rem' }}>
+                  {item.amountCents != null ? 'Paid' : String(item.status ?? '—')}
+                </td>
               </tr>
             ))}
           </tbody>

@@ -1,11 +1,25 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { customerApi } from '../../lib/api';
 import { getApiErrorMessage } from '@groupfit/shared';
 
-type PaymentItem = { id?: string; amount?: number; date?: string; status?: string; activityName?: string; [key: string]: unknown };
+type PaymentItem = {
+  id?: string;
+  amount?: number;
+  date?: string;
+  status?: string;
+  activityName?: string;
+  [key: string]: unknown;
+};
 
 export default function PaymentHistoryScreen() {
   const router = useRouter();
@@ -18,7 +32,11 @@ export default function PaymentHistoryScreen() {
     (async () => {
       try {
         const res = await customerApi.paymentList();
-        const data = res.data as { mtype?: string; list?: PaymentItem[]; PaymentList?: PaymentItem[] };
+        const data = res.data as {
+          mtype?: string;
+          list?: PaymentItem[];
+          PaymentList?: PaymentItem[];
+        };
         const items = data?.PaymentList ?? data?.list;
         if (!cancelled && data?.mtype === 'success' && Array.isArray(items)) {
           setList(items);
@@ -29,7 +47,9 @@ export default function PaymentHistoryScreen() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -52,7 +72,9 @@ export default function PaymentHistoryScreen() {
       )}
       {!loading && !error && list.length === 0 && (
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No payments yet. When you book sessions, they will appear here.</Text>
+          <Text style={styles.emptyText}>
+            No payments yet. When you book sessions, they will appear here.
+          </Text>
         </View>
       )}
       {!loading && !error && list.length > 0 && (
@@ -64,10 +86,16 @@ export default function PaymentHistoryScreen() {
             <View style={styles.row}>
               <View style={styles.rowLeft}>
                 <Text style={styles.rowDate}>{String(item.date ?? item.createdAt ?? '—')}</Text>
-                {item.activityName ? <Text style={styles.rowActivity}>{String(item.activityName)}</Text> : null}
+                {item.activityName ? (
+                  <Text style={styles.rowActivity}>{String(item.activityName)}</Text>
+                ) : null}
               </View>
-              <Text style={styles.rowAmount}>{item.amount != null ? `£${Number(item.amount).toFixed(2)}` : '—'}</Text>
-              <Text style={styles.rowStatus}>{String(item.status ?? '—')}</Text>
+              <Text style={styles.rowAmount}>
+                {item.amount != null ? `£${Number(item.amount).toFixed(2)}` : '—'}
+              </Text>
+              <Text style={styles.rowStatus}>
+                {item.amountCents != null ? 'Paid' : String(item.status ?? '—')}
+              </Text>
             </View>
           )}
         />
@@ -94,7 +122,14 @@ const styles = StyleSheet.create({
   errorText: { color: colors.secondary, textAlign: 'center' },
   emptyText: { color: colors.grey, textAlign: 'center' },
   listContent: { padding: 20, paddingBottom: 40 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
   rowLeft: { flex: 1 },
   rowDate: { fontSize: 14, color: colors.black, fontWeight: '500' },
   rowActivity: { fontSize: 12, color: colors.grey, marginTop: 2 },

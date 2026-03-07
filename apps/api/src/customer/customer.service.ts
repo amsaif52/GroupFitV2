@@ -404,12 +404,21 @@ export class CustomerService {
       where: { id: sessionId, customerId: userId },
       include: {
         trainer: { select: { id: true, name: true, email: true, phone: true, countryCode: true } },
+        trainerSessionLocation: true,
       },
     });
     if (!session) return { mtype: 'error', message: 'Session not found' };
     const trainerCountry = session.trainer.countryCode?.toUpperCase();
     const trainerCurrency = (trainerCountry && COUNTRY_TO_CURRENCY[trainerCountry]) || 'usd';
-    return {
+    const now = new Date();
+    const scheduledAt = session.scheduledAt.getTime();
+    const thirtyMinMs = 30 * 60 * 1000;
+    const isWithinTrackingWindow =
+      session.status === 'scheduled' &&
+      now.getTime() >= scheduledAt - thirtyMinMs &&
+      now.getTime() <= scheduledAt + thirtyMinMs; // show location up to 30 mins after start so customer sees last update
+    const loc = isWithinTrackingWindow ? session.trainerSessionLocation : null;
+    const out: Record<string, unknown> = {
       mtype: 'success',
       message: 'OK',
       id: session.id,
@@ -426,6 +435,12 @@ export class CustomerService {
       amountCents: session.amountCents,
       createdAt: session.createdAt.toISOString(),
     };
+    if (loc) {
+      out.trainerLatitude = loc.latitude;
+      out.trainerLongitude = loc.longitude;
+      out.trainerLocationUpdatedAt = loc.updatedAt.toISOString();
+    }
+    return out;
   }
 
   async cancelSession(userId: string, sessionId: string, _reason?: string) {
