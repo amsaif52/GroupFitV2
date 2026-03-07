@@ -46,6 +46,7 @@ const userSelect = {
   role: true,
   locale: true,
   phone: true,
+  trainerCanSetOwnPrice: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -60,16 +61,18 @@ export class AdminService {
 
   /** Dashboard summary (counts from User + Session) */
   async dashboard() {
-    const [userCount, trainerCount, customerCount, sessionCount, earningResult] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { role: 'trainer' } }),
-      this.prisma.user.count({ where: { role: 'customer' } }),
-      this.prisma.session.count(),
-      this.prisma.session.aggregate({
-        where: { status: 'completed' },
-        _sum: { amountCents: true },
-      }),
-    ]);
+    const [userCount, trainerCount, customerCount, sessionCount, earningResult] = await Promise.all(
+      [
+        this.prisma.user.count(),
+        this.prisma.user.count({ where: { role: 'trainer' } }),
+        this.prisma.user.count({ where: { role: 'customer' } }),
+        this.prisma.session.count(),
+        this.prisma.session.aggregate({
+          where: { status: 'completed' },
+          _sum: { amountCents: true },
+        }),
+      ]
+    );
     const earningTotal = earningResult._sum.amountCents ?? 0;
     return {
       mtype: 'success',
@@ -256,14 +259,16 @@ export class AdminService {
     type: string,
     value: number,
     validFrom?: string | null,
-    validTo?: string | null,
+    validTo?: string | null
   ) {
     const codeNorm = String(code ?? '').trim();
     if (!codeNorm) return { mtype: 'error', message: 'Code is required' };
     const typeNorm = String(type ?? '').toLowerCase();
-    if (typeNorm !== 'percent' && typeNorm !== 'fixed') return { mtype: 'error', message: 'Type must be percent or fixed' };
+    if (typeNorm !== 'percent' && typeNorm !== 'fixed')
+      return { mtype: 'error', message: 'Type must be percent or fixed' };
     const numValue = Number(value);
-    if (Number.isNaN(numValue) || numValue < 0) return { mtype: 'error', message: 'Value must be a non-negative number' };
+    if (Number.isNaN(numValue) || numValue < 0)
+      return { mtype: 'error', message: 'Value must be a non-negative number' };
     const existing = await this.prisma.discount.findUnique({ where: { code: codeNorm } });
     if (existing) return { mtype: 'error', message: 'Discount code already exists' };
     const validFromDate = validFrom ? new Date(validFrom) : null;
@@ -286,7 +291,7 @@ export class AdminService {
     type?: string,
     value?: number,
     validFrom?: string | null,
-    validTo?: string | null,
+    validTo?: string | null
   ) {
     const discount = await this.prisma.discount.findUnique({ where: { id } });
     if (!discount) return { mtype: 'error', message: 'Discount not found' };
@@ -296,10 +301,13 @@ export class AdminService {
       if (existing) return { mtype: 'error', message: 'Discount code already in use' };
     }
     const typeNorm = type !== undefined ? String(type).toLowerCase() : discount.type;
-    if (typeNorm !== 'percent' && typeNorm !== 'fixed') return { mtype: 'error', message: 'Type must be percent or fixed' };
+    if (typeNorm !== 'percent' && typeNorm !== 'fixed')
+      return { mtype: 'error', message: 'Type must be percent or fixed' };
     const numValue = value !== undefined ? Number(value) : Number(discount.value);
-    if (Number.isNaN(numValue) || numValue < 0) return { mtype: 'error', message: 'Value must be a non-negative number' };
-    const validFromDate = validFrom !== undefined ? (validFrom ? new Date(validFrom) : null) : undefined;
+    if (Number.isNaN(numValue) || numValue < 0)
+      return { mtype: 'error', message: 'Value must be a non-negative number' };
+    const validFromDate =
+      validFrom !== undefined ? (validFrom ? new Date(validFrom) : null) : undefined;
     const validToDate = validTo !== undefined ? (validTo ? new Date(validTo) : null) : undefined;
     await this.prisma.discount.update({
       where: { id },
@@ -348,29 +356,61 @@ export class AdminService {
     return {
       mtype: 'success',
       message: 'OK',
-      list: list.map((a: { id: string; code: string; name: string; description: string | null; createdAt: Date; updatedAt: Date }) => ({
-        id: a.id,
-        code: a.code,
-        name: a.name,
-        description: a.description ?? '',
-        createdAt: a.createdAt.toISOString(),
-        updatedAt: a.updatedAt.toISOString(),
-      })),
+      list: list.map(
+        (a: {
+          id: string;
+          code: string;
+          name: string;
+          description: string | null;
+          defaultPriceCents: number | null;
+          createdAt: Date;
+          updatedAt: Date;
+        }) => ({
+          id: a.id,
+          code: a.code,
+          name: a.name,
+          description: a.description ?? '',
+          defaultPriceCents: a.defaultPriceCents ?? undefined,
+          createdAt: a.createdAt.toISOString(),
+          updatedAt: a.updatedAt.toISOString(),
+        })
+      ),
     };
   }
 
-  async createActivity(code: string, name: string, description?: string) {
-    const codeNorm = String(code ?? '').trim().toLowerCase();
+  async createActivity(
+    code: string,
+    name: string,
+    description?: string,
+    defaultPriceCents?: number
+  ) {
+    const codeNorm = String(code ?? '')
+      .trim()
+      .toLowerCase();
     if (!codeNorm || !name?.trim()) return { mtype: 'error', message: 'code and name required' };
     const existing = await this.prisma.activity.findUnique({ where: { code: codeNorm } });
     if (existing) return { mtype: 'error', message: 'Activity code already exists' };
     const activity = await this.prisma.activity.create({
-      data: { code: codeNorm, name: name.trim(), description: description?.trim() || null },
+      data: {
+        code: codeNorm,
+        name: name.trim(),
+        description: description?.trim() || null,
+        ...(defaultPriceCents !== undefined &&
+          defaultPriceCents !== null && {
+            defaultPriceCents: Math.max(0, Math.round(defaultPriceCents)),
+          }),
+      },
     });
     return { mtype: 'success', message: 'OK', id: activity.id };
   }
 
-  async updateActivity(id: string, code?: string, name?: string, description?: string) {
+  async updateActivity(
+    id: string,
+    code?: string,
+    name?: string,
+    description?: string,
+    defaultPriceCents?: number
+  ) {
     const activity = await this.prisma.activity.findUnique({ where: { id } });
     if (!activity) return { mtype: 'error', message: 'Activity not found' };
     const codeNorm = code !== undefined ? String(code).trim().toLowerCase() : activity.code;
@@ -384,7 +424,31 @@ export class AdminService {
         ...(code !== undefined && { code: codeNorm }),
         ...(name !== undefined && { name: name.trim() }),
         ...(description !== undefined && { description: description?.trim() || null }),
+        ...(defaultPriceCents !== undefined && {
+          defaultPriceCents:
+            defaultPriceCents == null ? null : Math.max(0, Math.round(Number(defaultPriceCents))),
+        }),
       },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Set whether a trainer can set their own activity prices (admin toggle). */
+  async setTrainerCanSetOwnPrice(adminUserId: string, trainerId: string, canSetOwnPrice: boolean) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const trainer = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { role: true },
+    });
+    if (!trainer) return { mtype: 'error', message: 'Trainer not found' };
+    if (trainer.role !== 'trainer') return { mtype: 'error', message: 'User is not a trainer' };
+    await this.prisma.user.update({
+      where: { id: trainerId },
+      data: { trainerCanSetOwnPrice: canSetOwnPrice },
     });
     return { mtype: 'success', message: 'OK' };
   }
@@ -398,11 +462,15 @@ export class AdminService {
 
   /** Update a user's role. Caller must be admin. */
   async updateUserRole(adminUserId: string, targetUserId: string, role: string) {
-    const admin = await this.prisma.user.findUnique({ where: { id: adminUserId }, select: { role: true } });
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
     if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
     const allowed = ['admin', 'trainer', 'customer'];
     const roleNorm = role?.trim()?.toLowerCase();
-    if (!roleNorm || !allowed.includes(roleNorm)) return { mtype: 'error', message: 'Invalid role' };
+    if (!roleNorm || !allowed.includes(roleNorm))
+      return { mtype: 'error', message: 'Invalid role' };
     const target = await this.prisma.user.findUnique({ where: { id: targetUserId } });
     if (!target) return { mtype: 'error', message: 'User not found' };
     await this.prisma.user.update({
@@ -414,7 +482,10 @@ export class AdminService {
 
   /** Delete a user (admin only). Cascades to related data. */
   async deleteUser(adminUserId: string, targetUserId: string) {
-    const admin = await this.prisma.user.findUnique({ where: { id: adminUserId }, select: { role: true } });
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
     if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
     if (!targetUserId?.trim()) return { mtype: 'error', message: 'User id is required' };
     if (targetUserId === adminUserId) return { mtype: 'error', message: 'Cannot delete yourself' };
@@ -470,8 +541,7 @@ export class AdminService {
     const row = await this.prisma.contactSetting.findUnique({
       where: { key: 'contact_email' },
     });
-    const contactEmail =
-      row?.value ?? process.env.CONTACT_EMAIL ?? 'support@groupfit.example.com';
+    const contactEmail = row?.value ?? process.env.CONTACT_EMAIL ?? 'support@groupfit.example.com';
     return { mtype: 'success', message: 'OK', contactEmail };
   }
 

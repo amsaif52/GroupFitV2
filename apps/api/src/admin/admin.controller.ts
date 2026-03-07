@@ -106,14 +106,14 @@ export class AdminController {
       value?: number;
       validFrom?: string | null;
       validTo?: string | null;
-    },
+    }
   ) {
     return this.adminService.createDiscount(
       body?.code ?? '',
       body?.type ?? 'percent',
       Number(body?.value ?? 0),
       body?.validFrom,
-      body?.validTo,
+      body?.validTo
     );
   }
 
@@ -129,7 +129,7 @@ export class AdminController {
       value?: number;
       validFrom?: string | null;
       validTo?: string | null;
-    },
+    }
   ) {
     return this.adminService.updateDiscount(
       body?.id ?? '',
@@ -137,7 +137,7 @@ export class AdminController {
       body?.type,
       body?.value,
       body?.validFrom,
-      body?.validTo,
+      body?.validTo
     );
   }
 
@@ -165,23 +165,50 @@ export class AdminController {
   @Post('createActivity')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Create activity type' })
-  createActivity(@Body() body: { code?: string; name?: string; description?: string }) {
+  createActivity(
+    @Body() body: { code?: string; name?: string; description?: string; defaultPriceCents?: number }
+  ) {
     return this.adminService.createActivity(
       body?.code ?? '',
       body?.name ?? '',
       body?.description,
+      body?.defaultPriceCents
     );
   }
 
   @Post('updateActivity')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Update activity type' })
-  updateActivity(@Body() body: { id?: string; code?: string; name?: string; description?: string }) {
+  updateActivity(
+    @Body()
+    body: {
+      id?: string;
+      code?: string;
+      name?: string;
+      description?: string;
+      defaultPriceCents?: number | null;
+    }
+  ) {
     return this.adminService.updateActivity(
       body?.id ?? '',
       body?.code,
       body?.name,
       body?.description,
+      body?.defaultPriceCents
+    );
+  }
+
+  @Post('setTrainerCanSetOwnPrice')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Toggle trainer can set own activity price' })
+  setTrainerCanSetOwnPrice(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string; canSetOwnPrice?: boolean }
+  ) {
+    return this.adminService.setTrainerCanSetOwnPrice(
+      adminUserId,
+      body?.trainerId ?? '',
+      !!body?.canSetOwnPrice
     );
   }
 
@@ -197,7 +224,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Update user role (admin only)' })
   updateUserRole(
     @CurrentUser('sub') adminUserId: string,
-    @Body() body: { userId?: string; role?: string },
+    @Body() body: { userId?: string; role?: string }
   ) {
     return this.adminService.updateUserRole(adminUserId, body?.userId ?? '', body?.role ?? '');
   }
@@ -205,10 +232,7 @@ export class AdminController {
   @Post('DeleteAccount')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Delete user account (admin only)' })
-  DeleteAccount(
-    @CurrentUser('sub') adminUserId: string,
-    @Body() body: { userId?: string },
-  ) {
+  DeleteAccount(@CurrentUser('sub') adminUserId: string, @Body() body: { userId?: string }) {
     return this.adminService.deleteUser(adminUserId, body?.userId ?? '');
   }
 
@@ -222,14 +246,8 @@ export class AdminController {
   @Post('createFaq')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Create FAQ' })
-  createFaq(
-    @Body() body: { question?: string; answer?: string; sortOrder?: number },
-  ) {
-    return this.adminService.createFaq(
-      body?.question ?? '',
-      body?.answer ?? '',
-      body?.sortOrder,
-    );
+  createFaq(@Body() body: { question?: string; answer?: string; sortOrder?: number }) {
+    return this.adminService.createFaq(body?.question ?? '', body?.answer ?? '', body?.sortOrder);
   }
 
   @Post('updateFaq')
@@ -237,13 +255,18 @@ export class AdminController {
   @ApiOperation({ summary: 'Update FAQ' })
   updateFaq(
     @Body()
-    body: { id?: string; question?: string; answer?: string; sortOrder?: number },
+    body: {
+      id?: string;
+      question?: string;
+      answer?: string;
+      sortOrder?: number;
+    }
   ) {
     return this.adminService.updateFaq(
       body?.id ?? '',
       body?.question,
       body?.answer,
-      body?.sortOrder,
+      body?.sortOrder
     );
   }
 

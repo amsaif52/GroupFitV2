@@ -56,7 +56,7 @@ export class TrainerController {
   @ApiOperation({ summary: 'Save social links (stub; no persistence yet)' })
   saveSocialLinks(
     @CurrentUser('sub') userId: string,
-    @Body() body: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string },
+    @Body() body: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string }
   ) {
     return this.trainerService.saveSocialLinks(userId, body ?? {});
   }
@@ -120,8 +120,15 @@ export class TrainerController {
   @Post('addTrainerActivity')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add activity to trainer' })
-  addTrainerActivity(@CurrentUser('sub') userId: string, @Body() body: { activityCode?: string }) {
-    return this.trainerService.addTrainerActivity(userId, body?.activityCode ?? '');
+  addTrainerActivity(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { activityCode?: string; priceCents?: number }
+  ) {
+    return this.trainerService.addTrainerActivity(
+      userId,
+      body?.activityCode ?? '',
+      body?.priceCents
+    );
   }
 
   @Post('editTrainerActivity')
@@ -129,9 +136,14 @@ export class TrainerController {
   @ApiOperation({ summary: 'Edit trainer activity' })
   editTrainerActivity(
     @CurrentUser('sub') userId: string,
-    @Body() body: { id?: string; activityCode?: string },
+    @Body() body: { id?: string; activityCode?: string; priceCents?: number | null }
   ) {
-    return this.trainerService.editTrainerActivity(userId, body?.id ?? '', body?.activityCode);
+    return this.trainerService.editTrainerActivity(
+      userId,
+      body?.id ?? '',
+      body?.activityCode,
+      body?.priceCents
+    );
   }
 
   @Post('viewActivity')
@@ -151,14 +163,20 @@ export class TrainerController {
   @Post('trainerAvailabilityList')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Trainer availability list' })
-  trainerAvailabilityList(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  trainerAvailabilityList(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.trainerService.trainerAvailabilityList(userId);
   }
 
   @Post('viewListAllAvailabilty')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'View all availability' })
-  viewListAllAvailabilty(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  viewListAllAvailabilty(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.trainerService.viewListAllAvailabilty(userId);
   }
 
@@ -167,13 +185,13 @@ export class TrainerController {
   @ApiOperation({ summary: 'Add availability slot' })
   addTrainerAvailability(
     @CurrentUser('sub') userId: string,
-    @Body() body: { dayOfWeek?: number; startTime?: string; endTime?: string },
+    @Body() body: { dayOfWeek?: number; startTime?: string; endTime?: string }
   ) {
     return this.trainerService.addTrainerAvailability(
       userId,
       Number(body?.dayOfWeek ?? 0),
       body?.startTime ?? '',
-      body?.endTime ?? '',
+      body?.endTime ?? ''
     );
   }
 
@@ -182,14 +200,14 @@ export class TrainerController {
   @ApiOperation({ summary: 'Edit availability slot' })
   editTrainerAvailability(
     @CurrentUser('sub') userId: string,
-    @Body() body: { id?: string; dayOfWeek?: number; startTime?: string; endTime?: string },
+    @Body() body: { id?: string; dayOfWeek?: number; startTime?: string; endTime?: string }
   ) {
     return this.trainerService.editTrainerAvailability(
       userId,
       body?.id ?? '',
       body?.dayOfWeek,
       body?.startTime,
-      body?.endTime,
+      body?.endTime
     );
   }
 
@@ -210,7 +228,10 @@ export class TrainerController {
   @Post('trainerCertificateList')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Trainer certificates list' })
-  trainerCertificateList(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  trainerCertificateList(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.trainerService.trainerCertificateList(userId);
   }
 
@@ -226,7 +247,7 @@ export class TrainerController {
       issuedAt?: string | null;
       credentialId?: string | null;
       documentUrl?: string | null;
-    },
+    }
   ) {
     return this.trainerService.addTrainerCertificate(
       userId,
@@ -234,7 +255,7 @@ export class TrainerController {
       body?.issuingOrganization,
       body?.issuedAt,
       body?.credentialId,
-      body?.documentUrl,
+      body?.documentUrl
     );
   }
 
@@ -251,7 +272,7 @@ export class TrainerController {
       issuedAt?: string | null;
       credentialId?: string | null;
       documentUrl?: string | null;
-    },
+    }
   ) {
     return this.trainerService.editTrainerCertificate(
       userId,
@@ -260,7 +281,7 @@ export class TrainerController {
       body?.issuingOrganization,
       body?.issuedAt,
       body?.credentialId,
-      body?.documentUrl,
+      body?.documentUrl
     );
   }
 
@@ -315,7 +336,7 @@ export class TrainerController {
       latitude?: number | null;
       longitude?: number | null;
       radiusKm?: number | null;
-    },
+    }
   ) {
     return this.trainerService.addTrainerService(
       userId,
@@ -323,17 +344,14 @@ export class TrainerController {
       body?.address,
       body?.latitude,
       body?.longitude,
-      body?.radiusKm,
+      body?.radiusKm
     );
   }
 
   @Post('viewServiceArea')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'View service area(s); body id = one, omit = list' })
-  viewServiceArea(
-    @CurrentUser('sub') userId: string,
-    @Body() body: { id?: string },
-  ) {
+  viewServiceArea(@CurrentUser('sub') userId: string, @Body() body: { id?: string }) {
     return this.trainerService.viewServiceArea(userId, body?.id);
   }
 
@@ -350,7 +368,7 @@ export class TrainerController {
       latitude?: number | null;
       longitude?: number | null;
       radiusKm?: number | null;
-    },
+    }
   ) {
     return this.trainerService.editTrainerService(
       userId,
@@ -359,17 +377,14 @@ export class TrainerController {
       body?.address,
       body?.latitude,
       body?.longitude,
-      body?.radiusKm,
+      body?.radiusKm
     );
   }
 
   @Post('deleteTrainerService')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete service area' })
-  deleteTrainerService(
-    @CurrentUser('sub') userId: string,
-    @Body() body: { id?: string },
-  ) {
+  deleteTrainerService(@CurrentUser('sub') userId: string, @Body() body: { id?: string }) {
     return this.trainerService.deleteTrainerService(userId, body?.id ?? '');
   }
 
@@ -378,7 +393,7 @@ export class TrainerController {
   @ApiOperation({ summary: 'Toggle or set service area active' })
   serviceAreaOnOff(
     @CurrentUser('sub') userId: string,
-    @Body() body: { id?: string; isActive?: boolean },
+    @Body() body: { id?: string; isActive?: boolean }
   ) {
     return this.trainerService.serviceAreaOnOff(userId, body?.id ?? '', body?.isActive);
   }
@@ -401,21 +416,24 @@ export class TrainerController {
       bankName?: string | null;
       last4?: string | null;
       routingLast4?: string | null;
-    },
+    }
   ) {
     return this.trainerService.addTrainerBankDetails(
       userId,
       body?.accountHolderName ?? '',
       body?.bankName,
       body?.last4,
-      body?.routingLast4,
+      body?.routingLast4
     );
   }
 
   @Post('viewTrainerBankDetails')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'View own bank details' })
-  viewTrainerBankDetails(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  viewTrainerBankDetails(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.trainerService.viewTrainerBankDetails(userId);
   }
 
@@ -429,14 +447,20 @@ export class TrainerController {
   @Post('trainerSessionNewList')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Trainer new/scheduled sessions' })
-  trainerSessionNewList(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  trainerSessionNewList(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.trainerService.trainerSessionNewList(userId);
   }
 
   @Post('trainerSessionCompletedList')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Trainer completed sessions' })
-  trainerSessionCompletedList(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+  trainerSessionCompletedList(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
     return this.trainerService.trainerSessionCompletedList(userId);
   }
 
@@ -478,8 +502,15 @@ export class TrainerController {
   @Post('rescheduleSession')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Reschedule session (trainer)' })
-  rescheduleSession(@CurrentUser('sub') userId: string, @Body() body: { sessionId?: string; newScheduledAt?: string }) {
-    return this.trainerService.rescheduleSession(userId, body?.sessionId ?? '', body?.newScheduledAt ?? '');
+  rescheduleSession(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { sessionId?: string; newScheduledAt?: string }
+  ) {
+    return this.trainerService.rescheduleSession(
+      userId,
+      body?.sessionId ?? '',
+      body?.newScheduledAt ?? ''
+    );
   }
 
   @Post('fetchcancelreason')
@@ -493,12 +524,12 @@ export class TrainerController {
   @ApiOperation({ summary: 'Mark session completed; body: sessionId, optional amountCents' })
   UpdateSessionCompleteFlag(
     @CurrentUser('sub') userId: string,
-    @Body() body: { sessionId?: string; amountCents?: number },
+    @Body() body: { sessionId?: string; amountCents?: number }
   ) {
     return this.trainerService.UpdateSessionCompleteFlag(
       userId,
       body?.sessionId ?? '',
-      body?.amountCents,
+      body?.amountCents
     );
   }
 
@@ -532,11 +563,10 @@ export class TrainerController {
 
   @Post('getTrainerAvgRating')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Trainer avg rating; body: trainerId (optional; omit for current user)' })
-  getTrainerAvgRating(
-    @CurrentUser('sub') userId: string,
-    @Body() body: { trainerId?: string },
-  ) {
+  @ApiOperation({
+    summary: 'Trainer avg rating; body: trainerId (optional; omit for current user)',
+  })
+  getTrainerAvgRating(@CurrentUser('sub') userId: string, @Body() body: { trainerId?: string }) {
     const trainerId = body?.trainerId?.trim() || userId;
     return this.trainerService.getTrainerAvgRating(trainerId);
   }
@@ -562,7 +592,10 @@ export class TrainerController {
   @Post('raiseSupport')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Create support ticket' })
-  raiseSupport(@CurrentUser('sub') userId: string, @Body() body: { subject?: string; message?: string }) {
+  raiseSupport(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { subject?: string; message?: string }
+  ) {
     return this.trainerService.raiseSupport(userId, body?.subject ?? '', body?.message ?? '');
   }
 
@@ -603,14 +636,20 @@ export class TrainerController {
   @Post('UpdateNotificationReadStatus')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Mark notification(s) as read' })
-  UpdateNotificationReadStatus(@CurrentUser('sub') userId: string, @Body() body: { notificationId?: string }) {
+  UpdateNotificationReadStatus(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { notificationId?: string }
+  ) {
     return this.trainerService.UpdateNotificationReadStatus(userId, body?.notificationId);
   }
 
   @Post('deleteNotification')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Delete notification' })
-  deleteNotification(@CurrentUser('sub') userId: string, @Body() body: { notificationId?: string }) {
+  deleteNotification(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { notificationId?: string }
+  ) {
     return this.trainerService.deleteNotification(userId, body?.notificationId ?? '');
   }
 

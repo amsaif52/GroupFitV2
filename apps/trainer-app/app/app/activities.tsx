@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
   FlatList,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
@@ -21,6 +22,10 @@ type TrainerActivityItem = {
   activityCode: string;
   activityName?: string;
   activityDescription?: string;
+  defaultPriceCents?: number;
+  priceCents?: number;
+  canSetOwnPrice?: boolean;
+  effectivePriceCents?: number;
   createdAt: string;
 };
 
@@ -29,6 +34,7 @@ type MasterActivityItem = {
   code: string;
   name: string;
   description?: string;
+  defaultPriceCents?: number;
   createdAt: string;
 };
 
@@ -38,9 +44,12 @@ export default function ActivitiesScreen() {
   const [list, setList] = useState<TrainerActivityItem[]>([]);
   const [masterList, setMasterList] = useState<MasterActivityItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [canSetOwnPrice, setCanSetOwnPrice] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
+  const [addPriceCents, setAddPriceCents] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPriceCents, setEditPriceCents] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -59,6 +68,7 @@ export default function ActivitiesScreen() {
             | TrainerActivityItem[]
             | undefined;
           setList(myList ?? []);
+          setCanSetOwnPrice(Boolean((myData as Record<string, unknown>)?.canSetOwnPrice));
           setError(null);
         }
         if (allData?.mtype === 'error') {
@@ -88,12 +98,15 @@ export default function ActivitiesScreen() {
   const handleAdd = (activityCode: string) => {
     setAddLoading(true);
     setError(null);
+    const priceCents =
+      canSetOwnPrice && addPriceCents.trim() !== '' ? Math.round(Number(addPriceCents)) : undefined;
     trainerApi
-      .addTrainerActivity(activityCode)
+      .addTrainerActivity(activityCode, priceCents)
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
         if (data?.mtype === 'success') {
           setShowAddModal(false);
+          setAddPriceCents('');
           fetchLists();
         } else {
           setError(String(data?.message ?? 'Add failed'));
@@ -105,11 +118,13 @@ export default function ActivitiesScreen() {
 
   const startEdit = (row: TrainerActivityItem) => {
     setEditingId(row.id);
+    setEditPriceCents(row.priceCents != null ? String(row.priceCents) : '');
     setShowEditModal(true);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
+    setEditPriceCents('');
     setShowEditModal(false);
   };
 
@@ -117,8 +132,13 @@ export default function ActivitiesScreen() {
     if (!editingId) return;
     setEditLoading(true);
     setError(null);
+    const priceCents = canSetOwnPrice
+      ? editPriceCents.trim() === ''
+        ? null
+        : Math.round(Number(editPriceCents))
+      : undefined;
     trainerApi
-      .editTrainerActivity(editingId, newCode)
+      .editTrainerActivity(editingId, newCode, priceCents)
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
         if (data?.mtype === 'success') {
@@ -181,6 +201,16 @@ export default function ActivitiesScreen() {
             <View key={row.id} style={styles.card}>
               <Text style={styles.cardTitle}>{row.activityName || row.activityCode}</Text>
               <Text style={styles.cardSub}>{row.activityCode}</Text>
+              {(row.effectivePriceCents != null || row.defaultPriceCents != null) && (
+                <Text style={styles.cardSub}>
+                  Price:{' '}
+                  {row.effectivePriceCents != null
+                    ? `${row.effectivePriceCents}¢`
+                    : row.defaultPriceCents != null
+                      ? `${row.defaultPriceCents}¢ (default)`
+                      : '—'}
+                </Text>
+              )}
               <View style={styles.cardRow}>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => startEdit(row)}>
                   <Text style={styles.secondaryButtonText}>Edit</Text>
@@ -204,6 +234,18 @@ export default function ActivitiesScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select activity to add</Text>
+            {canSetOwnPrice && (
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>Your price (cents, optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={addPriceCents}
+                  onChangeText={setAddPriceCents}
+                  placeholder="Leave empty for default"
+                  keyboardType="number-pad"
+                />
+              </View>
+            )}
             {addLoading ? (
               <ActivityIndicator size="small" color={colors.secondary} />
             ) : availableToAdd.length === 0 ? (
@@ -239,6 +281,18 @@ export default function ActivitiesScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select new activity</Text>
+            {canSetOwnPrice && (
+              <View style={styles.inputRow}>
+                <Text style={styles.inputLabel}>Your price (cents)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editPriceCents}
+                  onChangeText={setEditPriceCents}
+                  placeholder="Default"
+                  keyboardType="number-pad"
+                />
+              </View>
+            )}
             {editLoading ? (
               <ActivityIndicator size="small" color={colors.secondary} />
             ) : (
@@ -355,4 +409,13 @@ const styles = StyleSheet.create({
   soloItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
   soloItemText: { fontSize: 16 },
   muted: { fontSize: 14, color: colors.grey },
+  inputRow: { marginBottom: 12 },
+  inputLabel: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 6,
+    padding: 8,
+    fontSize: 16,
+  },
 });

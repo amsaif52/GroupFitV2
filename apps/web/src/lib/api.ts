@@ -288,10 +288,14 @@ export const customerApi = {
 /** Trainer division: POST /api/trainer/<action>. */
 export const trainerApi = {
   viewProfile: () =>
-    api.post<{ mtype: string; name?: string; emailid?: string; phone?: string; locale?: string }>(
-      '/trainer/viewProfile',
-      {}
-    ),
+    api.post<{
+      mtype: string;
+      name?: string;
+      emailid?: string;
+      phone?: string;
+      locale?: string;
+      canSetOwnPrice?: boolean;
+    }>('/trainer/viewProfile', {}),
   editProfile: (body: { name?: string; phone?: string; locale?: string }) =>
     api.post<{ mtype: string; message?: string }>('/trainer/editProfile', body),
 
@@ -447,8 +451,13 @@ export const trainerApi = {
         activityCode: string;
         activityName?: string;
         activityDescription?: string;
+        defaultPriceCents?: number;
+        priceCents?: number;
+        canSetOwnPrice?: boolean;
+        effectivePriceCents?: number;
         createdAt: string;
       }[];
+      canSetOwnPrice?: boolean;
     }>('/trainer/trainerActivityList', body ?? {}),
   allActivityList: (body?: Record<string, unknown>) =>
     api.post<{
@@ -458,17 +467,20 @@ export const trainerApi = {
         code: string;
         name: string;
         description?: string;
+        defaultPriceCents?: number;
         createdAt: string;
       }[];
     }>('/trainer/allActivityList', body ?? {}),
-  addTrainerActivity: (activityCode: string) =>
+  addTrainerActivity: (activityCode: string, priceCents?: number) =>
     api.post<{ mtype: string; id?: string; message?: string }>('/trainer/addTrainerActivity', {
       activityCode,
+      priceCents,
     }),
-  editTrainerActivity: (id: string, activityCode: string) =>
+  editTrainerActivity: (id: string, activityCode?: string, priceCents?: number | null) =>
     api.post<{ mtype: string; message?: string }>('/trainer/editTrainerActivity', {
       id,
       activityCode,
+      priceCents,
     }),
   viewActivity: (id: string) =>
     api.post<{
@@ -583,6 +595,7 @@ export const adminApi = {
       name?: string;
       role?: string;
       createdAt?: string;
+      trainerCanSetOwnPrice?: boolean;
     }>('/admin/userDetail', { userId }),
   trainerList: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; list?: unknown[] }>('/admin/trainerList', body ?? {}),
@@ -631,26 +644,45 @@ export const adminApi = {
   activityList: (body?: Record<string, unknown>) =>
     api.post<{
       mtype: string;
-      list?: { id: string; code: string; name: string; description?: string }[];
+      list?: {
+        id: string;
+        code: string;
+        name: string;
+        description?: string;
+        defaultPriceCents?: number;
+      }[];
     }>('/admin/activityList', body ?? {}),
-  createActivity: (code: string, name: string, description?: string) =>
+  createActivity: (code: string, name: string, description?: string, defaultPriceCents?: number) =>
     api.post<{ mtype: string; id?: string; message?: string }>('/admin/createActivity', {
       code,
       name,
       description,
+      defaultPriceCents,
     }),
-  updateActivity: (id: string, code?: string, name?: string, description?: string) =>
+  updateActivity: (
+    id: string,
+    code?: string,
+    name?: string,
+    description?: string,
+    defaultPriceCents?: number | null
+  ) =>
     api.post<{ mtype: string; message?: string }>('/admin/updateActivity', {
       id,
       code,
       name,
       description,
+      defaultPriceCents,
     }),
   deleteActivity: (id: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/deleteActivity', { id }),
 
   updateUserRole: (userId: string, role: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/updateUserRole', { userId, role }),
+  setTrainerCanSetOwnPrice: (trainerId: string, canSetOwnPrice: boolean) =>
+    api.post<{ mtype: string; message?: string }>('/admin/setTrainerCanSetOwnPrice', {
+      trainerId,
+      canSetOwnPrice,
+    }),
   deleteAccount: (userId: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/DeleteAccount', { userId }),
 

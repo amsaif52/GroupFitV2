@@ -132,10 +132,14 @@ export const trainerApi = {
       '/trainer/allActivityList',
       body ?? {}
     ),
-  addTrainerActivity: (activityCode: string) =>
-    api.post<Record<string, unknown>>('/trainer/addTrainerActivity', { activityCode }),
-  editTrainerActivity: (id: string, activityCode: string) =>
-    api.post<Record<string, unknown>>('/trainer/editTrainerActivity', { id, activityCode }),
+  addTrainerActivity: (activityCode: string, priceCents?: number) =>
+    api.post<Record<string, unknown>>('/trainer/addTrainerActivity', { activityCode, priceCents }),
+  editTrainerActivity: (id: string, activityCode?: string, priceCents?: number | null) =>
+    api.post<Record<string, unknown>>('/trainer/editTrainerActivity', {
+      id,
+      activityCode,
+      priceCents,
+    }),
   deleteActivity: (id: string) =>
     api.post<Record<string, unknown>>('/trainer/deleteActivity', { id }),
 

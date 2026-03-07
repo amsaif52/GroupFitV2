@@ -10,6 +10,7 @@ const SYSTEM_PROMPT = `You are the GroupFit assistant for trainers. You help tra
 - Seeing today's sessions (use get_today_sessions)
 - Checking their weekly availability (use get_my_availability)
 - Viewing earnings summary (use get_earnings)
+- Reporting an issue or contacting support (use report_issue with subject and message; subject can be a short title, message is the details)
 
 You do NOT help with customer tasks like booking sessions or finding trainers. If the user asks about customer features, suggest they use the customer app or help centre. Be concise and friendly.`;
 
@@ -20,7 +21,7 @@ export class TrainerChatService {
   constructor(
     private readonly config: ConfigService,
     private readonly conversation: TrainerConversationService,
-    @Inject(forwardRef(() => TrainerService)) private readonly trainerService: TrainerService,
+    @Inject(forwardRef(() => TrainerService)) private readonly trainerService: TrainerService
   ) {
     const apiKey = this.config.get<string>('OPENAI_API_KEY');
     if (apiKey) this.openai = new OpenAI({ apiKey });
@@ -29,7 +30,7 @@ export class TrainerChatService {
   async sendMessage(
     userId: string,
     message: string,
-    conversationId?: string,
+    conversationId?: string
   ): Promise<{ message: string; conversationId: string }> {
     const cid = await this.conversation.getOrCreateConversation(userId, conversationId);
     await this.conversation.addUserMessage(cid, message);
@@ -37,15 +38,21 @@ export class TrainerChatService {
     if (!this.openai) {
       await this.conversation.addAssistantMessage(
         cid,
-        'Chat is not configured. Set OPENAI_API_KEY to enable the assistant.',
+        'Chat is not configured. Set OPENAI_API_KEY to enable the assistant.'
       );
-      return { message: 'Chat is not configured. Set OPENAI_API_KEY to enable the assistant.', conversationId: cid };
+      return {
+        message: 'Chat is not configured. Set OPENAI_API_KEY to enable the assistant.',
+        conversationId: cid,
+      };
     }
 
     const history = await this.conversation.getRecentMessages(cid);
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...history.map((m: { role: 'user' | 'assistant' | 'system'; content: string }) => ({ role: m.role, content: m.content })),
+      ...history.map((m: { role: 'user' | 'assistant' | 'system'; content: string }) => ({
+        role: m.role,
+        content: m.content,
+      })),
     ];
 
     const model = this.config.get('OPENAI_CHAT_MODEL') ?? 'gpt-4o-mini';
@@ -81,7 +88,8 @@ export class TrainerChatService {
       assistantMessage = completion.choices[0]?.message;
     }
 
-    const content = assistantMessage?.content?.trim() ?? "I couldn't generate a reply. Please try again.";
+    const content =
+      assistantMessage?.content?.trim() ?? "I couldn't generate a reply. Please try again.";
     await this.conversation.addAssistantMessage(cid, content);
 
     return { message: content, conversationId: cid };
@@ -90,13 +98,18 @@ export class TrainerChatService {
   private async runTool(
     userId: string,
     name: TrainerChatToolName,
-    _args: Record<string, unknown>,
+    _args: Record<string, unknown>
   ): Promise<string | Record<string, unknown>> {
     try {
       switch (name) {
         case 'get_my_upcoming_sessions': {
           const res = await this.trainerService.trainerSessionList(userId);
-          const list = (res.trainerSessionList ?? []) as { id?: string; sessionName?: string; customerName?: string; scheduledAt?: string }[];
+          const list = (res.trainerSessionList ?? []) as {
+            id?: string;
+            sessionName?: string;
+            customerName?: string;
+            scheduledAt?: string;
+          }[];
           const sessions = list.map((s) => ({
             id: s.id,
             activity: s.sessionName,
@@ -104,13 +117,20 @@ export class TrainerChatService {
             scheduledAt: s.scheduledAt,
           }));
           return {
-            message: sessions.length ? `You have ${sessions.length} upcoming session(s).` : 'You have no upcoming sessions.',
+            message: sessions.length
+              ? `You have ${sessions.length} upcoming session(s).`
+              : 'You have no upcoming sessions.',
             sessions,
           };
         }
         case 'get_today_sessions': {
           const res = await this.trainerService.todaySession(userId);
-          const list = (res.todaySession ?? []) as { id?: string; sessionName?: string; customerName?: string; scheduledAt?: string }[];
+          const list = (res.todaySession ?? []) as {
+            id?: string;
+            sessionName?: string;
+            customerName?: string;
+            scheduledAt?: string;
+          }[];
           const sessions = list.map((s) => ({
             id: s.id,
             activity: s.sessionName,
@@ -118,13 +138,19 @@ export class TrainerChatService {
             scheduledAt: s.scheduledAt,
           }));
           return {
-            message: sessions.length ? `You have ${sessions.length} session(s) today.` : 'You have no sessions today.',
+            message: sessions.length
+              ? `You have ${sessions.length} session(s) today.`
+              : 'You have no sessions today.',
             sessions,
           };
         }
         case 'get_my_availability': {
           const res = await this.trainerService.trainerAvailabilityList(userId);
-          const list = (res.availabilityList ?? []) as { dayOfWeek?: number; startTime?: string; endTime?: string }[];
+          const list = (res.availabilityList ?? []) as {
+            dayOfWeek?: number;
+            startTime?: string;
+            endTime?: string;
+          }[];
           const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
           const slots = list.map((s) => ({
             day: dayNames[s.dayOfWeek ?? 0],
@@ -132,13 +158,25 @@ export class TrainerChatService {
             endTime: s.endTime,
           }));
           return {
-            message: slots.length ? `You have ${slots.length} availability slot(s).` : 'You have no availability set.',
+            message: slots.length
+              ? `You have ${slots.length} availability slot(s).`
+              : 'You have no availability set.',
             slots,
           };
         }
         case 'get_earnings': {
           const res = await this.trainerService.earningStats(userId);
-          const stats = (res as { earningStats?: { thisMonthCents?: number; lastMonthCents?: number; totalCents?: number; thisMonthCount?: number; totalSessionCount?: number } }).earningStats;
+          const stats = (
+            res as {
+              earningStats?: {
+                thisMonthCents?: number;
+                lastMonthCents?: number;
+                totalCents?: number;
+                thisMonthCount?: number;
+                totalSessionCount?: number;
+              };
+            }
+          ).earningStats;
           if (!stats) return { message: 'Earnings data not available.', error: true };
           const format = (c: number) => `£${(c / 100).toFixed(2)}`;
           return {
@@ -146,6 +184,22 @@ export class TrainerChatService {
             thisMonthCents: stats.thisMonthCents,
             totalCents: stats.totalCents,
             totalSessionCount: stats.totalSessionCount,
+          };
+        }
+        case 'report_issue': {
+          const message = typeof _args.message === 'string' ? _args.message.trim() : '';
+          const subject = typeof _args.subject === 'string' ? _args.subject.trim() : '';
+          const subjectToUse = subject || 'Issue reported via assistant';
+          if (!message)
+            return { message: 'Please provide a description of the issue.', error: true };
+          const res = await this.trainerService.raiseSupport(userId, subjectToUse, message);
+          const data = res as { mtype?: string; message?: string; ticketId?: string };
+          if (data.mtype === 'error')
+            return { message: data.message ?? 'Could not create support ticket.', error: true };
+          return {
+            message:
+              "I've submitted your issue to support. An admin will get back to you. Your ticket reference is recorded.",
+            ticketId: data.ticketId,
           };
         }
         default:

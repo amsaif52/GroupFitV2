@@ -61,6 +61,7 @@ export class TrainerService {
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
       countryCode: user.countryCode ?? undefined,
+      canSetOwnPrice: user.trainerCanSetOwnPrice ?? false,
     };
   }
 
@@ -110,6 +111,7 @@ export class TrainerService {
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
       countryCode: user.countryCode ?? undefined,
+      canSetOwnPrice: user.trainerCanSetOwnPrice ?? false,
     };
   }
 
@@ -194,12 +196,14 @@ export class TrainerService {
         code: string;
         name: string;
         description: string | null;
+        defaultPriceCents: number | null;
         createdAt: Date;
       }) => ({
         id: a.id,
         code: a.code,
         name: a.name,
         description: a.description ?? '',
+        defaultPriceCents: a.defaultPriceCents ?? undefined,
         createdAt: a.createdAt.toISOString(),
       })
     );
@@ -207,51 +211,104 @@ export class TrainerService {
   }
 
   async trainerActivityList(trainerId: string) {
-    const rows = await this.prisma.trainerActivity.findMany({
-      where: { trainerId },
-      orderBy: { createdAt: 'asc' },
-    });
+    const [trainer, rows] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: trainerId },
+        select: { trainerCanSetOwnPrice: true },
+      }),
+      this.prisma.trainerActivity.findMany({
+        where: { trainerId },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+    const canSetOwnPrice = trainer?.trainerCanSetOwnPrice ?? false;
     const codes = [...new Set(rows.map((r: { activityCode: string }) => r.activityCode))];
     const activities = codes.length
       ? await this.prisma.activity.findMany({ where: { code: { in: codes } } })
       : [];
-    const byCode = Object.fromEntries(activities.map((a: { code: string }) => [a.code, a]));
+    const byCode = Object.fromEntries(
+      activities.map(
+        (a: {
+          code: string;
+          name: string;
+          description: string | null;
+          defaultPriceCents: number | null;
+        }) => [a.code, a]
+      )
+    );
     const list = rows.map(
-      (r: { id: string; trainerId: string; activityCode: string; createdAt: Date }) => {
+      (r: {
+        id: string;
+        trainerId: string;
+        activityCode: string;
+        priceCents: number | null;
+        createdAt: Date;
+      }) => {
         const a = byCode[r.activityCode];
+        const defaultPriceCents = a?.defaultPriceCents ?? null;
+        const effectivePriceCents =
+          canSetOwnPrice && r.priceCents != null ? r.priceCents : defaultPriceCents;
         return {
           id: r.id,
           trainerId: r.trainerId,
           activityCode: r.activityCode,
           activityName: a?.name ?? r.activityCode,
           activityDescription: a?.description ?? '',
+          defaultPriceCents: defaultPriceCents ?? undefined,
+          priceCents: r.priceCents ?? undefined,
+          canSetOwnPrice,
+          effectivePriceCents: effectivePriceCents ?? undefined,
           createdAt: r.createdAt.toISOString(),
         };
       }
     );
-    return { mtype: 'success', message: 'OK', list, trainerActivityList: list };
+    return { mtype: 'success', message: 'OK', list, trainerActivityList: list, canSetOwnPrice };
   }
 
-  async addTrainerActivity(trainerId: string, activityCode: string) {
+  async addTrainerActivity(trainerId: string, activityCode: string, priceCents?: number) {
     const code = String(activityCode ?? '')
       .trim()
       .toLowerCase();
     if (!code) return { mtype: 'error', message: 'Activity code is required' };
-    const activity = await this.prisma.activity.findUnique({ where: { code } });
+    const [activity, trainer] = await Promise.all([
+      this.prisma.activity.findUnique({ where: { code } }),
+      this.prisma.user.findUnique({
+        where: { id: trainerId },
+        select: { trainerCanSetOwnPrice: true },
+      }),
+    ]);
     if (!activity) return { mtype: 'error', message: 'Activity not found' };
     const existing = await this.prisma.trainerActivity.findUnique({
       where: { trainerId_activityCode: { trainerId, activityCode: code } },
     });
     if (existing) return { mtype: 'error', message: 'Already added this activity' };
-    const ta = await this.prisma.trainerActivity.create({
-      data: { trainerId, activityCode: code },
-    });
+    const canSet = trainer?.trainerCanSetOwnPrice ?? false;
+    const data: { trainerId: string; activityCode: string; priceCents?: number } = {
+      trainerId,
+      activityCode: code,
+    };
+    if (canSet && priceCents !== undefined && priceCents !== null) {
+      data.priceCents = Math.max(0, Math.round(priceCents));
+    }
+    const ta = await this.prisma.trainerActivity.create({ data });
     return { mtype: 'success', message: 'OK', id: ta.id };
   }
 
-  async editTrainerActivity(trainerId: string, id: string, activityCode?: string) {
-    const row = await this.prisma.trainerActivity.findFirst({ where: { id, trainerId } });
+  async editTrainerActivity(
+    trainerId: string,
+    id: string,
+    activityCode?: string,
+    priceCents?: number | null
+  ) {
+    const [row, trainer] = await Promise.all([
+      this.prisma.trainerActivity.findFirst({ where: { id, trainerId } }),
+      this.prisma.user.findUnique({
+        where: { id: trainerId },
+        select: { trainerCanSetOwnPrice: true },
+      }),
+    ]);
     if (!row) return { mtype: 'error', message: 'Trainer activity not found' };
+    const canSet = trainer?.trainerCanSetOwnPrice ?? false;
     if (activityCode !== undefined) {
       const code = String(activityCode).trim().toLowerCase();
       if (!code) return { mtype: 'error', message: 'Activity code is required' };
@@ -265,6 +322,16 @@ export class TrainerService {
       await this.prisma.trainerActivity.update({
         where: { id },
         data: { activityCode: code },
+      });
+    }
+    const updateData: { priceCents?: number | null } = {};
+    if (canSet && priceCents !== undefined) {
+      updateData.priceCents = priceCents == null ? null : Math.max(0, Math.round(priceCents));
+    }
+    if (Object.keys(updateData).length > 0) {
+      await this.prisma.trainerActivity.update({
+        where: { id },
+        data: updateData,
       });
     }
     return { mtype: 'success', message: 'OK' };

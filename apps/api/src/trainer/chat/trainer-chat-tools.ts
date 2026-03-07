@@ -37,10 +37,34 @@ export const TRAINER_CHAT_TOOLS: ChatCompletionTool[] = [
       parameters: { type: 'object', properties: {}, additionalProperties: false },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'report_issue',
+      description:
+        'Report an issue or create a support ticket for the admin. Use when the trainer wants to report a problem, ask for help, or contact support.',
+      parameters: {
+        type: 'object',
+        properties: {
+          subject: {
+            type: 'string',
+            description: 'Short subject/title for the ticket (e.g. "Payment delay", "App bug")',
+          },
+          message: {
+            type: 'string',
+            description: 'Detailed description of the issue or request',
+          },
+        },
+        required: ['message'],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
 export type TrainerChatToolName =
   | 'get_my_upcoming_sessions'
   | 'get_today_sessions'
   | 'get_my_availability'
-  | 'get_earnings';
+  | 'get_earnings'
+  | 'report_issue';

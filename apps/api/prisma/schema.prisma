@@ -19,6 +19,7 @@ model User {
   role          String         // admin | trainer | customer
   locale        String?        @default("en")
   countryCode   String?        @map("country_code") // ISO 3166-1 alpha-2 (e.g. US, GB) for payments/location
+  trainerCanSetOwnPrice Boolean? @map("trainer_can_set_own_price") // when true, trainer can set price per activity; else use activity default
   phone         String?        @unique // for OTP login
   otp           String?       // 4-digit OTP
   otpSentAt     DateTime?     @map("otp_sent_at") // expiry check (5 min)
@@ -164,22 +165,24 @@ model Discount {
 
 // Activity types (master data). Admin CRUD; customer/trainer read via fetchAllActivity.
 model Activity {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  name        String
-  description String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String   @id @default(cuid())
+  code              String   @unique
+  name              String
+  description       String?  @db.Text
+  defaultPriceCents Int?     @map("default_price_cents") // default session price when trainer does not set own
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
   @@map("activity")
 }
 
 // Which activities a trainer offers (activityCode matches Activity.code).
 model TrainerActivity {
-  id          String   @id @default(cuid())
-  trainerId   String   @map("trainer_id")
-  activityCode String  @map("activity_code")
-  createdAt   DateTime @default(now())
-  trainer     User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  trainerId    String   @map("trainer_id")
+  activityCode String   @map("activity_code")
+  priceCents   Int?     @map("price_cents") // trainer override; only used when user.trainerCanSetOwnPrice is true
+  createdAt    DateTime @default(now())
+  trainer      User     @relation(fields: [trainerId], references: [id], onDelete: Cascade)
   @@unique([trainerId, activityCode])
   @@map("trainer_activity")
 }
