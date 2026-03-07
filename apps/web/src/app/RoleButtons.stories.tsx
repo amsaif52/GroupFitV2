@@ -34,13 +34,25 @@ export const AllRoles: StoryObj = {
 };
 
 export const Blue: StoryObj = {
-  render: () => <Button theme="blue" size="$3">Admin</Button>,
+  render: () => (
+    <Button theme="blue" size="$3">
+      Admin
+    </Button>
+  ),
 };
 
 export const Green: StoryObj = {
-  render: () => <Button theme="green" size="$3">Trainer</Button>,
+  render: () => (
+    <Button theme="green" size="$3">
+      Trainer
+    </Button>
+  ),
 };
 
 export const Orange: StoryObj = {
-  render: () => <Button theme="orange" size="$3">Customer</Button>,
+  render: () => (
+    <Button theme="orange" size="$3">
+      Customer
+    </Button>
+  ),
 };

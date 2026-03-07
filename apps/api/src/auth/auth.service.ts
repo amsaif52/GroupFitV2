@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -40,7 +45,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService
   ) {}
 
   async login(email: string, password: string): Promise<LoginResult> {
@@ -63,7 +68,7 @@ export class AuthService {
     email: string,
     password: string,
     name?: string,
-    role?: string,
+    role?: string
   ): Promise<LoginResult> {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -84,14 +89,12 @@ export class AuthService {
 
   async loginWithGoogle(idToken: string, role?: string): Promise<LoginResult> {
     const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
-    if (!clientId)
-      throw new UnauthorizedException('Google sign-in is not configured');
+    if (!clientId) throw new UnauthorizedException('Google sign-in is not configured');
 
     const client = new OAuth2Client(clientId);
     const ticket = await client.verifyIdToken({ idToken, audience: clientId });
     const payload = ticket.getPayload();
-    if (!payload?.sub || !payload?.email)
-      throw new UnauthorizedException('Invalid Google token');
+    if (!payload?.sub || !payload?.email) throw new UnauthorizedException('Invalid Google token');
 
     const googleId = payload.sub;
     const email = payload.email;
@@ -121,8 +124,7 @@ export class AuthService {
 
   async loginWithApple(idToken: string, role?: string): Promise<LoginResult> {
     const clientId = this.config.get<string>('APPLE_CLIENT_ID');
-    if (!clientId)
-      throw new UnauthorizedException('Apple sign-in is not configured');
+    if (!clientId) throw new UnauthorizedException('Apple sign-in is not configured');
 
     const jwtClaims = await verifyAppleToken({
       idToken,
@@ -143,7 +145,7 @@ export class AuthService {
     } else {
       if (!email)
         throw new UnauthorizedException(
-          'Apple did not provide an email. Sign in with Apple requires email on first sign-in.',
+          'Apple did not provide an email. Sign in with Apple requires email on first sign-in.'
         );
       user = await this.prisma.user.create({
         data: {
@@ -161,7 +163,10 @@ export class AuthService {
   /**
    * Send OTP to phone: find or create user by phone, store OTP (5 min expiry), send SMS if Twilio configured.
    */
-  async sendOtp(phoneNumber: string, role?: string): Promise<{ message: string; userCode: string }> {
+  async sendOtp(
+    phoneNumber: string,
+    role?: string
+  ): Promise<{ message: string; userCode: string }> {
     const phone = normalizePhone(phoneNumber);
     if (phone.length < 10) {
       throw new BadRequestException('Invalid phone number');
@@ -195,7 +200,10 @@ export class AuthService {
   /**
    * Resend OTP: by phone or by userCode. Same as sendOtp but can target existing user by userCode.
    */
-  async resendOtp(phoneNumber: string, userCode?: string): Promise<{ message: string; userCode: string }> {
+  async resendOtp(
+    phoneNumber: string,
+    userCode?: string
+  ): Promise<{ message: string; userCode: string }> {
     const phone = normalizePhone(phoneNumber);
     if (phone.length < 10) {
       throw new BadRequestException('Invalid phone number');

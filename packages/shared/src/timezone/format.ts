@@ -17,7 +17,10 @@ export function isTimeZoneValid(timeZone: TimeZoneId): boolean {
  * Get the primary IANA timezone for a country + region (e.g. CA, ON).
  * Returns undefined if the region is not in the map (add it to REGION_TIMEZONES when expanding).
  */
-export function getTimezoneForRegion(country: CountryCode, region: RegionCode): TimeZoneId | undefined {
+export function getTimezoneForRegion(
+  country: CountryCode,
+  region: RegionCode
+): TimeZoneId | undefined {
   const byCountry = REGION_TIMEZONES[country as keyof typeof REGION_TIMEZONES];
   if (!byCountry) return undefined;
   const info = byCountry[region as keyof typeof byCountry];

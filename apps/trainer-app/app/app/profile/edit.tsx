@@ -31,7 +31,13 @@ export default function EditProfileScreen() {
     (async () => {
       try {
         const res = await trainerApi.viewProfile();
-        const data = res.data as { mtype?: string; name?: string; emailid?: string; phone?: string; locale?: string };
+        const data = res.data as {
+          mtype?: string;
+          name?: string;
+          emailid?: string;
+          phone?: string;
+          locale?: string;
+        };
         if (!cancelled && data?.mtype === 'success') {
           setName(data.name ?? '');
           setEmail(data.emailid ?? '');
@@ -39,22 +45,31 @@ export default function EditProfileScreen() {
           setLocale(data.locale ?? 'en');
         }
       } catch (e) {
-        if (!cancelled) setError(e instanceof ApiClientError ? e.message : 'Failed to load profile');
+        if (!cancelled)
+          setError(e instanceof ApiClientError ? e.message : 'Failed to load profile');
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleSave() {
     setError(null);
     setSaving(true);
     try {
-      const res = await trainerApi.editProfile({ name: name.trim() || undefined, phone: phone.trim() || undefined, locale: locale.trim() || undefined });
+      const res = await trainerApi.editProfile({
+        name: name.trim() || undefined,
+        phone: phone.trim() || undefined,
+        locale: locale.trim() || undefined,
+      });
       const data = res.data as { mtype?: string; message?: string };
       if (data?.mtype === 'success') {
-        Alert.alert('Saved', data.message ?? 'Profile updated.', [{ text: 'OK', onPress: () => router.back() }]);
+        Alert.alert('Saved', data.message ?? 'Profile updated.', [
+          { text: 'OK', onPress: () => router.back() },
+        ]);
       } else {
         setError('Update failed');
       }
@@ -82,7 +97,10 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <View style={styles.topbar}>
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.back}>← Back</Text>
@@ -92,15 +110,49 @@ export default function EditProfileScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <Text style={styles.label}>Name</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor={colors.grey} autoCapitalize="words" />
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Your name"
+          placeholderTextColor={colors.grey}
+          autoCapitalize="words"
+        />
         <Text style={styles.label}>Email</Text>
-        <TextInput style={[styles.input, styles.inputDisabled]} value={email} editable={false} placeholder="Email" placeholderTextColor={colors.grey} />
+        <TextInput
+          style={[styles.input, styles.inputDisabled]}
+          value={email}
+          editable={false}
+          placeholder="Email"
+          placeholderTextColor={colors.grey}
+        />
         <Text style={styles.label}>Phone</Text>
-        <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="+44 7700 900000" placeholderTextColor={colors.grey} keyboardType="phone-pad" />
+        <TextInput
+          style={styles.input}
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="+44 7700 900000"
+          placeholderTextColor={colors.grey}
+          keyboardType="phone-pad"
+        />
         <Text style={styles.label}>Locale</Text>
-        <TextInput style={styles.input} value={locale} onChangeText={setLocale} placeholder="en" placeholderTextColor={colors.grey} />
-        <TouchableOpacity style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveBtnText}>Save</Text>}
+        <TextInput
+          style={styles.input}
+          value={locale}
+          onChangeText={setLocale}
+          placeholder="en"
+          placeholderTextColor={colors.grey}
+        />
+        <TouchableOpacity
+          style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.saveBtnText}>Save</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -135,7 +187,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputDisabled: { backgroundColor: colors.borderLight, opacity: 0.8 },
-  saveBtn: { backgroundColor: colors.secondary, padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 8 },
+  saveBtn: {
+    backgroundColor: colors.secondary,
+    padding: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 8,
+  },
   saveBtnDisabled: { opacity: 0.7 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

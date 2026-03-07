@@ -1,9 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  Injectable,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import type { JwtPayload } from './jwt.strategy';
 
 /** Ensures the request is from a trainer or admin (e.g. for trainer-only chat). */

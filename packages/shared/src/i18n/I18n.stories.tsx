@@ -9,7 +9,8 @@ const meta: Meta = {
     layout: 'padded',
     docs: {
       description: {
-        component: 'getTranslations(locale) returns the full translation object for the given locale.',
+        component:
+          'getTranslations(locale) returns the full translation object for the given locale.',
       },
     },
   },
@@ -27,7 +28,9 @@ function TranslationsDemo() {
           Locale:{' '}
           <select value={locale} onChange={(e) => setLocale(e.target.value as Locale)}>
             {LOCALES.map((l) => (
-              <option key={l} value={l}>{l}</option>
+              <option key={l} value={l}>
+                {l}
+              </option>
             ))}
           </select>
         </label>

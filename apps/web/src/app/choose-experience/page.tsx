@@ -32,14 +32,42 @@ export default function ChooseExperiencePage() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--groupfit-primary-light)' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--groupfit-black)', marginBottom: 8, textAlign: 'center' }}>
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 24,
+        background: 'var(--groupfit-primary-light)',
+      }}
+    >
+      <h1
+        style={{
+          fontSize: 24,
+          fontWeight: 700,
+          color: 'var(--groupfit-black)',
+          marginBottom: 8,
+          textAlign: 'center',
+        }}
+      >
         Choose your experience
       </h1>
-      <p style={{ color: 'var(--groupfit-grey)', marginBottom: 32, textAlign: 'center', maxWidth: 360 }}>
-        You can use GroupFit as a customer to book sessions, or as a trainer to manage your sessions and earnings. Select how you&apos;d like to continue.
+      <p
+        style={{
+          color: 'var(--groupfit-grey)',
+          marginBottom: 32,
+          textAlign: 'center',
+          maxWidth: 360,
+        }}
+      >
+        You can use GroupFit as a customer to book sessions, or as a trainer to manage your sessions
+        and earnings. Select how you&apos;d like to continue.
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 320 }}>
+      <div
+        style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 320 }}
+      >
         <button
           type="button"
           onClick={() => handleChoose('customer')}

@@ -36,10 +36,18 @@ export const REGION_TIMEZONES: RegionTimeZoneMap = {
     HI: { timeZone: 'Pacific/Honolulu', label: 'Hawaii' },
     ID: { timeZone: 'America/Boise', alternateTimeZones: ['America/Los_Angeles'], label: 'Idaho' },
     IL: { timeZone: 'America/Chicago', label: 'Illinois' },
-    IN: { timeZone: 'America/Indiana/Indianapolis', alternateTimeZones: ['America/Chicago'], label: 'Indiana' },
+    IN: {
+      timeZone: 'America/Indiana/Indianapolis',
+      alternateTimeZones: ['America/Chicago'],
+      label: 'Indiana',
+    },
     IA: { timeZone: 'America/Chicago', label: 'Iowa' },
     KS: { timeZone: 'America/Chicago', alternateTimeZones: ['America/Denver'], label: 'Kansas' },
-    KY: { timeZone: 'America/Kentucky/Louisville', alternateTimeZones: ['America/Chicago'], label: 'Kentucky' },
+    KY: {
+      timeZone: 'America/Kentucky/Louisville',
+      alternateTimeZones: ['America/Chicago'],
+      label: 'Kentucky',
+    },
     LA: { timeZone: 'America/Chicago', label: 'Louisiana' },
     ME: { timeZone: 'America/New_York', label: 'Maine' },
     MD: { timeZone: 'America/New_York', label: 'Maryland' },
@@ -56,16 +64,32 @@ export const REGION_TIMEZONES: RegionTimeZoneMap = {
     NM: { timeZone: 'America/Denver', label: 'New Mexico' },
     NY: { timeZone: 'America/New_York', label: 'New York' },
     NC: { timeZone: 'America/New_York', label: 'North Carolina' },
-    ND: { timeZone: 'America/Chicago', alternateTimeZones: ['America/Denver'], label: 'North Dakota' },
+    ND: {
+      timeZone: 'America/Chicago',
+      alternateTimeZones: ['America/Denver'],
+      label: 'North Dakota',
+    },
     OH: { timeZone: 'America/New_York', label: 'Ohio' },
     OK: { timeZone: 'America/Chicago', label: 'Oklahoma' },
     OR: { timeZone: 'America/Los_Angeles', label: 'Oregon' },
     PA: { timeZone: 'America/New_York', label: 'Pennsylvania' },
     RI: { timeZone: 'America/New_York', label: 'Rhode Island' },
     SC: { timeZone: 'America/New_York', label: 'South Carolina' },
-    SD: { timeZone: 'America/Chicago', alternateTimeZones: ['America/Denver'], label: 'South Dakota' },
-    TN: { timeZone: 'America/Chicago', alternateTimeZones: ['America/New_York'], label: 'Tennessee' },
-    TX: { timeZone: 'America/Chicago', alternateTimeZones: ['America/Denver', 'America/El_Paso'], label: 'Texas' },
+    SD: {
+      timeZone: 'America/Chicago',
+      alternateTimeZones: ['America/Denver'],
+      label: 'South Dakota',
+    },
+    TN: {
+      timeZone: 'America/Chicago',
+      alternateTimeZones: ['America/New_York'],
+      label: 'Tennessee',
+    },
+    TX: {
+      timeZone: 'America/Chicago',
+      alternateTimeZones: ['America/Denver', 'America/El_Paso'],
+      label: 'Texas',
+    },
     UT: { timeZone: 'America/Denver', label: 'Utah' },
     VT: { timeZone: 'America/New_York', label: 'Vermont' },
     VA: { timeZone: 'America/New_York', label: 'Virginia' },
@@ -77,7 +101,11 @@ export const REGION_TIMEZONES: RegionTimeZoneMap = {
 };
 
 /** All supported Canadian province codes */
-export const CA_PROVINCE_CODES = Object.keys(REGION_TIMEZONES.CA) as (keyof typeof REGION_TIMEZONES.CA)[];
+export const CA_PROVINCE_CODES = Object.keys(
+  REGION_TIMEZONES.CA
+) as (keyof typeof REGION_TIMEZONES.CA)[];
 
 /** All supported US state codes */
-export const US_STATE_CODES = Object.keys(REGION_TIMEZONES.US) as (keyof typeof REGION_TIMEZONES.US)[];
+export const US_STATE_CODES = Object.keys(
+  REGION_TIMEZONES.US
+) as (keyof typeof REGION_TIMEZONES.US)[];

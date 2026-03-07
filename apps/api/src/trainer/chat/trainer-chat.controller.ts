@@ -17,12 +17,14 @@ export class TrainerChatController {
   constructor(private readonly chatService: TrainerChatService) {}
 
   @Post('chat')
-  @ApiOperation({ summary: 'Send a message to the trainer assistant (requires trainer or admin JWT)' })
+  @ApiOperation({
+    summary: 'Send a message to the trainer assistant (requires trainer or admin JWT)',
+  })
   @ApiBody({ type: TrainerSendMessageDto })
   @ApiResponse({ status: 200, description: 'Assistant reply', type: TrainerChatResponseDto })
   async chat(
     @CurrentUser() user: JwtPayload,
-    @Body() dto: TrainerSendMessageDto,
+    @Body() dto: TrainerSendMessageDto
   ): Promise<TrainerChatResponseDto> {
     const result = await this.chatService.sendMessage(user.sub, dto.message, dto.conversationId);
     return { message: result.message, conversationId: result.conversationId };

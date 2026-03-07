@@ -40,12 +40,18 @@ export const CustomFaqs: Story = {
   args: {
     title: 'Help Centre',
     faqs: [
-      { id: '1', question: 'How do I reset my password?', description: 'Go to Login and use the Forgot password link.' },
-      { id: '2', question: 'How do I delete my account?', description: 'Open Account and tap Delete account.' },
+      {
+        id: '1',
+        question: 'How do I reset my password?',
+        description: 'Go to Login and use the Forgot password link.',
+      },
+      {
+        id: '2',
+        question: 'How do I delete my account?',
+        description: 'Open Account and tap Delete account.',
+      },
     ],
-    contactList: [
-      { heading: 'Email support', link: 'mailto:support@groupfitapp.com' },
-    ],
+    contactList: [{ heading: 'Email support', link: 'mailto:support@groupfitapp.com' }],
     backLink: <a href="#">← Back</a>,
   },
 };

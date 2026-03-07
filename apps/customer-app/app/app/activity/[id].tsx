@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { customerApi } from '../../../lib/api';
@@ -17,7 +24,8 @@ export default function ActivityDetailScreen() {
       return;
     }
     let cancelled = false;
-    customerApi.viewActivity(id ?? '')
+    customerApi
+      .viewActivity(id ?? '')
       .then((res) => {
         if (cancelled) return;
         const data = res?.data as Record<string, unknown> | undefined;
@@ -35,8 +43,12 @@ export default function ActivityDetailScreen() {
           setDetail(null);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   return (
@@ -57,7 +69,9 @@ export default function ActivityDetailScreen() {
       ) : detail ? (
         <View style={styles.card}>
           <Text style={styles.label}>Activity</Text>
-          <Text style={styles.value}>{String(detail.activityName ?? detail.name ?? 'Activity')}</Text>
+          <Text style={styles.value}>
+            {String(detail.activityName ?? detail.name ?? 'Activity')}
+          </Text>
           {detail.description ? (
             <>
               <Text style={styles.label}>Description</Text>

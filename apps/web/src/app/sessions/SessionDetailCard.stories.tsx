@@ -18,13 +18,30 @@ function SessionDetailCard({
 }) {
   return (
     <div className="gf-home__empty" style={{ textAlign: 'left', padding: 20, maxWidth: 400 }}>
-      <p><strong>Session:</strong> {String(detail.sessionName ?? 'Session')}</p>
-      <p><strong>Date & time:</strong> {detail.scheduledAt ? new Date(detail.scheduledAt).toLocaleString() : '—'}</p>
-      <p><strong>Status:</strong> {String(detail.status ?? '')}</p>
-      {!isTrainer && <p><strong>Trainer:</strong> {String(detail.trainerName ?? '')}</p>}
-      {isTrainer && <p><strong>Customer:</strong> {String(detail.customerName ?? '')}</p>}
+      <p>
+        <strong>Session:</strong> {String(detail.sessionName ?? 'Session')}
+      </p>
+      <p>
+        <strong>Date & time:</strong>{' '}
+        {detail.scheduledAt ? new Date(detail.scheduledAt).toLocaleString() : '—'}
+      </p>
+      <p>
+        <strong>Status:</strong> {String(detail.status ?? '')}
+      </p>
+      {!isTrainer && (
+        <p>
+          <strong>Trainer:</strong> {String(detail.trainerName ?? '')}
+        </p>
+      )}
+      {isTrainer && (
+        <p>
+          <strong>Customer:</strong> {String(detail.customerName ?? '')}
+        </p>
+      )}
       {detail.amountCents != null && (
-        <p><strong>Amount:</strong> ${(Number(detail.amountCents) / 100).toFixed(2)}</p>
+        <p>
+          <strong>Amount:</strong> ${(Number(detail.amountCents) / 100).toFixed(2)}
+        </p>
       )}
     </div>
   );
@@ -37,7 +54,8 @@ const meta: Meta<typeof SessionDetailCard> = {
     layout: 'centered',
     docs: {
       description: {
-        component: 'Session detail content shown on the session detail page (customer or trainer view).',
+        component:
+          'Session detail content shown on the session detail page (customer or trainer view).',
       },
     },
   },

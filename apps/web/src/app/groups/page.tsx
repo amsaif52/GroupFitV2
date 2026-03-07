@@ -6,8 +6,20 @@ import { CustomerLayout } from '../CustomerLayout';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 
-type GroupItem = { id: string; name: string; ownerId: string; memberCount?: number; createdAt: string };
-type GroupMemberItem = { id: string; userId: string; userName?: string; userEmail?: string; createdAt: string };
+type GroupItem = {
+  id: string;
+  name: string;
+  ownerId: string;
+  memberCount?: number;
+  createdAt: string;
+};
+type GroupMemberItem = {
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  createdAt: string;
+};
 type SoloMemberItem = { id: string; name?: string; email: string };
 
 export default function GroupsPage() {
@@ -115,7 +127,7 @@ export default function GroupsPage() {
           setAddMemberUserId('');
           customerApi.fetchgroupMembers(selectedGroupId).then((r) => {
             const d = r?.data as Record<string, unknown>;
-            setMembers((d?.fetchgroupMembers ?? d?.list) as GroupMemberItem[] ?? []);
+            setMembers(((d?.fetchgroupMembers ?? d?.list) as GroupMemberItem[]) ?? []);
           });
           fetchGroups();
         } else {
@@ -170,7 +182,11 @@ export default function GroupsPage() {
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
         <span className="gf-home__logo">Groups</span>
         <div className="gf-home__header-actions">
-          <Link href={ROUTES.notifications} className="gf-home__header-link" aria-label="Notifications">
+          <Link
+            href={ROUTES.notifications}
+            className="gf-home__header-link"
+            aria-label="Notifications"
+          >
             🔔
           </Link>
         </div>
@@ -180,7 +196,16 @@ export default function GroupsPage() {
         Create groups and add other customers as members (e.g. for group sessions).
       </p>
 
-      <Link href={ROUTES.dashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
+      <Link
+        href={ROUTES.dashboard}
+        style={{
+          fontSize: 14,
+          color: 'var(--groupfit-secondary)',
+          fontWeight: 600,
+          marginBottom: 16,
+          display: 'inline-block',
+        }}
+      >
         ← Dashboard
       </Link>
 
@@ -189,23 +214,61 @@ export default function GroupsPage() {
       <button
         type="button"
         onClick={() => setShowCreateForm((v) => !v)}
-        style={{ marginBottom: 20, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+        style={{
+          marginBottom: 20,
+          padding: '10px 16px',
+          borderRadius: 8,
+          border: 'none',
+          background: 'var(--groupfit-secondary)',
+          color: '#fff',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
       >
         {showCreateForm ? 'Cancel' : 'Create group'}
       </button>
 
       {showCreateForm && (
-        <form onSubmit={handleCreateGroup} style={{ marginBottom: 24, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8 }}>
-          <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Group name</label>
+        <form
+          onSubmit={handleCreateGroup}
+          style={{
+            marginBottom: 24,
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+          }}
+        >
+          <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+            Group name
+          </label>
           <input
             type="text"
             value={newGroupName}
             onChange={(e) => setNewGroupName(e.target.value)}
             placeholder="e.g. Weekend runners"
             required
-            style={{ padding: 8, width: '100%', maxWidth: 280, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+            style={{
+              padding: 8,
+              width: '100%',
+              maxWidth: 280,
+              marginBottom: 12,
+              borderRadius: 6,
+              border: '1px solid var(--groupfit-border-light)',
+            }}
           />
-          <button type="submit" disabled={createLoading} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: createLoading ? 'not-allowed' : 'pointer' }}>
+          <button
+            type="submit"
+            disabled={createLoading}
+            style={{
+              padding: '10px 16px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--groupfit-secondary)',
+              color: '#fff',
+              fontWeight: 600,
+              cursor: createLoading ? 'not-allowed' : 'pointer',
+            }}
+          >
             {createLoading ? 'Creating…' : 'Create'}
           </button>
         </form>
@@ -224,15 +287,34 @@ export default function GroupsPage() {
                 padding: 16,
                 border: '1px solid var(--groupfit-border-light)',
                 borderRadius: 8,
-                background: selectedGroupId === group.id ? 'var(--groupfit-bg-subtle, #f8f9fa)' : undefined,
+                background:
+                  selectedGroupId === group.id ? 'var(--groupfit-bg-subtle, #f8f9fa)' : undefined,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                }}
+              >
                 <div>
                   <button
                     type="button"
-                    onClick={() => setSelectedGroupId(selectedGroupId === group.id ? null : group.id)}
-                    style={{ fontWeight: 700, fontSize: 16, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+                    onClick={() =>
+                      setSelectedGroupId(selectedGroupId === group.id ? null : group.id)
+                    }
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 16,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      padding: 0,
+                    }}
                   >
                     {group.name}
                   </button>
@@ -245,7 +327,15 @@ export default function GroupsPage() {
                     type="button"
                     onClick={() => handleDeleteGroup(group.id)}
                     disabled={actionLoading === 'delete'}
-                    style={{ padding: '6px 12px', fontSize: 13, borderRadius: 6, border: '1px solid #c00', background: '#fff', color: '#c00', cursor: actionLoading === 'delete' ? 'not-allowed' : 'pointer' }}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: 13,
+                      borderRadius: 6,
+                      border: '1px solid #c00',
+                      background: '#fff',
+                      color: '#c00',
+                      cursor: actionLoading === 'delete' ? 'not-allowed' : 'pointer',
+                    }}
                   >
                     {actionLoading === 'delete' ? '…' : 'Delete group'}
                   </button>
@@ -258,24 +348,64 @@ export default function GroupsPage() {
                     <p style={{ color: 'var(--groupfit-grey)', fontSize: 14 }}>Loading members…</p>
                   ) : (
                     <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          marginBottom: 8,
+                        }}
+                      >
                         <strong style={{ fontSize: 14 }}>Members</strong>
                         <button
                           type="button"
                           onClick={loadSoloMembers}
-                          style={{ padding: '6px 12px', fontSize: 13, borderRadius: 6, border: '1px solid var(--groupfit-secondary)', background: '#fff', color: 'var(--groupfit-secondary)', cursor: 'pointer' }}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 13,
+                            borderRadius: 6,
+                            border: '1px solid var(--groupfit-secondary)',
+                            background: '#fff',
+                            color: 'var(--groupfit-secondary)',
+                            cursor: 'pointer',
+                          }}
                         >
                           Add member
                         </button>
                       </div>
                       {showAddMember && (
-                        <form onSubmit={handleAddMember} style={{ marginBottom: 12, padding: 12, background: '#fff', borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}>
-                          <label style={{ display: 'block', marginBottom: 4, fontSize: 13, fontWeight: 600 }}>Select customer to add</label>
+                        <form
+                          onSubmit={handleAddMember}
+                          style={{
+                            marginBottom: 12,
+                            padding: 12,
+                            background: '#fff',
+                            borderRadius: 6,
+                            border: '1px solid var(--groupfit-border-light)',
+                          }}
+                        >
+                          <label
+                            style={{
+                              display: 'block',
+                              marginBottom: 4,
+                              fontSize: 13,
+                              fontWeight: 600,
+                            }}
+                          >
+                            Select customer to add
+                          </label>
                           <select
                             value={addMemberUserId}
                             onChange={(e) => setAddMemberUserId(e.target.value)}
                             required
-                            style={{ padding: 8, width: '100%', maxWidth: 320, marginBottom: 8, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+                            style={{
+                              padding: 8,
+                              width: '100%',
+                              maxWidth: 320,
+                              marginBottom: 8,
+                              borderRadius: 6,
+                              border: '1px solid var(--groupfit-border-light)',
+                            }}
                           >
                             <option value="">— Choose —</option>
                             {soloList.map((u) => (
@@ -285,27 +415,70 @@ export default function GroupsPage() {
                             ))}
                           </select>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <button type="submit" disabled={actionLoading === 'add'} style={{ padding: '8px 14px', borderRadius: 6, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: actionLoading === 'add' ? 'not-allowed' : 'pointer' }}>
+                            <button
+                              type="submit"
+                              disabled={actionLoading === 'add'}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: 6,
+                                border: 'none',
+                                background: 'var(--groupfit-secondary)',
+                                color: '#fff',
+                                fontWeight: 600,
+                                cursor: actionLoading === 'add' ? 'not-allowed' : 'pointer',
+                              }}
+                            >
                               {actionLoading === 'add' ? '…' : 'Add'}
                             </button>
-                            <button type="button" onClick={() => setShowAddMember(false)} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #666', background: '#fff', cursor: 'pointer' }}>
+                            <button
+                              type="button"
+                              onClick={() => setShowAddMember(false)}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: 6,
+                                border: '1px solid #666',
+                                background: '#fff',
+                                cursor: 'pointer',
+                              }}
+                            >
                               Cancel
                             </button>
                           </div>
                         </form>
                       )}
                       {members.length === 0 ? (
-                        <p style={{ fontSize: 14, color: 'var(--groupfit-grey)' }}>No members. Add one above.</p>
+                        <p style={{ fontSize: 14, color: 'var(--groupfit-grey)' }}>
+                          No members. Add one above.
+                        </p>
                       ) : (
                         <ul style={{ listStyle: 'none', padding: 0 }}>
                           {members.map((m) => (
-                            <li key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid var(--groupfit-border-light)' }}>
-                              <span style={{ fontSize: 14 }}>{m.userName || m.userEmail || m.userId}</span>
+                            <li
+                              key={m.id}
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '8px 0',
+                                borderBottom: '1px solid var(--groupfit-border-light)',
+                              }}
+                            >
+                              <span style={{ fontSize: 14 }}>
+                                {m.userName || m.userEmail || m.userId}
+                              </span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMember(group.id, m.id)}
                                 disabled={actionLoading === m.id}
-                                style={{ padding: '4px 10px', fontSize: 12, borderRadius: 6, border: '1px solid #c00', background: '#fff', color: '#c00', cursor: actionLoading === m.id ? 'not-allowed' : 'pointer' }}
+                                style={{
+                                  padding: '4px 10px',
+                                  fontSize: 12,
+                                  borderRadius: 6,
+                                  border: '1px solid #c00',
+                                  background: '#fff',
+                                  color: '#c00',
+                                  cursor: actionLoading === m.id ? 'not-allowed' : 'pointer',
+                                }}
                               >
                                 {actionLoading === m.id ? '…' : 'Remove'}
                               </button>

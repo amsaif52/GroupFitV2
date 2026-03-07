@@ -168,7 +168,9 @@ export default function CertificatesScreen() {
         <Text style={styles.title}>Certificates</Text>
       </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.subtitle}>Add and manage your certifications (e.g. CPR, NASM, ACE).</Text>
+        <Text style={styles.subtitle}>
+          Add and manage your certifications (e.g. CPR, NASM, ACE).
+        </Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <TouchableOpacity style={styles.primaryButton} onPress={() => setShowForm((v) => !v)}>
           <Text style={styles.primaryButtonText}>{showForm ? 'Cancel' : 'Add certificate'}</Text>
@@ -176,18 +178,58 @@ export default function CertificatesScreen() {
         {showForm && (
           <View style={styles.form}>
             <Text style={styles.label}>Name *</Text>
-            <TextInput style={styles.input} value={formName} onChangeText={setFormName} placeholder="e.g. CPR" placeholderTextColor={colors.grey} editable={!submitLoading} />
+            <TextInput
+              style={styles.input}
+              value={formName}
+              onChangeText={setFormName}
+              placeholder="e.g. CPR"
+              placeholderTextColor={colors.grey}
+              editable={!submitLoading}
+            />
             <Text style={styles.label}>Issuing organization (optional)</Text>
-            <TextInput style={styles.input} value={formIssuingOrg} onChangeText={setFormIssuingOrg} placeholder="e.g. Red Cross" placeholderTextColor={colors.grey} editable={!submitLoading} />
+            <TextInput
+              style={styles.input}
+              value={formIssuingOrg}
+              onChangeText={setFormIssuingOrg}
+              placeholder="e.g. Red Cross"
+              placeholderTextColor={colors.grey}
+              editable={!submitLoading}
+            />
             <Text style={styles.label}>Issued date (optional, YYYY-MM-DD)</Text>
-            <TextInput style={styles.input} value={formIssuedAt} onChangeText={setFormIssuedAt} placeholder="2024-01-15" placeholderTextColor={colors.grey} editable={!submitLoading} />
+            <TextInput
+              style={styles.input}
+              value={formIssuedAt}
+              onChangeText={setFormIssuedAt}
+              placeholder="2024-01-15"
+              placeholderTextColor={colors.grey}
+              editable={!submitLoading}
+            />
             <Text style={styles.label}>Credential ID (optional)</Text>
-            <TextInput style={styles.input} value={formCredentialId} onChangeText={setFormCredentialId} placeholderTextColor={colors.grey} editable={!submitLoading} />
+            <TextInput
+              style={styles.input}
+              value={formCredentialId}
+              onChangeText={setFormCredentialId}
+              placeholderTextColor={colors.grey}
+              editable={!submitLoading}
+            />
             <Text style={styles.label}>Document URL (optional)</Text>
-            <TextInput style={styles.input} value={formDocumentUrl} onChangeText={setFormDocumentUrl} placeholder="https://..." placeholderTextColor={colors.grey} editable={!submitLoading} />
+            <TextInput
+              style={styles.input}
+              value={formDocumentUrl}
+              onChangeText={setFormDocumentUrl}
+              placeholder="https://..."
+              placeholderTextColor={colors.grey}
+              editable={!submitLoading}
+            />
             <View style={styles.formRow}>
-              <TouchableOpacity style={[styles.primaryButton, submitLoading && styles.buttonDisabled]} onPress={handleSubmit} disabled={submitLoading}>
-                <Text style={styles.primaryButtonText}>{submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}</Text>
+              <TouchableOpacity
+                style={[styles.primaryButton, submitLoading && styles.buttonDisabled]}
+                onPress={handleSubmit}
+                disabled={submitLoading}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.cancelButton} onPress={closeForm}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -203,14 +245,24 @@ export default function CertificatesScreen() {
           list.map((row) => (
             <View key={row.id} style={styles.card}>
               <Text style={styles.cardTitle}>{row.name}</Text>
-              {row.issuingOrganization ? <Text style={styles.cardSub}>{row.issuingOrganization}</Text> : null}
-              {row.issuedAt ? <Text style={styles.cardSub}>Issued: {String(row.issuedAt).slice(0, 10)}</Text> : null}
+              {row.issuingOrganization ? (
+                <Text style={styles.cardSub}>{row.issuingOrganization}</Text>
+              ) : null}
+              {row.issuedAt ? (
+                <Text style={styles.cardSub}>Issued: {String(row.issuedAt).slice(0, 10)}</Text>
+              ) : null}
               <View style={styles.cardRow}>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => openEdit(row)}>
                   <Text style={styles.secondaryButtonText}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.dangerButton} onPress={() => handleDelete(row.id)} disabled={actionId === row.id}>
-                  <Text style={styles.dangerButtonText}>{actionId === row.id ? '…' : 'Remove'}</Text>
+                <TouchableOpacity
+                  style={styles.dangerButton}
+                  onPress={() => handleDelete(row.id)}
+                  disabled={actionId === row.id}
+                >
+                  <Text style={styles.dangerButtonText}>
+                    {actionId === row.id ? '…' : 'Remove'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -223,30 +275,84 @@ export default function CertificatesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primaryLight },
-  topbar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
   back: { fontSize: 14, color: colors.secondary, fontWeight: '600' },
   title: { fontSize: 20, fontWeight: '600', color: colors.black },
   scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 40 },
   subtitle: { fontSize: 14, color: colors.grey, marginBottom: 16 },
   error: { color: '#c00', marginBottom: 16 },
-  primaryButton: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.secondary, alignSelf: 'flex-start', marginBottom: 20 },
+  primaryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+  },
   primaryButtonText: { color: '#fff', fontWeight: '600' },
   buttonDisabled: { opacity: 0.7 },
-  form: { marginBottom: 24, padding: 16, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 8 },
+  form: {
+    marginBottom: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+  },
   label: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: colors.borderLight, borderRadius: 6, padding: 10, marginBottom: 12, fontSize: 16, color: colors.black },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 12,
+    fontSize: 16,
+    color: colors.black,
+  },
   formRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  cancelButton: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: '#666' },
+  cancelButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#666',
+  },
   cancelButtonText: { color: '#666', fontWeight: '600' },
   loader: { marginVertical: 20 },
   empty: { fontSize: 16, color: colors.grey },
-  card: { padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.borderLight, borderRadius: 8 },
+  card: {
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 8,
+  },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
   cardSub: { fontSize: 14, color: colors.grey, marginBottom: 4 },
   cardRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  secondaryButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.secondary, borderRadius: 6 },
+  secondaryButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.secondary,
+    borderRadius: 6,
+  },
   secondaryButtonText: { color: colors.secondary, fontSize: 13 },
-  dangerButton: { paddingVertical: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#c00', borderRadius: 6 },
+  dangerButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#c00',
+    borderRadius: 6,
+  },
   dangerButtonText: { color: '#c00', fontSize: 13 },
 });

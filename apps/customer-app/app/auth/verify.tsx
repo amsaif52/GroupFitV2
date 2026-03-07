@@ -11,7 +11,12 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function VerifyScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ phone?: string; mobile?: string; userCode?: string; usercode?: string }>();
+  const params = useLocalSearchParams<{
+    phone?: string;
+    mobile?: string;
+    userCode?: string;
+    usercode?: string;
+  }>();
   const phoneNumber = params.phone ?? params.mobile ?? '';
   const userCode = params.userCode ?? params.usercode ?? '';
 
@@ -63,9 +68,7 @@ export default function VerifyScreen() {
     return (
       <View style={styles.fallback}>
         <Text style={styles.fallbackTitle}>Verify Phone Number</Text>
-        <Text style={styles.fallbackText}>
-          Open this screen with phone and userCode params.
-        </Text>
+        <Text style={styles.fallbackText}>Open this screen with phone and userCode params.</Text>
         <TouchableOpacity onPress={handleBack} style={styles.backBtn}>
           <Text style={styles.backBtnText}>Back to Login</Text>
         </TouchableOpacity>

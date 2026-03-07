@@ -4,8 +4,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { HelpChatProps } from './HelpChat.types';
 
 const hintStyle = { color: 'var(--groupfit-grey)', fontSize: 14, margin: 0 };
-const bubbleBase = { display: 'inline-block', padding: '8px 12px', borderRadius: 8, maxWidth: '85%', fontSize: 14 };
-const rowStyle = (isUser: boolean) => ({ marginBottom: 8, textAlign: (isUser ? 'right' : 'left') as const });
+const bubbleBase = {
+  display: 'inline-block',
+  padding: '8px 12px',
+  borderRadius: 8,
+  maxWidth: '85%',
+  fontSize: 14,
+};
+const rowStyle = (isUser: boolean) => ({
+  marginBottom: 8,
+  textAlign: (isUser ? 'right' : 'left') as const,
+});
 
 export function HelpChatWeb({
   messages,
@@ -51,7 +60,8 @@ export function HelpChatWeb({
             <span
               style={{
                 ...bubbleBase,
-                background: m.role === 'user' ? 'var(--groupfit-secondary)' : 'var(--groupfit-border-light)',
+                background:
+                  m.role === 'user' ? 'var(--groupfit-secondary)' : 'var(--groupfit-border-light)',
                 color: m.role === 'user' ? '#fff' : 'var(--groupfit-black)',
               }}
             >
@@ -91,7 +101,9 @@ export function HelpChatWeb({
           {sending ? '…' : 'Send'}
         </button>
       </form>
-      {error && <p style={{ color: 'var(--groupfit-error, #c00)', fontSize: 13, marginTop: 8 }}>{error}</p>}
+      {error && (
+        <p style={{ color: 'var(--groupfit-error, #c00)', fontSize: 13, marginTop: 8 }}>{error}</p>
+      )}
     </div>
   );
 }

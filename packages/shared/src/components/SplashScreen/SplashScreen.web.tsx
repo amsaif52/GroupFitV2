@@ -10,14 +10,7 @@ export interface SplashScreenWebProps {
 }
 
 export function SplashScreenWeb(props: SplashScreenWebProps) {
-  const {
-    title = 'GroupFit',
-    version,
-    subtitle,
-    loading = false,
-    logo,
-    className = '',
-  } = props;
+  const { title = 'GroupFit', version, subtitle, loading = false, logo, className = '' } = props;
 
   return (
     <main

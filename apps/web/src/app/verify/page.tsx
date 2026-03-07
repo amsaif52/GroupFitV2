@@ -76,8 +76,8 @@ export default function VerifyPage() {
         <div className="gf-auth" style={{ padding: 24, textAlign: 'center' }}>
           <h1 className="gf-auth__title">Verify Phone Number</h1>
           <p className="gf-auth__subtitle">
-            This page is used after requesting an OTP. Please go to login or signup
-            and request a code, or open this page with query params: ?phone=...&amp;userCode=...
+            This page is used after requesting an OTP. Please go to login or signup and request a
+            code, or open this page with query params: ?phone=...&amp;userCode=...
           </p>
           <Link href={ROUTES.login} className="gf-verify__resend-btn" style={{ marginTop: 16 }}>
             ← Back to Login

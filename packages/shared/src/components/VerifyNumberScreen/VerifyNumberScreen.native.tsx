@@ -78,7 +78,7 @@ export function VerifyNumberScreenNative({
         });
       }
     },
-    [digits],
+    [digits]
   );
 
   async function handleSubmit() {
@@ -139,11 +139,7 @@ export function VerifyNumberScreenNative({
               {requestNewCodeInLabel} ({resendCooldownSeconds}s)
             </Text>
           ) : (
-            <TouchableOpacity
-              onPress={() => onResend()}
-              disabled={loading}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity onPress={() => onResend()} disabled={loading} activeOpacity={0.7}>
               <Text style={styles.resendBtn}>{resendLabel}</Text>
             </TouchableOpacity>
           )}
@@ -155,9 +151,7 @@ export function VerifyNumberScreenNative({
           disabled={!canSubmit || loading}
           activeOpacity={0.8}
         >
-          <Text style={styles.submitBtnText}>
-            {loading ? loadingLabel : submitLabel}
-          </Text>
+          <Text style={styles.submitBtnText}>{loading ? loadingLabel : submitLabel}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

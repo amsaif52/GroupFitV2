@@ -17,22 +17,22 @@ export default function PrivacyPolicyPage() {
         <section aria-labelledby="privacy-intro">
           <h2 id="privacy-intro">Introduction</h2>
           <p>
-            GroupFit is committed to protecting your privacy. This Privacy Policy explains how we collect,
-            use, and safeguard your information when you use our app and services.
+            GroupFit is committed to protecting your privacy. This Privacy Policy explains how we
+            collect, use, and safeguard your information when you use our app and services.
           </p>
         </section>
         <section aria-labelledby="privacy-data">
           <h2 id="privacy-data">Information we collect</h2>
           <p>
-            We may collect information you provide directly (e.g. name, email, profile details), usage data,
-            and device information necessary to deliver and improve our services.
+            We may collect information you provide directly (e.g. name, email, profile details),
+            usage data, and device information necessary to deliver and improve our services.
           </p>
         </section>
         <section aria-labelledby="privacy-use">
           <h2 id="privacy-use">How we use your information</h2>
           <p>
-            We use your information to provide, maintain, and improve GroupFit; to communicate with you;
-            and to comply with legal obligations.
+            We use your information to provide, maintain, and improve GroupFit; to communicate with
+            you; and to comply with legal obligations.
           </p>
         </section>
         <p className="gf-legal__contact">

@@ -72,7 +72,7 @@ export function VerifyNumberScreenWeb({
         });
       }
     },
-    [digits],
+    [digits]
   );
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
@@ -101,17 +101,14 @@ export function VerifyNumberScreenWeb({
     <main className="gf-auth-main">
       <div className="gf-auth gf-auth--verify">
         {onBack && (
-          <button
-            type="button"
-            className="gf-verify__back"
-            onClick={onBack}
-            aria-label={backLabel}
-          >
+          <button type="button" className="gf-verify__back" onClick={onBack} aria-label={backLabel}>
             ← {backLabel}
           </button>
         )}
         <div className="gf-auth__header">
-          <h1 className="gf-auth__title" style={{ whiteSpace: 'pre-line' }}>{title}</h1>
+          <h1 className="gf-auth__title" style={{ whiteSpace: 'pre-line' }}>
+            {title}
+          </h1>
           <p className="gf-auth__subtitle">{defaultSubtitle}</p>
         </div>
 
@@ -137,7 +134,11 @@ export function VerifyNumberScreenWeb({
             ))}
           </div>
 
-          {error && <p className="gf-auth__error" role="alert">{error}</p>}
+          {error && (
+            <p className="gf-auth__error" role="alert">
+              {error}
+            </p>
+          )}
 
           <div className="gf-verify__resend">
             <span className="gf-verify__resend-prompt">{resendPrompt}</span>

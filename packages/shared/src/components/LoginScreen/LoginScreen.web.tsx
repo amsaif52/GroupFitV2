@@ -166,7 +166,11 @@ export function LoginScreenWeb({
           loading={loading}
           loadingLabel={loadingLabel}
           label={submitLabel}
-          className={isAdmin ? 'gf-button--full gf-button--mt gf-button--pill' : 'gf-button--full gf-button--mt'}
+          className={
+            isAdmin
+              ? 'gf-button--full gf-button--mt gf-button--pill'
+              : 'gf-button--full gf-button--mt'
+          }
         />
       </form>
 
@@ -192,7 +196,9 @@ export function LoginScreenWeb({
           className="gf-auth-panel gf-auth-panel--left"
           style={
             leftPanelImageUrl
-              ? ({ ['--gf-auth-left-bg' as string]: `url(${leftPanelImageUrl})` } as React.CSSProperties)
+              ? ({
+                  ['--gf-auth-left-bg' as string]: `url(${leftPanelImageUrl})`,
+                } as React.CSSProperties)
               : undefined
           }
         />

@@ -58,7 +58,9 @@ export default function ReviewsPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -71,7 +73,16 @@ export default function ReviewsPage() {
         Reviews from customers after sessions. You cannot reply or delete them here.
       </p>
 
-      <Link href={ROUTES.dashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600, marginBottom: 16, display: 'inline-block' }}>
+      <Link
+        href={ROUTES.dashboard}
+        style={{
+          fontSize: 14,
+          color: 'var(--groupfit-secondary)',
+          fontWeight: 600,
+          marginBottom: 16,
+          display: 'inline-block',
+        }}
+      >
         ← Dashboard
       </Link>
 
@@ -82,7 +93,15 @@ export default function ReviewsPage() {
       ) : (
         <>
           {(avgRating != null || reviewCount > 0) && (
-            <div style={{ marginBottom: 24, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8, background: 'var(--groupfit-bg-subtle, #f8f9fa)' }}>
+            <div
+              style={{
+                marginBottom: 24,
+                padding: 20,
+                border: '1px solid var(--groupfit-border-light)',
+                borderRadius: 8,
+                background: 'var(--groupfit-bg-subtle, #f8f9fa)',
+              }}
+            >
               <div style={{ fontSize: 32, fontWeight: 700, marginBottom: 4 }}>
                 {avgRating != null ? avgRating.toFixed(1) : '—'}
               </div>
@@ -93,7 +112,9 @@ export default function ReviewsPage() {
           )}
 
           {list.length === 0 ? (
-            <div className="gf-home__empty">No reviews yet. They appear here after customers rate completed sessions.</div>
+            <div className="gf-home__empty">
+              No reviews yet. They appear here after customers rate completed sessions.
+            </div>
           ) : (
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {list.map((row) => (
@@ -106,11 +127,22 @@ export default function ReviewsPage() {
                     borderRadius: 8,
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}
+                  >
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>{row.customerName ?? 'Customer'}</div>
+                      <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                        {row.customerName ?? 'Customer'}
+                      </div>
                       <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 6 }}>
-                        {'★'.repeat(Math.min(5, Math.round(row.rating)))}{'☆'.repeat(5 - Math.min(5, Math.round(row.rating)))} {row.rating}
+                        {'★'.repeat(Math.min(5, Math.round(row.rating)))}
+                        {'☆'.repeat(5 - Math.min(5, Math.round(row.rating)))} {row.rating}
                       </div>
                       {row.comment && <p style={{ fontSize: 14, margin: 0 }}>{row.comment}</p>}
                     </div>

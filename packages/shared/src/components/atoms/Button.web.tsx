@@ -21,12 +21,9 @@ export default function ButtonWeb({
   'data-testid': dataTestId,
   className: classNameProp,
 }: ButtonProps) {
-  const className = [
-    'gf-button',
-    variantClass[variant],
-    sizeClass[size],
-    classNameProp,
-  ].filter(Boolean).join(' ');
+  const className = ['gf-button', variantClass[variant], sizeClass[size], classNameProp]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <button

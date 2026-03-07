@@ -13,11 +13,7 @@ import { EntityNotFoundException } from '../exceptions';
  * }
  */
 export function ThrowNotFound(entityName: string = 'Resource') {
-  return function (
-    _target: object,
-    _propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ) {
+  return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor) {
     const original = descriptor.value;
     descriptor.value = async function (...args: unknown[]) {
       const result = await original.apply(this, args);

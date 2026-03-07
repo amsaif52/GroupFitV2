@@ -6,11 +6,7 @@ import { getStoredUser } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { AdminLayout } from '../AdminLayout';
 
-export default function AdminRootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const user = getStoredUser();
 

@@ -17,10 +17,5 @@ export default function SplashPage() {
     return () => clearTimeout(t);
   }, [router]);
 
-  return (
-    <SplashScreen
-      title="GroupFit"
-      loading
-    />
-  );
+  return <SplashScreen title="GroupFit" loading />;
 }

@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "GroupFit - Fitness platform with admin, trainer, and customer apps",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev:api": "npm run build:shared && npm run dev --workspace=api",
     "dev:web": "npm run dev --workspace=web",
@@ -23,6 +26,7 @@
     "e2e:local": "playwright test -c playwright.config.local.ts",
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
+    "e2e:creds": "playwright test -g \"test credentials\"",
     "prepare": "husky || true"
   },
   "engines": {
@@ -39,6 +43,9 @@
     "typescript-eslint": "^8.0.0"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,md}": ["prettier --write", "eslint --fix"]
+    "*.{ts,tsx,js,jsx,json,md}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   }
 }

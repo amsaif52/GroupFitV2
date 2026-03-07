@@ -29,7 +29,10 @@ export class ConversationService {
       take: limit,
       select: { role: true, content: true },
     });
-    return messages.map((m) => ({ role: m.role as 'user' | 'assistant' | 'system', content: m.content }));
+    return messages.map((m) => ({
+      role: m.role as 'user' | 'assistant' | 'system',
+      content: m.content,
+    }));
   }
 
   /** Append a user message. */

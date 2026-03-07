@@ -8,7 +8,8 @@ const meta: Meta<typeof SplashScreenWeb> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'App splash screen with logo/title, optional version, subtitle, and loading spinner.',
+        component:
+          'App splash screen with logo/title, optional version, subtitle, and loading spinner.',
       },
     },
   },

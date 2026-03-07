@@ -28,7 +28,9 @@ export default function HelpPage() {
   const [supportSubmitting, setSupportSubmitting] = useState(false);
   const [supportSuccess, setSupportSuccess] = useState(false);
   const [supportError, setSupportError] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [chatMessages, setChatMessages] = useState<
+    { role: 'user' | 'assistant'; content: string }[]
+  >([]);
   const [chatConversationId, setChatConversationId] = useState<string | undefined>();
   const [chatSending, setChatSending] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -40,13 +42,18 @@ export default function HelpPage() {
         if (cancelled) return;
         const faqData = faqRes?.data as Record<string, unknown> | undefined;
         const contactData = contactRes?.data as Record<string, unknown> | undefined;
-        const faqList = (faqData?.faqlist ?? faqData?.list) as { id: string; question: string; answer: string }[] | undefined;
+        const faqList = (faqData?.faqlist ?? faqData?.list) as
+          | { id: string; question: string; answer: string }[]
+          | undefined;
         if (faqList && faqList.length > 0) {
           setFaqs(faqList.map((f) => ({ id: f.id, question: f.question, description: f.answer })));
         }
         const email = contactData?.contactEmail as string | undefined;
         if (email) {
-          setContactLinks([{ heading: 'Email support', link: `mailto:${email}` }, ...FALLBACK_CONTACT_CUSTOMER]);
+          setContactLinks([
+            { heading: 'Email support', link: `mailto:${email}` },
+            ...FALLBACK_CONTACT_CUSTOMER,
+          ]);
         } else {
           setContactLinks(FALLBACK_CONTACT_CUSTOMER);
         }
@@ -55,13 +62,17 @@ export default function HelpPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
     <main className="gf-help">
       <div className="gf-help__topbar">
-        <Link href={ROUTES.dashboard} className="gf-help__back">← Dashboard</Link>
+        <Link href={ROUTES.dashboard} className="gf-help__back">
+          ← Dashboard
+        </Link>
         <h1 className="gf-help__title">Help Centre</h1>
       </div>
 
@@ -84,7 +95,11 @@ export default function HelpPage() {
           <button
             type="button"
             className={`gf-help__tab ${tab === 'Support' ? 'gf-help__tab--active' : ''}`}
-            onClick={() => { setTab('Support'); setSupportSuccess(false); setSupportError(null); }}
+            onClick={() => {
+              setTab('Support');
+              setSupportSuccess(false);
+              setSupportError(null);
+            }}
           >
             Contact support
           </button>
@@ -93,7 +108,10 @@ export default function HelpPage() {
           <button
             type="button"
             className={`gf-help__tab ${tab === 'Assistant' ? 'gf-help__tab--active' : ''}`}
-            onClick={() => { setTab('Assistant'); setChatError(null); }}
+            onClick={() => {
+              setTab('Assistant');
+              setChatError(null);
+            }}
           >
             Assistant
           </button>
@@ -118,7 +136,10 @@ export default function HelpPage() {
                   {faq.question}
                   <span aria-hidden>{openFaqId === faq.id ? '−' : '+'}</span>
                 </button>
-                <div className="gf-help__faq-answer" style={{ display: openFaqId === faq.id ? 'block' : 'none' }}>
+                <div
+                  className="gf-help__faq-answer"
+                  style={{ display: openFaqId === faq.id ? 'block' : 'none' }}
+                >
                   {faq.description}
                 </div>
               </div>
@@ -151,7 +172,10 @@ export default function HelpPage() {
       {tab === 'Support' && user && (
         <div className="gf-help__contact-list" style={{ maxWidth: 480 }}>
           {supportSuccess ? (
-            <p className="gf-help__empty" style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}>
+            <p
+              className="gf-help__empty"
+              style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+            >
               Your message has been sent. We&apos;ll get back to you soon.
             </p>
           ) : (
@@ -178,16 +202,32 @@ export default function HelpPage() {
                   .finally(() => setSupportSubmitting(false));
               }}
             >
-              <label htmlFor="support-subject" style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Subject (optional)</label>
+              <label
+                htmlFor="support-subject"
+                style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}
+              >
+                Subject (optional)
+              </label>
               <input
                 id="support-subject"
                 type="text"
                 value={supportSubject}
                 onChange={(e) => setSupportSubject(e.target.value)}
                 placeholder="e.g. Billing question"
-                style={{ padding: 8, width: '100%', marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+                style={{
+                  padding: 8,
+                  width: '100%',
+                  marginBottom: 12,
+                  borderRadius: 6,
+                  border: '1px solid var(--groupfit-border-light)',
+                }}
               />
-              <label htmlFor="support-message" style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Message *</label>
+              <label
+                htmlFor="support-message"
+                style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}
+              >
+                Message *
+              </label>
               <textarea
                 id="support-message"
                 value={supportMessage}
@@ -195,13 +235,29 @@ export default function HelpPage() {
                 placeholder="Describe your issue or question…"
                 required
                 rows={4}
-                style={{ padding: 8, width: '100%', marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+                style={{
+                  padding: 8,
+                  width: '100%',
+                  marginBottom: 12,
+                  borderRadius: 6,
+                  border: '1px solid var(--groupfit-border-light)',
+                }}
               />
-              {supportError && <p style={{ color: '#c00', marginBottom: 12, fontSize: 14 }}>{supportError}</p>}
+              {supportError && (
+                <p style={{ color: '#c00', marginBottom: 12, fontSize: 14 }}>{supportError}</p>
+              )}
               <button
                 type="submit"
                 disabled={supportSubmitting}
-                style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: supportSubmitting ? 'not-allowed' : 'pointer' }}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--groupfit-secondary)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: supportSubmitting ? 'not-allowed' : 'pointer',
+                }}
               >
                 {supportSubmitting ? 'Sending…' : 'Send'}
               </button>
@@ -211,20 +267,31 @@ export default function HelpPage() {
       )}
 
       {tab === 'Assistant' && user && (
-        <div className="gf-help__contact-list" style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', height: 360 }}>
+        <div
+          className="gf-help__contact-list"
+          style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', height: 360 }}
+        >
           <HelpChat
             messages={chatMessages}
             onSend={(text) => {
               setChatSending(true);
               setChatError(null);
               setChatMessages((prev) => [...prev, { role: 'user', content: text }]);
-              (isTrainer ? trainerApi.chat : customerApi.chat)({ message: text, conversationId: chatConversationId })
+              (isTrainer ? trainerApi.chat : customerApi.chat)({
+                message: text,
+                conversationId: chatConversationId,
+              })
                 .then((res) => {
                   setChatConversationId(res?.data?.conversationId);
-                  setChatMessages((prev) => [...prev, { role: 'assistant', content: res?.data?.message ?? 'No reply.' }]);
+                  setChatMessages((prev) => [
+                    ...prev,
+                    { role: 'assistant', content: res?.data?.message ?? 'No reply.' },
+                  ]);
                 })
                 .catch((err: unknown) => {
-                  setChatError(getApiErrorMessage(err, 'Failed to send. Check your connection or try again.'));
+                  setChatError(
+                    getApiErrorMessage(err, 'Failed to send. Check your connection or try again.')
+                  );
                   setChatMessages((prev) => prev.slice(0, -1));
                 })
                 .finally(() => setChatSending(false));

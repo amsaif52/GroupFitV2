@@ -11,7 +11,12 @@ const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function VerifyScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ phone?: string; mobile?: string; userCode?: string; usercode?: string }>();
+  const params = useLocalSearchParams<{
+    phone?: string;
+    mobile?: string;
+    userCode?: string;
+    usercode?: string;
+  }>();
   const phoneNumber = params.phone ?? params.mobile ?? '';
   const userCode = params.userCode ?? params.usercode ?? '';
 
@@ -36,7 +41,9 @@ export default function VerifyScreen() {
       await setStoredToken(data.accessToken);
       router.replace('/app/home');
     } catch (err: unknown) {
-      setError(err instanceof ApiClientError ? err.message : 'Verification failed. Please try again.');
+      setError(
+        err instanceof ApiClientError ? err.message : 'Verification failed. Please try again.'
+      );
     } finally {
       setLoading(false);
     }

@@ -37,9 +37,9 @@ export interface OnboardingScreenNativeProps {
 export function OnboardingScreenNative({
   slides,
   onComplete,
-  getStartedLabel = "Get Started",
-  nextLabel = "Next",
-  skipLabel = "Skip",
+  getStartedLabel = 'Get Started',
+  nextLabel = 'Next',
+  skipLabel = 'Skip',
 }: OnboardingScreenNativeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
@@ -104,26 +104,22 @@ export function OnboardingScreenNative({
 
       {/* Bottom: Skip, dots, Next / Get Started */}
       <View style={styles.footer}>
-        <TouchableOpacity onPress={skip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={styles.skipBtn}>
+        <TouchableOpacity
+          onPress={skip}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={styles.skipBtn}
+        >
           <Text style={styles.skipText}>{skipLabel}</Text>
         </TouchableOpacity>
 
         <View style={styles.dots}>
           {slides.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentIndex && styles.dotActive,
-              ]}
-            />
+            <View key={index} style={[styles.dot, index === currentIndex && styles.dotActive]} />
           ))}
         </View>
 
         <TouchableOpacity onPress={goNext} style={styles.nextBtn} activeOpacity={0.8}>
-          <Text style={styles.nextText}>
-            {isLastSlide ? getStartedLabel : nextLabel}
-          </Text>
+          <Text style={styles.nextText}>{isLastSlide ? getStartedLabel : nextLabel}</Text>
         </TouchableOpacity>
       </View>
     </View>

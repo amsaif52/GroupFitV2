@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, Image, type ImageSourcePropType, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  Image,
+  type ImageSourcePropType,
+  StyleSheet,
+} from 'react-native';
 import { colors, fontSizes, spacing } from '../../theme';
 
 export interface SplashScreenNativeProps {
@@ -32,11 +39,7 @@ export function SplashScreenNative({
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         {version ? <Text style={styles.version}>v{version}</Text> : null}
         {loading ? (
-          <ActivityIndicator
-            size="large"
-            color={colors.secondary}
-            style={styles.spinner}
-          />
+          <ActivityIndicator size="large" color={colors.secondary} style={styles.spinner} />
         ) : null}
       </View>
     </View>

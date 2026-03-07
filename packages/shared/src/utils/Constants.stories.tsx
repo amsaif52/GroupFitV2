@@ -20,9 +20,15 @@ export const Roles: StoryObj = {
     <div>
       <h3>ROLES</h3>
       <ul>
-        <li><code>ADMIN</code>: {ROLES.ADMIN}</li>
-        <li><code>TRAINER</code>: {ROLES.TRAINER}</li>
-        <li><code>CUSTOMER</code>: {ROLES.CUSTOMER}</li>
+        <li>
+          <code>ADMIN</code>: {ROLES.ADMIN}
+        </li>
+        <li>
+          <code>TRAINER</code>: {ROLES.TRAINER}
+        </li>
+        <li>
+          <code>CUSTOMER</code>: {ROLES.CUSTOMER}
+        </li>
       </ul>
     </div>
   ),
@@ -33,9 +39,15 @@ export const ApiPrefixes: StoryObj = {
     <div>
       <h3>API_PREFIXES</h3>
       <ul>
-        <li><code>CUSTOMER</code>: {API_PREFIXES.CUSTOMER}</li>
-        <li><code>TRAINER</code>: {API_PREFIXES.TRAINER}</li>
-        <li><code>ADMIN</code>: {API_PREFIXES.ADMIN}</li>
+        <li>
+          <code>CUSTOMER</code>: {API_PREFIXES.CUSTOMER}
+        </li>
+        <li>
+          <code>TRAINER</code>: {API_PREFIXES.TRAINER}
+        </li>
+        <li>
+          <code>ADMIN</code>: {API_PREFIXES.ADMIN}
+        </li>
       </ul>
     </div>
   ),
@@ -46,7 +58,9 @@ export const Locales: StoryObj = {
     <div>
       <h3>LOCALES</h3>
       <p>Supported: {LOCALES.join(', ')}</p>
-      <p>Default: <code>{DEFAULT_LOCALE}</code></p>
+      <p>
+        Default: <code>{DEFAULT_LOCALE}</code>
+      </p>
     </div>
   ),
 };
@@ -56,9 +70,15 @@ export const AppNames: StoryObj = {
     <div>
       <h3>APP_NAMES</h3>
       <ul>
-        <li><code>WEB</code>: {APP_NAMES.WEB}</li>
-        <li><code>CUSTOMER_APP</code>: {APP_NAMES.CUSTOMER_APP}</li>
-        <li><code>TRAINER_APP</code>: {APP_NAMES.TRAINER_APP}</li>
+        <li>
+          <code>WEB</code>: {APP_NAMES.WEB}
+        </li>
+        <li>
+          <code>CUSTOMER_APP</code>: {APP_NAMES.CUSTOMER_APP}
+        </li>
+        <li>
+          <code>TRAINER_APP</code>: {APP_NAMES.TRAINER_APP}
+        </li>
       </ul>
     </div>
   ),

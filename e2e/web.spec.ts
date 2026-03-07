@@ -1,4 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+/** Sign up as a new customer and wait for dashboard. Use a unique namePrefix per test. */
+async function signUpCustomer(page: Page, namePrefix: string): Promise<void> {
+  await page.goto('/signup');
+  await page
+    .getByPlaceholder(/name|Full name/i)
+    .first()
+    .fill(`E2E ${namePrefix}`);
+  await page
+    .getByPlaceholder(/email|Enter your email here/i)
+    .fill(`e2e-${namePrefix.replace(/\s+/g, '-')}-${Date.now()}@groupfit.test`);
+  await page
+    .getByPlaceholder(/Enter your password here|Password/i)
+    .first()
+    .fill('password123');
+  await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+}
 
 test.describe('Web app', () => {
   test('home page shows GroupFit and role links', async ({ page }) => {
@@ -37,6 +56,29 @@ test.describe('Login page', () => {
     await expect(page.getByText(/invalid|failed|credentials|error|Login failed/i)).toBeVisible({
       timeout: 10000,
     });
+  });
+
+  test('after signup, user can log in with same credentials', async ({ page }) => {
+    const email = `e2e-login-flow-${Date.now()}@groupfit.test`;
+    await page.goto('/signup');
+    await page
+      .getByPlaceholder(/name|Full name/i)
+      .first()
+      .fill('E2E Login Flow');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page
+      .getByPlaceholder(/Enter your password here|Password/i)
+      .first()
+      .fill('password123');
+    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await page.goto('/login');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page.getByPlaceholder(/password|Enter your password here/i).fill('password123');
+    await page.getByRole('button', { name: 'Login' }).click();
+    await expect(page).toHaveURL(/\/(dashboard|choose-experience)/, { timeout: 15000 });
+    await expect(page.getByText('GroupFit').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('login has sign up link', async ({ page }) => {
@@ -211,20 +253,7 @@ test.describe('Help page', () => {
   });
 
   test('when logged in, Help shows Assistant tab and chat UI', async ({ page }) => {
-    const email = `e2e-help-${Date.now()}@groupfit.test`;
-    await page.goto('/signup');
-    await page
-      .getByPlaceholder(/name|Full name/i)
-      .first()
-      .fill('E2E Help User');
-    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
-    await page
-      .getByPlaceholder(/Enter your password here|Password/i)
-      .first()
-      .fill('password123');
-    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
-    await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await signUpCustomer(page, 'Help User');
     await page.goto('/help');
     await expect(page.getByRole('button', { name: 'Assistant' })).toBeVisible();
     await page.getByRole('button', { name: 'Assistant' }).click();
@@ -238,6 +267,127 @@ test.describe('Account page', () => {
     await page.goto('/account');
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
+
+  test('when logged in, account page shows Account heading and nav', async ({ page }) => {
+    await signUpCustomer(page, 'Account User');
+    await page.goto('/account');
+    await expect(page.getByRole('heading', { name: 'Account' })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('link', { name: /Dashboard/i })).toBeVisible();
+  });
+});
+
+test.describe('Profile page', () => {
+  test('profile page redirects to login when not authenticated', async ({ page }) => {
+    await page.goto('/profile');
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+  });
+
+  test('when logged in, profile page shows Profile heading and nav', async ({ page }) => {
+    await signUpCustomer(page, 'Profile User');
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: /Profile/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('link', { name: /Dashboard/i })).toBeVisible();
+  });
+});
+
+test.describe('Activities page', () => {
+  test('when logged in as customer, activities page shows title and content', async ({ page }) => {
+    await signUpCustomer(page, 'Activities User');
+    await page.goto('/activities');
+    await expect(page.getByText('Activities')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(
+        /Loading|Set a default address|No activities available|Favourites|All activities/i
+      )
+    ).toBeVisible({ timeout: 8000 });
+  });
+
+  test('when logged in as customer, activity detail with invalid id shows back link and error', async ({
+    page,
+  }) => {
+    await signUpCustomer(page, 'Activity Detail User');
+    await page.goto('/activities/invalid-activity-id-e2e');
+    await expect(page.getByRole('link', { name: /Back to activities/i })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByText(/Not found|Failed to load activity/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
+});
+
+test.describe('Locations page', () => {
+  test('when logged in as customer, locations page shows title and content', async ({ page }) => {
+    await signUpCustomer(page, 'Locations User');
+    await page.goto('/locations');
+    await expect(page.getByText('My Locations')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Saved addresses|Add location|Dashboard|Loading/i)).toBeVisible({
+      timeout: 8000,
+    });
+  });
+});
+
+test.describe('Groups page', () => {
+  test('when logged in as customer, groups page shows title and content', async ({ page }) => {
+    await signUpCustomer(page, 'Groups User');
+    await page.goto('/groups');
+    await expect(page.getByText('Groups')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(/Create groups|Create group|Loading|No groups yet|Dashboard/i)
+    ).toBeVisible({ timeout: 8000 });
+  });
+});
+
+test.describe('Refer page', () => {
+  test('when logged in as customer, refer page shows title and content', async ({ page }) => {
+    await signUpCustomer(page, 'Refer User');
+    await page.goto('/refer');
+    await expect(page.getByText('Refer')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(/Refer a friend|Share the love|People you've referred|No referrals yet|Share/i)
+    ).toBeVisible({ timeout: 8000 });
+  });
+});
+
+test.describe('Trainers page', () => {
+  test('when logged in as customer, trainers page shows title and content', async ({ page }) => {
+    await signUpCustomer(page, 'Trainers User');
+    await page.goto('/trainers');
+    await expect(page.getByText('My Trainers')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText(
+        /Loading|Set a default address|Favourite trainers|No favourite trainers|Top rated|No trainers listed/i
+      )
+    ).toBeVisible({ timeout: 8000 });
+  });
+
+  test('when logged in as customer, trainer detail with invalid id shows back link and error', async ({
+    page,
+  }) => {
+    await signUpCustomer(page, 'Trainer Detail User');
+    await page.goto('/trainers/invalid-trainer-id-e2e');
+    await expect(page.getByRole('link', { name: /Back to trainers/i })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText(/Not found|Failed to load trainer|Missing trainer ID/i)
+    ).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Notifications page', () => {
+  test('when logged in as customer, notifications page shows title and content', async ({
+    page,
+  }) => {
+    await signUpCustomer(page, 'Notifications User');
+    await page.goto('/notifications');
+    await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByText(/Loading|No notifications yet|Dashboard/i)).toBeVisible({
+      timeout: 8000,
+    });
+  });
 });
 
 test.describe('Payment history page', () => {
@@ -247,20 +397,7 @@ test.describe('Payment history page', () => {
   });
 
   test('when logged in as customer, payment-history shows title and content', async ({ page }) => {
-    const email = `e2e-payment-${Date.now()}@groupfit.test`;
-    await page.goto('/signup');
-    await page
-      .getByPlaceholder(/name|Full name/i)
-      .first()
-      .fill('E2E Payment User');
-    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
-    await page
-      .getByPlaceholder(/Enter your password here|Password/i)
-      .first()
-      .fill('password123');
-    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
-    await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await signUpCustomer(page, 'Payment User');
     await page.goto('/payment-history');
     await expect(page.getByRole('heading', { name: 'Payment History' })).toBeVisible({
       timeout: 5000,
@@ -278,25 +415,51 @@ test.describe('Sessions page', () => {
   });
 
   test('when logged in as customer, sessions page shows title and content', async ({ page }) => {
-    const email = `e2e-sessions-${Date.now()}@groupfit.test`;
-    await page.goto('/signup');
-    await page
-      .getByPlaceholder(/name|Full name/i)
-      .first()
-      .fill('E2E Sessions User');
-    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
-    await page
-      .getByPlaceholder(/Enter your password here|Password/i)
-      .first()
-      .fill('password123');
-    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
-    await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    await signUpCustomer(page, 'Sessions User');
     await page.goto('/sessions');
     await expect(page.getByText('My Sessions')).toBeVisible({ timeout: 5000 });
     await expect(
       page.getByText(/Upcoming|Completed|No upcoming sessions|No completed sessions/i)
     ).toBeVisible();
+  });
+
+  test('when logged in as customer, session detail with invalid id shows back link and error', async ({
+    page,
+  }) => {
+    await signUpCustomer(page, 'Session Detail User');
+    await page.goto('/sessions/invalid-session-id-e2e');
+    await expect(page.getByRole('link', { name: /Back to sessions/i })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText(/Not found|Failed to load session|Missing session ID/i)
+    ).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Admin', () => {
+  test('admin redirects to login when not authenticated', async ({ page }) => {
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+  });
+
+  test('when logged in as customer, admin redirects to dashboard', async ({ page }) => {
+    await signUpCustomer(page, 'Admin Redirect Customer');
+    await page.goto('/admin');
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
+  });
+});
+
+test.describe('Choose experience', () => {
+  test('choose-experience redirects to login when not authenticated', async ({ page }) => {
+    await page.goto('/choose-experience');
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+  });
+
+  test('when logged in as customer, choose-experience redirects to dashboard', async ({ page }) => {
+    await signUpCustomer(page, 'Choose Experience Customer');
+    await page.goto('/choose-experience');
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
   });
 });
 
@@ -327,6 +490,42 @@ test.describe('Dashboard (home screen)', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     await expect(page).toHaveURL(/\/(dashboard|choose-experience)/, { timeout: 15000 });
     await expect(page.getByText('GroupFit').first()).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Trainer (with test credentials)', () => {
+  test('when E2E_TEST_EMAIL is trainer, login shows trainer dashboard', async ({ page }) => {
+    const email = process.env.E2E_TEST_EMAIL;
+    const password = process.env.E2E_TEST_PASSWORD;
+    test.skip(!email || !password, 'Set E2E_TEST_EMAIL and E2E_TEST_PASSWORD to run this test');
+    await page.goto('/login');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page.getByPlaceholder(/password|Enter your password here/i).fill(password);
+    await page.getByRole('button', { name: 'Login' }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    // Trainer dashboard has "New Sessions" and "Earning" sections (customer has "Upcoming Sessions")
+    await expect(
+      page
+        .getByRole('heading', { name: 'New Sessions' })
+        .or(page.getByRole('heading', { name: 'Earning' }))
+    ).toBeVisible({ timeout: 10000 });
+  });
+});
+
+test.describe('Admin (with test credentials)', () => {
+  test('when E2E_TEST_EMAIL is admin, login shows choose-experience page', async ({ page }) => {
+    const email = process.env.E2E_TEST_EMAIL;
+    const password = process.env.E2E_TEST_PASSWORD;
+    test.skip(!email || !password, 'Set E2E_TEST_EMAIL and E2E_TEST_PASSWORD to run this test');
+    await page.goto('/login');
+    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+    await page.getByPlaceholder(/password|Enter your password here/i).fill(password);
+    await page.getByRole('button', { name: 'Login' }).click();
+    await expect(page).toHaveURL(/\/choose-experience/, { timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Choose your experience' })).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByRole('button', { name: 'Continue as Customer' })).toBeVisible();
   });
 });
 

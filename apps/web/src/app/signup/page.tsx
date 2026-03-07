@@ -39,7 +39,9 @@ export default function SignupPage() {
       router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
       router.refresh();
     } catch (err: unknown) {
-      setError(err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.');
+      setError(
+        err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export default function SignupPage() {
         setError(err instanceof ApiClientError ? err.message : 'Google sign-up failed');
       }
     },
-    [roleParam, router],
+    [roleParam, router]
   );
 
   const handleGoogleError = useCallback(() => {
@@ -77,18 +79,17 @@ export default function SignupPage() {
     setError('Apple sign-up is not configured yet. Use the form below or Google.');
   }
 
-  const googleButton =
-    googleClientId ? (
-      <GoogleLogin
-        onSuccess={(res) => res.credential && handleGoogleSuccess(res.credential)}
-        onError={handleGoogleError}
-        theme="outline"
-        size="large"
-        text="signup_with"
-        shape="rectangular"
-        width="320"
-      />
-    ) : null;
+  const googleButton = googleClientId ? (
+    <GoogleLogin
+      onSuccess={(res) => res.credential && handleGoogleSuccess(res.credential)}
+      onError={handleGoogleError}
+      theme="outline"
+      size="large"
+      text="signup_with"
+      shape="rectangular"
+      width="320"
+    />
+  ) : null;
 
   const content = (
     <>
@@ -106,7 +107,9 @@ export default function SignupPage() {
         footerLinkText={t.auth.login}
         termsLabel={t.auth.termsAgreePrefix}
         termsLinkText={t.auth.termsLink}
-        onTermsClick={() => window.open('https://groupfitapp.com/app-user-terms-and-condition/', '_blank')}
+        onTermsClick={() =>
+          window.open('https://groupfitapp.com/app-user-terms-and-condition/', '_blank')
+        }
         onSubmit={handleSubmit}
         loading={loading}
         error={error}
@@ -119,7 +122,10 @@ export default function SignupPage() {
         orLabel={t.auth.or}
       />
       <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
-        <Link href={ROUTES.serverUnavailable} style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}>
+        <Link
+          href={ROUTES.serverUnavailable}
+          style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}
+        >
           Having connection issues?
         </Link>
       </p>
@@ -136,11 +142,7 @@ export default function SignupPage() {
   );
 
   if (googleClientId) {
-    return (
-      <GoogleOAuthProvider clientId={googleClientId}>
-        {content}
-      </GoogleOAuthProvider>
-    );
+    return <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>;
   }
   return content;
 }

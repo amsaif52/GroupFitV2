@@ -2,6 +2,10 @@
 
 This doc lists what still needs to be brought over from the desktop projects (**newCustomer**, **newTrainer**, **adminApi**, **customerApi**, **trainerApi**) into GroupFitV2.
 
+**Status:** Next steps 1 (payment status in UI) and 2 (E2E coverage, helper, redirects, auth flow, docs) are complete. Remaining: 3 (specs-dependent screens) and 4 (optional: push, Stripe webhooks, etc.). See “Next steps (continue from here)” below.
+
+**Quick reference:** [Recent additions](#recent-additions-not-from-old-projects) · [Progress](#progress-updated-as-we-implement) · [Next steps](#next-steps-continue-from-here) · [Already in GroupFitV2](#already-in-groupfitv2)
+
 ---
 
 ## Recent additions (not from old projects)
@@ -30,15 +34,19 @@ The following were added after the import checklist and are **done** in GroupFit
 ### Remaining summary (as of last update)
 
 - **Screens (need product specs):** Fitness, DateTimeSchedule, TrainerActivityList (customer/trainer); PublicProfile, Specializations, AddLocation/EditLocation/ServiceLocation (trainer); VerifyNumberW, BankDetailW, CertificateW widgets. Implement when specs are defined.
-- **Optional/legacy:** File GETs (GetReducedImage, BaseUrl, GetAllFilesByType, GetFilesByType, GetFilesByCode, requestLog); Stripe webhooks/refunds; push notifications; trainer **convertRequiredTimeFormat** (stub added for legacy clients).
-- **Tests:** More e2e as needed; payment/Stripe models if flows expand.
+- **Optional/legacy:** File GETs (GetReducedImage, BaseUrl, GetAllFilesByType, GetFilesByType, GetFilesByCode, requestLog) — not implemented; **fileUpload** (customer + trainer) already stubbed. Stripe webhooks/refunds; push notifications; trainer **convertRequiredTimeFormat** (stub added for legacy clients).
+- **Tests:** E2E covers customer pages, detail (session/activity/trainer invalid id), admin redirect, auth, help, static pages, trainer dashboard and admin choose-experience (when E2E_TEST_EMAIL/PASSWORD set to trainer/admin); more e2e and payment/Stripe models as needed.
 
 ### Next steps (continue from here)
 
+**Steps 1–2 below are complete.** Remaining: 3 (blocked on specs), 4 (optional).
+
 1. **Payment status in UI:** ✅ “Paid” in Payment History (web + RN). ✅ “Payment: Paid/Unpaid” on session detail (customer web + RN).
-2. **E2E:** ✅ Payment-history e2e (customer). ✅ Sessions page e2e (redirect + customer view). More e2e as needed.
+2. **E2E:** ✅ Payment-history, Sessions, Session/Activity/Trainer detail (invalid id), Account, Profile, Activities, Trainers, Notifications, Locations, Groups, Refer (customer). ✅ Admin redirect; choose-experience redirect (customer → dashboard). ✅ Signup then login with same credentials. ✅ Reusable `signUpCustomer()` helper in `e2e/web.spec.ts`. ✅ Trainer dashboard E2E when `E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD` are set to a trainer account (test skips otherwise). ✅ Admin choose-experience E2E when set to an admin account (test skips otherwise). More e2e as needed.
 3. **Specs-dependent:** Fitness, DateTimeSchedule, PublicProfile, etc. — implement when product specs are defined.
-4. **Optional:** File/asset endpoints (stubs), push notifications, Stripe webhooks/refunds.
+4. **Optional:** File/asset endpoints (stubs), push notifications, Stripe webhooks/refunds. Profile picture storage: see [Profile picture storage (design)](./PROFILE_PICTURE_STORAGE.md) for low-cost approach (e.g. Cloudflare R2 + presigned URLs, store URL on User).
+
+**What to do next:** Run `npm run e2e:local` with API and web already running to verify E2E. When product specs exist, implement step 3 (Fitness, DateTimeSchedule, PublicProfile, etc.). To run credential-dependent E2E, set `E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD` to a trainer account (trainer dashboard test) or admin account (choose-experience test); tests skip if unset. Tackle step 4 (push, Stripe webhooks) when prioritised.
 
 ---
 

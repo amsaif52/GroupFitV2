@@ -118,7 +118,12 @@ export default function AdminFaqPage() {
   return (
     <>
       <header style={{ marginBottom: 24 }}>
-        <Link href={ROUTES.adminMasterData} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Master data</Link>
+        <Link
+          href={ROUTES.adminMasterData}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
+          ← Master data
+        </Link>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>FAQ</h1>
         <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginTop: 8 }}>
           FAQ entries shown on help pages. Order by sort order.
@@ -126,7 +131,16 @@ export default function AdminFaqPage() {
         <button
           type="button"
           onClick={openAdd}
-          style={{ marginTop: 12, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+          style={{
+            marginTop: 12,
+            padding: '10px 16px',
+            borderRadius: 8,
+            border: 'none',
+            background: 'var(--groupfit-secondary)',
+            color: '#fff',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
         >
           Add FAQ
         </button>
@@ -135,40 +149,99 @@ export default function AdminFaqPage() {
       {error && <p style={{ color: '#c00', marginBottom: 16 }}>{error}</p>}
 
       {showForm && (
-        <div style={{ marginBottom: 24, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>{editing ? 'Edit FAQ' : 'New FAQ'}</h2>
+        <div
+          style={{
+            marginBottom: 24,
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+          }}
+        >
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
+            {editing ? 'Edit FAQ' : 'New FAQ'}
+          </h2>
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Question</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Question
+            </label>
             <input
               type="text"
               value={formQuestion}
               onChange={(e) => setFormQuestion(e.target.value)}
               placeholder="e.g. How do I book a session?"
               required
-              style={{ padding: 8, width: '100%', maxWidth: 480, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 480,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Answer</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Answer
+            </label>
             <textarea
               value={formAnswer}
               onChange={(e) => setFormAnswer(e.target.value)}
               placeholder="Answer text"
               required
               rows={3}
-              style={{ padding: 8, width: '100%', maxWidth: 480, marginBottom: 12, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 480,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Sort order</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Sort order
+            </label>
             <input
               type="number"
               value={formSortOrder}
               onChange={(e) => setFormSortOrder(Number(e.target.value) || 0)}
               min={0}
-              style={{ padding: 8, width: 80, marginBottom: 16, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: 80,
+                marginBottom: 16,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button type="submit" disabled={submitLoading} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: submitLoading ? 'not-allowed' : 'pointer' }}>
+              <button
+                type="submit"
+                disabled={submitLoading}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: 'none',
+                  background: 'var(--groupfit-secondary)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: submitLoading ? 'not-allowed' : 'pointer',
+                }}
+              >
                 {submitLoading ? 'Saving…' : editing ? 'Update' : 'Create'}
               </button>
-              <button type="button" onClick={closeForm} style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #666', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+              <button
+                type="button"
+                onClick={closeForm}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: 8,
+                  border: '1px solid #666',
+                  background: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
@@ -182,7 +255,12 @@ export default function AdminFaqPage() {
         <div className="gf-home__empty" style={{ padding: 0, overflow: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid var(--groupfit-border-light)', textAlign: 'left' }}>
+              <tr
+                style={{
+                  borderBottom: '2px solid var(--groupfit-border-light)',
+                  textAlign: 'left',
+                }}
+              >
                 <th style={{ padding: '12px 16px', width: 60 }}>Order</th>
                 <th style={{ padding: '12px 16px' }}>Question</th>
                 <th style={{ padding: '12px 16px', maxWidth: 320 }}>Answer</th>
@@ -194,10 +272,42 @@ export default function AdminFaqPage() {
                 <tr key={row.id} style={{ borderBottom: '1px solid var(--groupfit-border-light)' }}>
                   <td style={{ padding: '12px 16px' }}>{row.sortOrder ?? 0}</td>
                   <td style={{ padding: '12px 16px' }}>{row.question}</td>
-                  <td style={{ padding: '12px 16px', maxWidth: 320 }}>{row.answer.length > 80 ? `${row.answer.slice(0, 80)}…` : row.answer}</td>
+                  <td style={{ padding: '12px 16px', maxWidth: 320 }}>
+                    {row.answer.length > 80 ? `${row.answer.slice(0, 80)}…` : row.answer}
+                  </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <button type="button" onClick={() => openEdit(row)} style={{ marginRight: 8, padding: '6px 10px', fontSize: 12, borderRadius: 6, border: '1px solid var(--groupfit-secondary)', background: '#fff', color: 'var(--groupfit-secondary)', cursor: 'pointer' }}>Edit</button>
-                    <button type="button" onClick={() => handleDelete(row.id)} disabled={actionId === row.id} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, border: '1px solid #c00', background: '#fff', color: '#c00', cursor: actionId === row.id ? 'not-allowed' : 'pointer' }}>{actionId === row.id ? '…' : 'Delete'}</button>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(row)}
+                      style={{
+                        marginRight: 8,
+                        padding: '6px 10px',
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: '1px solid var(--groupfit-secondary)',
+                        background: '#fff',
+                        color: 'var(--groupfit-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(row.id)}
+                      disabled={actionId === row.id}
+                      style={{
+                        padding: '6px 10px',
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: '1px solid #c00',
+                        background: '#fff',
+                        color: '#c00',
+                        cursor: actionId === row.id ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {actionId === row.id ? '…' : 'Delete'}
+                    </button>
                   </td>
                 </tr>
               ))}

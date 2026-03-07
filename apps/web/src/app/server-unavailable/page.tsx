@@ -47,7 +47,11 @@ export default function ServerUnavailablePage() {
       >
         {retrying ? 'Checking…' : 'Retry'}
       </button>
-      {error && <p style={{ color: 'var(--groupfit-secondary)', marginTop: '1rem', fontSize: '0.875rem' }}>{error}</p>}
+      {error && (
+        <p style={{ color: 'var(--groupfit-secondary)', marginTop: '1rem', fontSize: '0.875rem' }}>
+          {error}
+        </p>
+      )}
       <p style={{ marginTop: '2rem' }}>
         <Link href="/login" style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}>
           ← Back to login

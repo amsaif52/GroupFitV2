@@ -32,9 +32,7 @@ test.describe('API', () => {
   });
 
   test.describe('Login', () => {
-    test('POST /api/auth/login with invalid credentials returns 401', async ({
-      request,
-    }) => {
+    test('POST /api/auth/login with invalid credentials returns 401', async ({ request }) => {
       const res = await request.post('/api/auth/login', {
         data: { email: 'nonexistent@test.com', password: 'wrong' },
       });
@@ -79,9 +77,7 @@ test.describe('API', () => {
       expect(body.user.email).toBe(email);
     });
 
-    test('POST /api/auth/signup with existing email returns 409', async ({
-      request,
-    }) => {
+    test('POST /api/auth/signup with existing email returns 409', async ({ request }) => {
       const email = `e2e-dup-${Date.now()}@groupfit.test`;
       await request.post('/api/auth/signup', {
         data: { name: 'First', email, password: 'password123' },
@@ -182,7 +178,9 @@ test.describe('API', () => {
       expect(Array.isArray(body.ReferralList ?? body.list)).toBe(true);
     });
 
-    test('POST /api/customer/fetchallgroupslist with JWT returns 200 and list', async ({ request }) => {
+    test('POST /api/customer/fetchallgroupslist with JWT returns 200 and list', async ({
+      request,
+    }) => {
       const email = `e2e-groups-${Date.now()}@groupfit.test`;
       await request.post('/api/auth/signup', {
         data: { name: 'E2E Groups User', email, password: 'password123', role: 'customer' },
@@ -202,7 +200,9 @@ test.describe('API', () => {
       expect(Array.isArray(body.fetchallgroupslist ?? body.list)).toBe(true);
     });
 
-    test('POST /api/customer/addgroupname with JWT creates group and returns id', async ({ request }) => {
+    test('POST /api/customer/addgroupname with JWT creates group and returns id', async ({
+      request,
+    }) => {
       const email = `e2e-addgroup-${Date.now()}@groupfit.test`;
       await request.post('/api/auth/signup', {
         data: { name: 'E2E AddGroup User', email, password: 'password123', role: 'customer' },
@@ -246,7 +246,9 @@ test.describe('API', () => {
       expect(res.status()).toBe(401);
     });
 
-    test('POST /api/customer/otherConcern with JWT and message returns success', async ({ request }) => {
+    test('POST /api/customer/otherConcern with JWT and message returns success', async ({
+      request,
+    }) => {
       const email = `e2e-other-${Date.now()}@groupfit.test`;
       await request.post('/api/auth/signup', {
         data: { name: 'E2E Other User', email, password: 'password123', role: 'customer' },
@@ -266,7 +268,9 @@ test.describe('API', () => {
       expect(body.ticketId).toBeDefined();
     });
 
-    test('POST /api/customer/fetchSoloMembers with JWT returns 200 and list', async ({ request }) => {
+    test('POST /api/customer/fetchSoloMembers with JWT returns 200 and list', async ({
+      request,
+    }) => {
       const email = `e2e-solo-${Date.now()}@groupfit.test`;
       await request.post('/api/auth/signup', {
         data: { name: 'E2E Solo User', email, password: 'password123', role: 'customer' },
@@ -293,7 +297,12 @@ test.describe('API', () => {
         data: { name: 'E2E Owner', email: ownerEmail, password: 'password123', role: 'customer' },
       });
       const inviteeSignup = await request.post('/api/auth/signup', {
-        data: { name: 'E2E Invitee', email: inviteeEmail, password: 'password123', role: 'customer' },
+        data: {
+          name: 'E2E Invitee',
+          email: inviteeEmail,
+          password: 'password123',
+          role: 'customer',
+        },
       });
       expect(inviteeSignup.ok()).toBeTruthy();
       const inviteeBody = await inviteeSignup.json();
@@ -356,7 +365,9 @@ test.describe('API', () => {
       expect(Array.isArray(body.trainerServiceList ?? body.list)).toBe(true);
     });
 
-    test('POST /api/trainer/referralSummary with JWT returns 200 and referralSummary', async ({ request }) => {
+    test('POST /api/trainer/referralSummary with JWT returns 200 and referralSummary', async ({
+      request,
+    }) => {
       const email = `e2e-trainer-ref-${Date.now()}@groupfit.test`;
       await request.post('/api/auth/signup', {
         data: { name: 'E2E Trainer Ref', email, password: 'password123', role: 'trainer' },

@@ -2,17 +2,17 @@
 :root {
   --groupfit-primary-dark: #161639;
   --groupfit-primary-light: #ffffff;
-  --groupfit-secondary: #E21B22;
+  --groupfit-secondary: #e21b22;
   --groupfit-blue: #000033;
   --groupfit-grey: #777777;
-  --groupfit-grey-dark: #57585A;
+  --groupfit-grey-dark: #57585a;
   --groupfit-black: #060606;
   --groupfit-white: #ffffff;
   --groupfit-placeholder: rgba(6, 6, 6, 0.3);
   --groupfit-border: rgba(255, 255, 255, 0.8);
   --groupfit-border-light: rgba(44, 44, 46, 0.4);
-  --groupfit-error: #EC3D3D;
-  --groupfit-success: #07AF36;
+  --groupfit-error: #ec3d3d;
+  --groupfit-success: #07af36;
 }
 
 * {
@@ -52,7 +52,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 0 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   margin-bottom: 8px;
 }
 .gf-customer-sidebar__nav {
@@ -63,13 +63,15 @@ a {
 .gf-customer-sidebar__link {
   display: block;
   padding: 12px 20px;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255, 255, 255, 0.85);
   font-weight: 500;
   font-size: 14px;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .gf-customer-sidebar__link:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: var(--groupfit-white);
 }
 .gf-customer-sidebar__link--active {

@@ -34,7 +34,11 @@ function SessionsContent({
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
         <span className="gf-home__logo">My Sessions</span>
         <div className="gf-home__header-actions">
-          <Link href={ROUTES.notifications} className="gf-home__header-link" aria-label="Notifications">
+          <Link
+            href={ROUTES.notifications}
+            className="gf-home__header-link"
+            aria-label="Notifications"
+          >
             🔔
           </Link>
         </div>
@@ -85,12 +89,20 @@ function SessionsContent({
             const row = item as Record<string, unknown>;
             const sessionId = row.id ?? row.sessionId;
             return (
-              <li key={String(sessionId ?? i)} className="gf-home__empty" style={{ marginBottom: 12 }}>
-                <Link href={sessionId ? ROUTES.sessionDetail(String(sessionId)) : ROUTES.sessions} style={{ fontWeight: 600, color: 'inherit', textDecoration: 'none' }}>
+              <li
+                key={String(sessionId ?? i)}
+                className="gf-home__empty"
+                style={{ marginBottom: 12 }}
+              >
+                <Link
+                  href={sessionId ? ROUTES.sessionDetail(String(sessionId)) : ROUTES.sessions}
+                  style={{ fontWeight: 600, color: 'inherit', textDecoration: 'none' }}
+                >
                   {String(row.sessionName ?? 'Session')}
                 </Link>
                 <span style={{ fontSize: 12, color: 'var(--groupfit-grey)', marginLeft: 8 }}>
-                  {row.trainerName ?? row.customerName ?? ''} · {row.scheduledAt ? new Date(String(row.scheduledAt)).toLocaleString() : ''}
+                  {row.trainerName ?? row.customerName ?? ''} ·{' '}
+                  {row.scheduledAt ? new Date(String(row.scheduledAt)).toLocaleString() : ''}
                 </span>
               </li>
             );
@@ -135,12 +147,15 @@ export default function SessionsPage() {
           setCompleted((compData.customerSessionCompletedList as SessionItem[]) ?? []);
         }
       } catch {
-        if (!cancelled) setUpcoming([]); setCompleted([]);
+        if (!cancelled) setUpcoming([]);
+        setCompleted([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [isTrainer]);
 
   return (

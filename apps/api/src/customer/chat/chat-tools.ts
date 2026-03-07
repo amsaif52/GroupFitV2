@@ -17,7 +17,8 @@ export const CHAT_TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'get_trainers_near_me',
-      description: 'Get trainers and activities near the user. Optionally filter by location or activity type.',
+      description:
+        'Get trainers and activities near the user. Optionally filter by location or activity type.',
       parameters: {
         type: 'object',
         properties: {
@@ -50,12 +51,16 @@ export const CHAT_TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'book_session',
-      description: 'Book a session with a trainer at a specific slot. slotId must be the full datetime from get_availability (e.g. 2025-03-02T10:00:00).',
+      description:
+        'Book a session with a trainer at a specific slot. slotId must be the full datetime from get_availability (e.g. 2025-03-02T10:00:00).',
       parameters: {
         type: 'object',
         properties: {
           trainerId: { type: 'string', description: 'Trainer id' },
-          slotId: { type: 'string', description: 'Full datetime from get_availability, e.g. 2025-03-02T10:00:00' },
+          slotId: {
+            type: 'string',
+            description: 'Full datetime from get_availability, e.g. 2025-03-02T10:00:00',
+          },
         },
         required: ['trainerId', 'slotId'],
         additionalProperties: false,
@@ -64,4 +69,8 @@ export const CHAT_TOOLS: ChatCompletionTool[] = [
   },
 ];
 
-export type ChatToolName = 'get_upcoming_sessions' | 'get_trainers_near_me' | 'get_availability' | 'book_session';
+export type ChatToolName =
+  | 'get_upcoming_sessions'
+  | 'get_trainers_near_me'
+  | 'get_availability'
+  | 'book_session';

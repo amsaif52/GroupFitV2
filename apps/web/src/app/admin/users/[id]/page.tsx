@@ -24,7 +24,8 @@ export default function AdminUserDetailPage() {
       return;
     }
     let cancelled = false;
-    adminApi.userDetail(id)
+    adminApi
+      .userDetail(id)
       .then((res) => {
         if (cancelled) return;
         const data = res?.data as Record<string, unknown> | undefined;
@@ -42,8 +43,12 @@ export default function AdminUserDetailPage() {
           setUser(null);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleDeleteAccount = () => {
@@ -51,7 +56,8 @@ export default function AdminUserDetailPage() {
     if (!window.confirm('Permanently delete this user? This cannot be undone.')) return;
     setDeleteError(null);
     setDeleting(true);
-    adminApi.deleteAccount(id)
+    adminApi
+      .deleteAccount(id)
       .then((res) => {
         const data = res?.data as Record<string, unknown> | undefined;
         if (data?.mtype === 'success') {
@@ -67,7 +73,12 @@ export default function AdminUserDetailPage() {
   if (!id) {
     return (
       <>
-        <Link href={ROUTES.adminUsers} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Users</Link>
+        <Link
+          href={ROUTES.adminUsers}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
+          ← Users
+        </Link>
         <p style={{ color: 'var(--groupfit-grey)', marginTop: 16 }}>Invalid user.</p>
       </>
     );
@@ -76,7 +87,12 @@ export default function AdminUserDetailPage() {
   return (
     <>
       <header style={{ marginBottom: 24 }}>
-        <Link href={ROUTES.adminUsers} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Users</Link>
+        <Link
+          href={ROUTES.adminUsers}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
+          ← Users
+        </Link>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>User detail</h1>
       </header>
       {loading ? (
@@ -84,17 +100,46 @@ export default function AdminUserDetailPage() {
       ) : error ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>{error}</p>
       ) : user ? (
-        <div style={{ padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8, maxWidth: 480 }}>
-          <p><strong>ID</strong> {String(user.id ?? '')}</p>
-          <p><strong>Email</strong> {String(user.email ?? '')}</p>
-          <p><strong>Name</strong> {String(user.name ?? '—')}</p>
-          <p><strong>Role</strong> {String(user.role ?? '')}</p>
-          <p><strong>Locale</strong> {String(user.locale ?? '—')}</p>
-          <p><strong>Phone</strong> {String(user.phone ?? '—')}</p>
-          <p><strong>Created</strong> {user.createdAt ? new Date(String(user.createdAt)).toLocaleString() : '—'}</p>
-          {deleteError && <p style={{ color: 'var(--groupfit-error, #c00)', marginTop: 12 }}>{deleteError}</p>}
+        <div
+          style={{
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+            maxWidth: 480,
+          }}
+        >
+          <p>
+            <strong>ID</strong> {String(user.id ?? '')}
+          </p>
+          <p>
+            <strong>Email</strong> {String(user.email ?? '')}
+          </p>
+          <p>
+            <strong>Name</strong> {String(user.name ?? '—')}
+          </p>
+          <p>
+            <strong>Role</strong> {String(user.role ?? '')}
+          </p>
+          <p>
+            <strong>Locale</strong> {String(user.locale ?? '—')}
+          </p>
+          <p>
+            <strong>Phone</strong> {String(user.phone ?? '—')}
+          </p>
+          <p>
+            <strong>Created</strong>{' '}
+            {user.createdAt ? new Date(String(user.createdAt)).toLocaleString() : '—'}
+          </p>
+          {deleteError && (
+            <p style={{ color: 'var(--groupfit-error, #c00)', marginTop: 12 }}>{deleteError}</p>
+          )}
           <p style={{ marginTop: 16 }}>
-            <Link href={ROUTES.adminUsers} style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Back to users</Link>
+            <Link
+              href={ROUTES.adminUsers}
+              style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+            >
+              ← Back to users
+            </Link>
           </p>
           {getStoredUser()?.sub !== id && (
             <p style={{ marginTop: 12 }}>

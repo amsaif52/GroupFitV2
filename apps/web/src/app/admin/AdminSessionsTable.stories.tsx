@@ -37,13 +37,20 @@ function SessionsTable({ list }: { list: Record<string, unknown>[] }) {
         </thead>
         <tbody>
           {list.map((row, i) => (
-            <tr key={(row.id as string) ?? i} style={{ borderBottom: '1px solid var(--groupfit-border-light)' }}>
-              <td style={{ padding: '12px 16px' }}>{row.scheduledAt ? new Date(String(row.scheduledAt)).toLocaleString() : ''}</td>
+            <tr
+              key={(row.id as string) ?? i}
+              style={{ borderBottom: '1px solid var(--groupfit-border-light)' }}
+            >
+              <td style={{ padding: '12px 16px' }}>
+                {row.scheduledAt ? new Date(String(row.scheduledAt)).toLocaleString() : ''}
+              </td>
               <td style={{ padding: '12px 16px' }}>{String(row.activityName ?? '—')}</td>
               <td style={{ padding: '12px 16px' }}>{String(row.customerName ?? '')}</td>
               <td style={{ padding: '12px 16px' }}>{String(row.trainerName ?? '')}</td>
               <td style={{ padding: '12px 16px' }}>{String(row.status ?? '')}</td>
-              <td style={{ padding: '12px 16px' }}>{row.amountCents != null ? `$${(Number(row.amountCents) / 100).toFixed(2)}` : '—'}</td>
+              <td style={{ padding: '12px 16px' }}>
+                {row.amountCents != null ? `$${(Number(row.amountCents) / 100).toFixed(2)}` : '—'}
+              </td>
             </tr>
           ))}
         </tbody>

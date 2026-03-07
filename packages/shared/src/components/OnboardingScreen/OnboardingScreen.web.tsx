@@ -89,16 +89,40 @@ export function OnboardingScreenWeb({
             }}
           >
             <div style={{ textAlign: 'center' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center' }}>
-                <span style={{ fontSize: fontSizes.font25 + 1, fontWeight: 700, color: colors.white, marginRight: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: fontSizes.font25 + 1,
+                    fontWeight: 700,
+                    color: colors.white,
+                    marginRight: 8,
+                  }}
+                >
                   {slide.titleBold}
                 </span>
-                <span style={{ fontSize: fontSizes.font25 + 1, fontWeight: 300, color: colors.white }}>
+                <span
+                  style={{ fontSize: fontSizes.font25 + 1, fontWeight: 300, color: colors.white }}
+                >
                   {slide.titleRest}
                 </span>
               </div>
               {slide.subtitle ? (
-                <p style={{ fontSize: fontSizes.font25 + 1, fontWeight: 300, color: colors.white, marginTop: 4, margin: 0 }}>
+                <p
+                  style={{
+                    fontSize: fontSizes.font25 + 1,
+                    fontWeight: 300,
+                    color: colors.white,
+                    marginTop: 4,
+                    margin: 0,
+                  }}
+                >
                   {slide.subtitle}
                 </p>
               ) : null}
@@ -141,7 +165,8 @@ export function OnboardingScreenWeb({
                 width: index === currentIndex ? 35 : 15,
                 height: 4,
                 borderRadius: 2,
-                backgroundColor: index === currentIndex ? colors.secondary : 'rgba(255,255,255,0.5)',
+                backgroundColor:
+                  index === currentIndex ? colors.secondary : 'rgba(255,255,255,0.5)',
               }}
             />
           ))}

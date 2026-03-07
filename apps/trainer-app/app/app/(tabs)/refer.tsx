@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
 import { colors } from '@groupfit/shared/theme';
 
-const REFERRAL_MESSAGE = 'Join GroupFit – your fitness community. Get started with GroupFit today. https://groupfit.app';
+const REFERRAL_MESSAGE =
+  'Join GroupFit – your fitness community. Get started with GroupFit today. https://groupfit.app';
 
 export default function ReferTab() {
   async function handleShare() {
@@ -46,7 +47,13 @@ const styles = StyleSheet.create({
   },
   logo: { fontSize: 20, fontWeight: '700', color: colors.white, letterSpacing: 0.5 },
   content: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 20, fontWeight: '700', color: colors.white, marginBottom: 12, textAlign: 'center' },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.white,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   subtitle: { fontSize: 14, color: colors.placeholderDark, textAlign: 'center', marginBottom: 24 },
   button: {
     backgroundColor: colors.secondary,

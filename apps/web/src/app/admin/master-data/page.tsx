@@ -12,7 +12,8 @@ const SECTIONS = [
   },
   {
     title: 'Country / State / City',
-    description: 'Reference data for addresses and locations. Currently served from static reference data in the API.',
+    description:
+      'Reference data for addresses and locations. Currently served from static reference data in the API.',
     href: null,
     label: 'Coming soon',
   },
@@ -46,10 +47,16 @@ export default function AdminMasterDataPage() {
   return (
     <>
       <header style={{ marginBottom: 24 }}>
-        <Link href={ROUTES.adminDashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Dashboard</Link>
+        <Link
+          href={ROUTES.adminDashboard}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
+          ← Dashboard
+        </Link>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>Master data</h1>
         <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginTop: 8 }}>
-          Reference data and content used across the platform. Activity types are managed here; country/state/city and other master data can be added later.
+          Reference data and content used across the platform. Activity types are managed here;
+          country/state/city and other master data can be added later.
         </p>
       </header>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -64,9 +71,14 @@ export default function AdminMasterDataPage() {
             }}
           >
             <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>{section.title}</h2>
-            <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 12 }}>{section.description}</p>
+            <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 12 }}>
+              {section.description}
+            </p>
             {section.href ? (
-              <Link href={section.href} style={{ fontSize: 14, fontWeight: 600, color: 'var(--groupfit-secondary)' }}>
+              <Link
+                href={section.href}
+                style={{ fontSize: 14, fontWeight: 600, color: 'var(--groupfit-secondary)' }}
+              >
                 {section.label} →
               </Link>
             ) : (

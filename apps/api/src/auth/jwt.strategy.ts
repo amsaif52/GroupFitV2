@@ -5,7 +5,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 /** Claims stored in the JWT. Add more when you sign the token at login. */
 export interface JwtPayload {
-  sub: string;       // user id (required)
+  sub: string; // user id (required)
   email?: string;
   role?: string;
   locale?: string;

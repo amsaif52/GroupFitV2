@@ -55,7 +55,12 @@ export default function AdminCustomizeDashboardPage() {
   return (
     <>
       <header style={{ marginBottom: 24 }}>
-        <Link href={ROUTES.adminDashboard} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Dashboard</Link>
+        <Link
+          href={ROUTES.adminDashboard}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
+          ← Dashboard
+        </Link>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>Customize dashboard</h1>
         <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginTop: 8 }}>
           Optional JSON config for dashboard layout or widget visibility. Save valid JSON only.
@@ -68,17 +73,46 @@ export default function AdminCustomizeDashboardPage() {
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
       ) : (
-        <div style={{ maxWidth: 640, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8 }}>
+        <div
+          style={{
+            maxWidth: 640,
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+          }}
+        >
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Dashboard config (JSON)</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Dashboard config (JSON)
+            </label>
             <textarea
               value={jsonText}
               onChange={(e) => setJsonText(e.target.value)}
               rows={12}
-              style={{ padding: 8, width: '100%', fontFamily: 'monospace', fontSize: 13, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                fontFamily: 'monospace',
+                fontSize: 13,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
               spellCheck={false}
             />
-            <button type="submit" disabled={submitLoading} style={{ marginTop: 12, padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: submitLoading ? 'not-allowed' : 'pointer' }}>
+            <button
+              type="submit"
+              disabled={submitLoading}
+              style={{
+                marginTop: 12,
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'var(--groupfit-secondary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: submitLoading ? 'not-allowed' : 'pointer',
+              }}
+            >
               {submitLoading ? 'Saving…' : 'Save'}
             </button>
           </form>

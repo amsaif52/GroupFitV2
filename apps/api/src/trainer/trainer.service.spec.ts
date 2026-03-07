@@ -51,10 +51,7 @@ describe('TrainerService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TrainerService,
-        { provide: PrismaService, useValue: mockPrisma },
-      ],
+      providers: [TrainerService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile();
 
     service = module.get<TrainerService>(TrainerService);
@@ -127,26 +124,26 @@ describe('TrainerService', () => {
       expect(result.mtype).toBe('success');
       expect(result.trainerSessionList).toHaveLength(1);
       expect((result.trainerSessionList as Record<string, unknown>[])[0].sessionName).toBe('HIIT');
-      expect((result.trainerSessionList as Record<string, unknown>[])[0].customerName).toBe('Customer');
+      expect((result.trainerSessionList as Record<string, unknown>[])[0].customerName).toBe(
+        'Customer'
+      );
       expect(mockPrisma.session.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { trainerId: 'trainer-1', status: 'scheduled' },
-        }),
+        })
       );
     });
   });
 
   describe('trainerSessionCompletedList', () => {
     it('returns completed sessions for the trainer', async () => {
-      mockPrisma.session.findMany.mockResolvedValue([
-        { ...mockSession, status: 'completed' },
-      ]);
+      mockPrisma.session.findMany.mockResolvedValue([{ ...mockSession, status: 'completed' }]);
       const result = await service.trainerSessionCompletedList('trainer-1');
       expect(result.trainerSessionCompletedList).toHaveLength(1);
       expect(mockPrisma.session.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { trainerId: 'trainer-1', status: 'completed' },
-        }),
+        })
       );
     });
   });
@@ -162,7 +159,7 @@ describe('TrainerService', () => {
             trainerId: 'trainer-1',
             status: 'scheduled',
           }),
-        }),
+        })
       );
     });
   });
@@ -249,7 +246,11 @@ describe('TrainerService', () => {
     });
 
     it('updates session to completed', async () => {
-      mockPrisma.session.findFirst.mockResolvedValue({ id: 'session-1', trainerId: 'trainer-1', status: 'scheduled' });
+      mockPrisma.session.findFirst.mockResolvedValue({
+        id: 'session-1',
+        trainerId: 'trainer-1',
+        status: 'scheduled',
+      });
       mockPrisma.session.update.mockResolvedValue(undefined);
       const result = await service.UpdateSessionCompleteFlag('trainer-1', 'session-1');
       expect(result.mtype).toBe('success');
@@ -260,7 +261,11 @@ describe('TrainerService', () => {
     });
 
     it('updates session to completed with amountCents', async () => {
-      mockPrisma.session.findFirst.mockResolvedValue({ id: 'session-1', trainerId: 'trainer-1', status: 'scheduled' });
+      mockPrisma.session.findFirst.mockResolvedValue({
+        id: 'session-1',
+        trainerId: 'trainer-1',
+        status: 'scheduled',
+      });
       mockPrisma.session.update.mockResolvedValue(undefined);
       await service.UpdateSessionCompleteFlag('trainer-1', 'session-1', 5000);
       expect(mockPrisma.session.update).toHaveBeenCalledWith({
@@ -409,7 +414,9 @@ describe('TrainerService', () => {
       expect(result.mtype).toBe('success');
       expect(result.id).toBe('new-cert');
       expect(mockPrisma.trainerCertificate.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ name: 'NASM', trainerId: 'trainer-1' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ name: 'NASM', trainerId: 'trainer-1' }),
+        })
       );
     });
   });
@@ -452,7 +459,9 @@ describe('TrainerService', () => {
       mockPrisma.trainerCertificate.findFirst.mockResolvedValue({ id: 'cert-1' });
       const result = await service.deleteCertification('trainer-1', 'cert-1');
       expect(result.mtype).toBe('success');
-      expect(mockPrisma.trainerCertificate.delete).toHaveBeenCalledWith({ where: { id: 'cert-1' } });
+      expect(mockPrisma.trainerCertificate.delete).toHaveBeenCalledWith({
+        where: { id: 'cert-1' },
+      });
     });
   });
 
@@ -477,7 +486,7 @@ describe('TrainerService', () => {
         expect.objectContaining({
           where: { trainerId: 'trainer-1' },
           create: expect.objectContaining({ accountHolderName: 'John Doe', last4: '1234' }),
-        }),
+        })
       );
     });
   });
@@ -541,7 +550,9 @@ describe('TrainerService', () => {
       expect(result.mtype).toBe('success');
       expect(result.id).toBe('new-area');
       expect(mockPrisma.trainerServiceArea.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ label: 'North Side', trainerId: 'trainer-1' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ label: 'North Side', trainerId: 'trainer-1' }),
+        })
       );
     });
   });
@@ -637,11 +648,15 @@ describe('TrainerService', () => {
 
   describe('fetchContactLink', () => {
     it('returns success with contactEmail from DB or env', async () => {
-      (mockPrisma.contactSetting.findUnique as jest.Mock).mockResolvedValue({ value: 'help@test.com' });
+      (mockPrisma.contactSetting.findUnique as jest.Mock).mockResolvedValue({
+        value: 'help@test.com',
+      });
       const result = await service.fetchContactLink();
       expect(result.mtype).toBe('success');
       expect((result as Record<string, unknown>).contactEmail).toBe('help@test.com');
-      expect(mockPrisma.contactSetting.findUnique).toHaveBeenCalledWith({ where: { key: 'contact_email' } });
+      expect(mockPrisma.contactSetting.findUnique).toHaveBeenCalledWith({
+        where: { key: 'contact_email' },
+      });
     });
   });
 

@@ -12,7 +12,7 @@ export class BaseHttpException extends HttpException {
     message: string,
     statusCode: HttpStatus = HttpStatus.INTERNAL_SERVER_ERROR,
     public readonly code?: string,
-    public readonly details?: ErrorDetails,
+    public readonly details?: ErrorDetails
   ) {
     super(
       {
@@ -21,7 +21,7 @@ export class BaseHttpException extends HttpException {
         message,
         ...(details && Object.keys(details).length > 0 && { details }),
       },
-      statusCode,
+      statusCode
     );
   }
 }

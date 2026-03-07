@@ -21,7 +21,16 @@ export default function EarningScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primaryLight },
-  topbar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
   back: { fontSize: 14, color: colors.secondary, fontWeight: '600' },
   title: { fontSize: 20, fontWeight: '600', color: colors.black },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },

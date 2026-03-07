@@ -7,7 +7,15 @@ export default function ComingSoonPage() {
   const router = useRouter();
 
   return (
-    <main style={{ padding: '2rem', fontFamily: 'system-ui', maxWidth: 400, margin: '0 auto', textAlign: 'center' }}>
+    <main
+      style={{
+        padding: '2rem',
+        fontFamily: 'system-ui',
+        maxWidth: 400,
+        margin: '0 auto',
+        textAlign: 'center',
+      }}
+    >
       <h1 style={{ marginBottom: '1rem' }}>Coming soon</h1>
       <p style={{ color: '#666', marginBottom: '1.5rem' }}>
         This page is not built yet. We’ll add it soon.
@@ -20,10 +28,16 @@ export default function ComingSoonPage() {
         >
           Go back
         </button>
-        <Link href="/dashboard" style={{ padding: '0.5rem 1rem', color: 'var(--groupfit-secondary)', fontWeight: 600 }}>
+        <Link
+          href="/dashboard"
+          style={{ padding: '0.5rem 1rem', color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
           Dashboard
         </Link>
-        <Link href="/profile" style={{ padding: '0.5rem 1rem', color: 'var(--groupfit-secondary)', fontWeight: 600 }}>
+        <Link
+          href="/profile"
+          style={{ padding: '0.5rem 1rem', color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
           Profile
         </Link>
       </div>

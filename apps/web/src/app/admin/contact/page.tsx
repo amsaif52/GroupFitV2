@@ -47,7 +47,12 @@ export default function AdminContactPage() {
   return (
     <>
       <header style={{ marginBottom: 24 }}>
-        <Link href={ROUTES.adminMasterData} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Master data</Link>
+        <Link
+          href={ROUTES.adminMasterData}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
+          ← Master data
+        </Link>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>Contact Us</h1>
         <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginTop: 8 }}>
           Contact email shown on help and contact pages.
@@ -60,18 +65,45 @@ export default function AdminContactPage() {
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
       ) : (
-        <div style={{ maxWidth: 480, padding: 20, border: '1px solid var(--groupfit-border-light)', borderRadius: 8 }}>
+        <div
+          style={{
+            maxWidth: 480,
+            padding: 20,
+            border: '1px solid var(--groupfit-border-light)',
+            borderRadius: 8,
+          }}
+        >
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>Contact email</label>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Contact email
+            </label>
             <input
               type="email"
               value={formEmail}
               onChange={(e) => setFormEmail(e.target.value)}
               placeholder="support@example.com"
               required
-              style={{ padding: 8, width: '100%', marginBottom: 16, borderRadius: 6, border: '1px solid var(--groupfit-border-light)' }}
+              style={{
+                padding: 8,
+                width: '100%',
+                marginBottom: 16,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
             />
-            <button type="submit" disabled={submitLoading} style={{ padding: '10px 16px', borderRadius: 8, border: 'none', background: 'var(--groupfit-secondary)', color: '#fff', fontWeight: 600, cursor: submitLoading ? 'not-allowed' : 'pointer' }}>
+            <button
+              type="submit"
+              disabled={submitLoading}
+              style={{
+                padding: '10px 16px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'var(--groupfit-secondary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: submitLoading ? 'not-allowed' : 'pointer',
+              }}
+            >
               {submitLoading ? 'Saving…' : 'Save'}
             </button>
           </form>

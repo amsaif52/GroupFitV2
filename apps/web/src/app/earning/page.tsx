@@ -35,20 +35,28 @@ export default function EarningPage() {
         setCurrentEarning(getData(earnRes).currentEarning ?? null);
         setEarningStats(getData(statsRes).earningStats ?? null);
       } catch {
-        if (!cancelled) setCurrentEarning(null); setEarningStats(null);
+        if (!cancelled) setCurrentEarning(null);
+        setEarningStats(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user, router]);
 
   if (!user) return null;
   if (user.role !== ROLES.TRAINER && user.role !== ROLES.ADMIN) return null;
 
-  const amountStr = currentEarning != null && typeof currentEarning === 'object' && 'amount' in (currentEarning as object)
-    ? String((currentEarning as Record<string, unknown>).amount)
-    : currentEarning != null ? String(currentEarning) : '£0.00';
+  const amountStr =
+    currentEarning != null &&
+    typeof currentEarning === 'object' &&
+    'amount' in (currentEarning as object)
+      ? String((currentEarning as Record<string, unknown>).amount)
+      : currentEarning != null
+        ? String(currentEarning)
+        : '£0.00';
 
   return (
     <TrainerLayout>
@@ -66,7 +74,14 @@ export default function EarningPage() {
           {earningStats != null && (
             <div className="gf-home__empty" style={{ padding: 16 }}>
               <strong>Summary</strong>
-              <pre style={{ fontSize: 12, color: 'var(--groupfit-grey)', marginTop: 8, overflow: 'auto' }}>
+              <pre
+                style={{
+                  fontSize: 12,
+                  color: 'var(--groupfit-grey)',
+                  marginTop: 8,
+                  overflow: 'auto',
+                }}
+              >
                 {JSON.stringify(earningStats, null, 2).slice(0, 300)}…
               </pre>
             </div>

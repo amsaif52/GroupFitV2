@@ -22,8 +22,6 @@ import { HealthModule } from './health/health.module';
     TrainerModule,
     AdminModule,
   ],
-  providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

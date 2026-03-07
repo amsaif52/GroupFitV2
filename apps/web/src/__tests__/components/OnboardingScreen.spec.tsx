@@ -3,27 +3,21 @@ import { OnboardingScreen, ONBOARDING_SLIDES_CUSTOMER } from '@groupfit/shared/c
 
 describe('OnboardingScreen', () => {
   it('renders first slide content', () => {
-    render(
-      <OnboardingScreen slides={ONBOARDING_SLIDES_CUSTOMER} onComplete={() => {}} />
-    );
+    render(<OnboardingScreen slides={ONBOARDING_SLIDES_CUSTOMER} onComplete={() => {}} />);
     expect(screen.getByText('Pick')).toBeInTheDocument();
     expect(screen.getByText('the activity and trainer')).toBeInTheDocument();
     expect(screen.getByText('for your group')).toBeInTheDocument();
   });
 
   it('renders Skip, Next and dot indicators', () => {
-    render(
-      <OnboardingScreen slides={ONBOARDING_SLIDES_CUSTOMER} onComplete={() => {}} />
-    );
+    render(<OnboardingScreen slides={ONBOARDING_SLIDES_CUSTOMER} onComplete={() => {}} />);
     expect(screen.getByRole('button', { name: 'Skip' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
   });
 
   it('calls onComplete when Skip is clicked', () => {
     const onComplete = jest.fn();
-    render(
-      <OnboardingScreen slides={ONBOARDING_SLIDES_CUSTOMER} onComplete={onComplete} />
-    );
+    render(<OnboardingScreen slides={ONBOARDING_SLIDES_CUSTOMER} onComplete={onComplete} />);
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
     expect(onComplete).toHaveBeenCalledTimes(1);
   });

@@ -5,15 +5,40 @@
 import type { FaqDisplay, ContactItem } from './types';
 
 export const DEFAULT_FAQS_CUSTOMER: FaqDisplay[] = [
-  { id: '1', question: 'How do I book a session?', description: 'Go to Activities or find a trainer, choose a time slot, and confirm your booking.' },
-  { id: '2', question: 'How do I cancel or reschedule?', description: 'Open your session from My Sessions and use the cancel or reschedule option.' },
-  { id: '3', question: 'Where can I see my payment history?', description: 'Go to Account or Profile and tap Payment History.' },
+  {
+    id: '1',
+    question: 'How do I book a session?',
+    description:
+      'Go to Activities or find a trainer, choose a time slot, and confirm your booking.',
+  },
+  {
+    id: '2',
+    question: 'How do I cancel or reschedule?',
+    description: 'Open your session from My Sessions and use the cancel or reschedule option.',
+  },
+  {
+    id: '3',
+    question: 'Where can I see my payment history?',
+    description: 'Go to Account or Profile and tap Payment History.',
+  },
 ];
 
 export const DEFAULT_FAQS_TRAINER: FaqDisplay[] = [
-  { id: '1', question: 'How do I create a session?', description: 'Go to Sessions and tap Create. Choose activity, date, time, and location.' },
-  { id: '2', question: 'How do I get paid?', description: 'Add your bank details in Account → Bank Details to receive payments.' },
-  { id: '3', question: 'Where can I see my reviews?', description: 'Go to Account or Profile and open Reviews to see feedback from customers.' },
+  {
+    id: '1',
+    question: 'How do I create a session?',
+    description: 'Go to Sessions and tap Create. Choose activity, date, time, and location.',
+  },
+  {
+    id: '2',
+    question: 'How do I get paid?',
+    description: 'Add your bank details in Account → Bank Details to receive payments.',
+  },
+  {
+    id: '3',
+    question: 'Where can I see my reviews?',
+    description: 'Go to Account or Profile and open Reviews to see feedback from customers.',
+  },
 ];
 
 export const FALLBACK_CONTACT_CUSTOMER: ContactItem[] = [

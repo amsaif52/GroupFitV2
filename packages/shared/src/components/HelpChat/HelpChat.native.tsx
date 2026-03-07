@@ -1,5 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { colors } from '../../theme';
 import type { HelpChatProps } from './HelpChat.types';
 
@@ -33,7 +42,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.black,
   },
-  sendBtn: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.secondary },
+  sendBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+  },
   sendBtnDisabled: { opacity: 0.7 },
   sendText: { color: colors.white, fontWeight: '600' },
   error: { color: colors.error, fontSize: 14, marginTop: 8, marginHorizontal: 12 },
@@ -62,12 +76,23 @@ export function HelpChatNative({
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={80}
     >
-      <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+      >
         {messages.length === 0 && <Text style={styles.hint}>{hintText}</Text>}
         {messages.map((m, i) => (
           <View key={i} style={[styles.row, m.role === 'user' && styles.rowUser]}>
-            <View style={[styles.bubble, m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant]}>
-              <Text style={m.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant}>{m.content}</Text>
+            <View
+              style={[
+                styles.bubble,
+                m.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant,
+              ]}
+            >
+              <Text style={m.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant}>
+                {m.content}
+              </Text>
             </View>
           </View>
         ))}

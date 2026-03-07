@@ -21,7 +21,7 @@ export class ChatController {
   @ApiResponse({ status: 200, description: 'Assistant reply', type: ChatResponseDto })
   async chat(
     @CurrentUser() user: JwtPayload,
-    @Body() dto: SendMessageDto,
+    @Body() dto: SendMessageDto
   ): Promise<ChatResponseDto> {
     const result = await this.chatService.sendMessage(user.sub, dto.message, dto.conversationId);
     return { message: result.message, conversationId: result.conversationId };

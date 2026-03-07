@@ -92,7 +92,7 @@ describe('AuthService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
 
       await expect(service.login('unknown@test.com', 'pass')).rejects.toThrow(
-        UnauthorizedException,
+        UnauthorizedException
       );
     });
 
@@ -100,9 +100,7 @@ describe('AuthService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUserWithPassword);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login('user@test.com', 'wrong')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.login('user@test.com', 'wrong')).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -133,9 +131,9 @@ describe('AuthService', () => {
     it('throws ConflictException when email already exists', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUserWithPassword);
 
-      await expect(
-        service.signup('user@test.com', 'password123'),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.signup('user@test.com', 'password123')).rejects.toThrow(
+        ConflictException
+      );
       expect(mockPrisma.user.create).not.toHaveBeenCalled();
     });
   });
@@ -156,7 +154,7 @@ describe('AuthService', () => {
             otp: expect.any(String),
             otpSentAt: expect.any(Date),
           }),
-        }),
+        })
       );
     });
 
@@ -171,7 +169,7 @@ describe('AuthService', () => {
         expect.objectContaining({
           where: { id: mockUser.id },
           data: { otp: expect.any(String), otpSentAt: expect.any(Date) },
-        }),
+        })
       );
     });
 
@@ -237,9 +235,7 @@ describe('AuthService', () => {
       mockPrisma.user.findUnique.mockResolvedValue(expiredUser);
       mockPrisma.user.update.mockResolvedValue(expiredUser);
 
-      await expect(service.verifyOtp('1234', mockUser.id)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.verifyOtp('1234', mockUser.id)).rejects.toThrow(UnauthorizedException);
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: mockUser.id },
         data: { otp: null, otpSentAt: null },

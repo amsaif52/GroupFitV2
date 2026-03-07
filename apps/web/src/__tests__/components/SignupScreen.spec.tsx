@@ -16,9 +16,13 @@ describe('SignupScreen', () => {
     const onSubmit = jest.fn();
     render(<SignupScreen onSubmit={onSubmit} />);
     fireEvent.change(screen.getByPlaceholderText('Name'), { target: { value: 'Jane Doe' } });
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'jane@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('Email'), {
+      target: { value: 'jane@example.com' },
+    });
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByPlaceholderText('Confirm password'), { target: { value: 'secret123' } });
+    fireEvent.change(screen.getByPlaceholderText('Confirm password'), {
+      target: { value: 'secret123' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith({
@@ -32,9 +36,13 @@ describe('SignupScreen', () => {
     const onSubmit = jest.fn();
     render(<SignupScreen onSubmit={onSubmit} />);
     fireEvent.change(screen.getByPlaceholderText('Name'), { target: { value: 'Jane' } });
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'jane@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('Email'), {
+      target: { value: 'jane@example.com' },
+    });
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByPlaceholderText('Confirm password'), { target: { value: 'different' } });
+    fireEvent.change(screen.getByPlaceholderText('Confirm password'), {
+      target: { value: 'different' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
     expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
@@ -51,9 +59,13 @@ describe('SignupScreen', () => {
       />
     );
     fireEvent.change(screen.getByPlaceholderText('Name'), { target: { value: 'Jane' } });
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'jane@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('Email'), {
+      target: { value: 'jane@example.com' },
+    });
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByPlaceholderText('Confirm password'), { target: { value: 'secret123' } });
+    fireEvent.change(screen.getByPlaceholderText('Confirm password'), {
+      target: { value: 'secret123' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
     expect(screen.getByText('Please accept the terms to continue')).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
@@ -70,9 +82,13 @@ describe('SignupScreen', () => {
       />
     );
     fireEvent.change(screen.getByPlaceholderText('Name'), { target: { value: 'Jane' } });
-    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'jane@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('Email'), {
+      target: { value: 'jane@example.com' },
+    });
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'secret123' } });
-    fireEvent.change(screen.getByPlaceholderText('Confirm password'), { target: { value: 'secret123' } });
+    fireEvent.change(screen.getByPlaceholderText('Confirm password'), {
+      target: { value: 'secret123' },
+    });
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
     expect(onSubmit).toHaveBeenCalledWith({
@@ -100,13 +116,7 @@ describe('SignupScreen', () => {
   });
 
   it('shows social buttons when onGooglePress and onApplePress are provided', () => {
-    render(
-      <SignupScreen
-        onSubmit={() => {}}
-        onGooglePress={() => {}}
-        onApplePress={() => {}}
-      />
-    );
+    render(<SignupScreen onSubmit={() => {}} onGooglePress={() => {}} onApplePress={() => {}} />);
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Continue with Apple' })).toBeInTheDocument();
     expect(screen.getByText('or')).toBeInTheDocument();
@@ -115,11 +125,7 @@ describe('SignupScreen', () => {
   it('calls onGooglePress when Continue with Google is clicked', () => {
     const onGooglePress = jest.fn();
     render(
-      <SignupScreen
-        onSubmit={() => {}}
-        onGooglePress={onGooglePress}
-        onApplePress={() => {}}
-      />
+      <SignupScreen onSubmit={() => {}} onGooglePress={onGooglePress} onApplePress={() => {}} />
     );
     fireEvent.click(screen.getByRole('button', { name: 'Continue with Google' }));
     expect(onGooglePress).toHaveBeenCalledTimes(1);
@@ -128,11 +134,7 @@ describe('SignupScreen', () => {
   it('calls onApplePress when Continue with Apple is clicked', () => {
     const onApplePress = jest.fn();
     render(
-      <SignupScreen
-        onSubmit={() => {}}
-        onGooglePress={() => {}}
-        onApplePress={onApplePress}
-      />
+      <SignupScreen onSubmit={() => {}} onGooglePress={() => {}} onApplePress={onApplePress} />
     );
     fireEvent.click(screen.getByRole('button', { name: 'Continue with Apple' }));
     expect(onApplePress).toHaveBeenCalledTimes(1);

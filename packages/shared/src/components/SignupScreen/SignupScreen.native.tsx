@@ -186,7 +186,10 @@ export function SignupScreenNative({
                 </Text>
               </TouchableOpacity>
               {onTermsClick && termsLinkText ? (
-                <TouchableOpacity onPress={onTermsClick} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <TouchableOpacity
+                  onPress={onTermsClick}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
                   <Text style={styles.termsLink}>{termsLinkText}</Text>
                 </TouchableOpacity>
               ) : null}
@@ -199,16 +202,17 @@ export function SignupScreenNative({
             disabled={loading}
             activeOpacity={0.8}
           >
-            <Text style={styles.buttonText}>
-              {loading ? loadingLabel : submitLabel}
-            </Text>
+            <Text style={styles.buttonText}>{loading ? loadingLabel : submitLabel}</Text>
           </TouchableOpacity>
         </View>
 
         {onLoginClick ? (
           <View style={styles.footer}>
             <Text style={styles.footerPrompt}>{footerPrompt}</Text>
-            <TouchableOpacity onPress={onLoginClick} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity
+              onPress={onLoginClick}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <Text style={styles.footerLink}>{footerLinkText}</Text>
             </TouchableOpacity>
           </View>
@@ -354,7 +358,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...(Platform.OS === 'ios'
-      ? { shadowColor: 'rgba(0,0,0,0.2)', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.8, shadowRadius: 2 }
+      ? {
+          shadowColor: 'rgba(0,0,0,0.2)',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.8,
+          shadowRadius: 2,
+        }
       : { elevation: 5 }),
   },
   buttonDisabled: {

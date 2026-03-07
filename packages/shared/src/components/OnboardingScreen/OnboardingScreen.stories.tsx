@@ -10,7 +10,8 @@ const meta: Meta<typeof OnboardingScreenWeb> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component: 'Onboarding carousel (web version for Storybook). RN apps use OnboardingScreen from @groupfit/shared/components/native.',
+        component:
+          'Onboarding carousel (web version for Storybook). RN apps use OnboardingScreen from @groupfit/shared/components/native.',
       },
     },
   },

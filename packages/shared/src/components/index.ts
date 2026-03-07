@@ -14,7 +14,10 @@ export { SignupScreenWeb as SignupScreen } from './SignupScreen';
 export type { SignupScreenWebProps as SignupScreenProps } from './SignupScreen';
 export { OnboardingScreenWeb as OnboardingScreen } from './OnboardingScreen/OnboardingScreen.web';
 export type { OnboardingScreenWebProps as OnboardingScreenProps } from './OnboardingScreen/OnboardingScreen.web';
-export { ONBOARDING_SLIDES_CUSTOMER, ONBOARDING_SLIDES_TRAINER } from './OnboardingScreen/onboardingSlides';
+export {
+  ONBOARDING_SLIDES_CUSTOMER,
+  ONBOARDING_SLIDES_TRAINER,
+} from './OnboardingScreen/onboardingSlides';
 export { VerifyNumberScreenWeb as VerifyNumberScreen } from './VerifyNumberScreen';
 export type { VerifyNumberScreenWebProps as VerifyNumberScreenProps } from './VerifyNumberScreen';
 export { SplashScreenWeb as SplashScreen } from './SplashScreen';

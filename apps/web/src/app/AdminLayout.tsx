@@ -26,7 +26,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="gf-customer-layout">
-      <aside className="gf-customer-sidebar" style={{ backgroundColor: 'var(--groupfit-primary-dark)', minWidth: 200 }}>
+      <aside
+        className="gf-customer-sidebar"
+        style={{ backgroundColor: 'var(--groupfit-primary-dark)', minWidth: 200 }}
+      >
         <span className="gf-customer-sidebar__logo">GroupFit Admin</span>
         <nav className="gf-customer-sidebar__nav" aria-label="Admin navigation">
           {ADMIN_NAV.map(({ href, label }) => (

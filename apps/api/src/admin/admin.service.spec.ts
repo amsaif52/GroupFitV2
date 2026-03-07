@@ -86,10 +86,7 @@ describe('AdminService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AdminService,
-        { provide: PrismaService, useValue: mockPrisma },
-      ],
+      providers: [AdminService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile();
 
     service = module.get<AdminService>(AdminService);
@@ -143,8 +140,8 @@ describe('AdminService', () => {
       const result = await service.usersList();
       expect(result.mtype).toBe('success');
       expect(result.list).toHaveLength(1);
-      expect((result.list as typeof mockUser[])[0].email).toBe('admin@test.com');
-      expect((result.list as typeof mockUser[])[0].name).toBe('Admin');
+      expect((result.list as (typeof mockUser)[])[0].email).toBe('admin@test.com');
+      expect((result.list as (typeof mockUser)[])[0].name).toBe('Admin');
     });
   });
 
@@ -154,7 +151,7 @@ describe('AdminService', () => {
       const result = await service.trainerList();
       expect(result.list).toHaveLength(1);
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { role: 'trainer' } }),
+        expect.objectContaining({ where: { role: 'trainer' } })
       );
     });
   });
@@ -165,7 +162,7 @@ describe('AdminService', () => {
       const result = await service.customerList();
       expect(result.list).toHaveLength(1);
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { role: 'customer' } }),
+        expect.objectContaining({ where: { role: 'customer' } })
       );
     });
   });
@@ -273,14 +270,17 @@ describe('AdminService', () => {
       expect(result.list).toHaveLength(2);
       expect(result.faqList).toHaveLength(2);
       expect(mockPrisma.faq.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { sortOrder: 'asc' } }),
+        expect.objectContaining({ orderBy: { sortOrder: 'asc' } })
       );
     });
   });
 
   describe('contactUs', () => {
     it('returns contactEmail from DB when set', async () => {
-      mockPrisma.contactSetting.findUnique.mockResolvedValue({ key: 'contact_email', value: 'admin@example.com' });
+      mockPrisma.contactSetting.findUnique.mockResolvedValue({
+        key: 'contact_email',
+        value: 'admin@example.com',
+      });
       const result = await service.contactUs();
       expect(result.mtype).toBe('success');
       expect(result.contactEmail).toBe('admin@example.com');
@@ -316,7 +316,7 @@ describe('AdminService', () => {
       expect(result.mtype).toBe('success');
       expect(result.id).toBe('new-faq-1');
       expect(mockPrisma.faq.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: { question: 'Q', answer: 'A', sortOrder: 1 } }),
+        expect.objectContaining({ data: { question: 'Q', answer: 'A', sortOrder: 1 } })
       );
     });
   });
@@ -331,12 +331,17 @@ describe('AdminService', () => {
     });
 
     it('updates FAQ when found', async () => {
-      mockPrisma.faq.findUnique.mockResolvedValue({ id: 'faq-1', question: 'Q', answer: 'A', sortOrder: 0 });
+      mockPrisma.faq.findUnique.mockResolvedValue({
+        id: 'faq-1',
+        question: 'Q',
+        answer: 'A',
+        sortOrder: 0,
+      });
       mockPrisma.faq.update.mockResolvedValue(undefined);
       const result = await service.updateFaq('faq-1', 'Q2', 'A2');
       expect(result.mtype).toBe('success');
       expect(mockPrisma.faq.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'faq-1' }, data: { question: 'Q2', answer: 'A2' } }),
+        expect.objectContaining({ where: { id: 'faq-1' }, data: { question: 'Q2', answer: 'A2' } })
       );
     });
   });

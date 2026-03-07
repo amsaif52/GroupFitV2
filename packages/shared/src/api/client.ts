@@ -10,7 +10,7 @@ export class ApiClientError extends Error {
   constructor(
     message: string,
     public status: number,
-    public body?: ApiErrorBody,
+    public body?: ApiErrorBody
   ) {
     super(message);
     this.name = 'ApiClientError';
@@ -31,11 +31,10 @@ export function createApiClient(config: ApiClientConfig) {
   const { baseUrl, getAccessToken, onUnauthorized } = config;
   const base = baseUrl.replace(/\/$/, '');
 
-  async function request<T>(
-    path: string,
-    options: RequestInit = {},
-  ): Promise<T> {
-    const url = path.startsWith('http') ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
+  async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const url = path.startsWith('http')
+      ? path
+      : `${base}${path.startsWith('/') ? path : `/${path}`}`;
     const token = getAccessToken?.() ?? null;
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -57,11 +56,7 @@ export function createApiClient(config: ApiClientConfig) {
       if (res.status === 401 && onUnauthorized) {
         onUnauthorized();
       }
-      throw new ApiClientError(
-        body?.message ?? res.statusText,
-        res.status,
-        body,
-      );
+      throw new ApiClientError(body?.message ?? res.statusText, res.status, body);
     }
 
     if (res.status === 204) return undefined as T;

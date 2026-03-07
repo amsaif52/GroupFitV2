@@ -13,7 +13,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
-    }),
+    })
   );
   app.setGlobalPrefix('api');
   app.enableCors({

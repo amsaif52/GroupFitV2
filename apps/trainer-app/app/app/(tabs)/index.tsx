@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { trainerApi } from '../../../lib/api';
@@ -68,7 +75,9 @@ export default function TrainerHomeTab() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) {
@@ -79,9 +88,12 @@ export default function TrainerHomeTab() {
     );
   }
 
-  const earningValue = earning != null && typeof earning === 'object' && 'amount' in (earning as object)
-    ? String((earning as Record<string, unknown>).amount)
-    : earning != null ? String(earning) : '£0.00';
+  const earningValue =
+    earning != null && typeof earning === 'object' && 'amount' in (earning as object)
+      ? String((earning as Record<string, unknown>).amount)
+      : earning != null
+        ? String(earning)
+        : '£0.00';
 
   return (
     <View style={styles.container}>
@@ -95,7 +107,11 @@ export default function TrainerHomeTab() {
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Section
           title="Today's Sessions"
           seeAllHref={() => router.push('/app/sessions')}
@@ -147,7 +163,12 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 18, paddingBottom: 24 },
   section: { marginBottom: 24 },
-  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: { fontSize: 18, fontWeight: '600', color: colors.black },
   seeAll: { fontSize: 14, fontWeight: '600', color: colors.secondary },
   card: {

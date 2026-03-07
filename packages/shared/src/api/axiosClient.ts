@@ -42,11 +42,7 @@ export function createAxiosApiClient(config: AxiosApiClientConfig): AxiosInstanc
       if (status === 401 && onUnauthorized) {
         onUnauthorized();
       }
-      throw new ApiClientError(
-        body?.message ?? err.message ?? 'Request failed',
-        status,
-        body,
-      );
+      throw new ApiClientError(body?.message ?? err.message ?? 'Request failed', status, body);
     }
   );
 

@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  TextInput,
+  RefreshControl,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { trainerApi } from '../../lib/api';
@@ -23,7 +32,8 @@ export default function AvailabilityScreen() {
   const [actionId, setActionId] = useState<string | null>(null);
 
   const fetchList = () => {
-    trainerApi.trainerAvailabilityList()
+    trainerApi
+      .trainerAvailabilityList()
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
         if (data?.mtype === 'error') {
@@ -77,7 +87,8 @@ export default function AvailabilityScreen() {
   const handleSubmit = () => {
     setSubmitLoading(true);
     if (editingId) {
-      trainerApi.editTrainerAvailability(editingId, dayOfWeek, startTime, endTime)
+      trainerApi
+        .editTrainerAvailability(editingId, dayOfWeek, startTime, endTime)
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
           if (data?.mtype === 'success') {
@@ -90,7 +101,8 @@ export default function AvailabilityScreen() {
         .catch(() => setError('Update failed'))
         .finally(() => setSubmitLoading(false));
     } else {
-      trainerApi.addTrainerAvailability(dayOfWeek, startTime, endTime)
+      trainerApi
+        .addTrainerAvailability(dayOfWeek, startTime, endTime)
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
           if (data?.mtype === 'success') {
@@ -107,7 +119,8 @@ export default function AvailabilityScreen() {
 
   const handleDelete = (id: string) => {
     setActionId(id);
-    trainerApi.deleteAvaibilitySlot(id)
+    trainerApi
+      .deleteAvaibilitySlot(id)
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
         if (data?.mtype === 'success') fetchList();
@@ -140,7 +153,9 @@ export default function AvailabilityScreen() {
                 onPress={() => setDayOfWeek(i)}
                 style={[styles.dayChip, dayOfWeek === i && styles.dayChipActive]}
               >
-                <Text style={[styles.dayChipText, dayOfWeek === i && styles.dayChipTextActive]}>{d}</Text>
+                <Text style={[styles.dayChipText, dayOfWeek === i && styles.dayChipTextActive]}>
+                  {d}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -161,8 +176,14 @@ export default function AvailabilityScreen() {
             autoCapitalize="none"
           />
           <View style={styles.formActions}>
-            <TouchableOpacity onPress={handleSubmit} disabled={submitLoading} style={[styles.primaryButton, submitLoading && styles.buttonDisabled]}>
-              <Text style={styles.primaryButtonText}>{submitLoading ? '…' : editingId ? 'Update' : 'Add'}</Text>
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={submitLoading}
+              style={[styles.primaryButton, submitLoading && styles.buttonDisabled]}
+            >
+              <Text style={styles.primaryButtonText}>
+                {submitLoading ? '…' : editingId ? 'Update' : 'Add'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={closeForm} style={styles.cancelButton}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -173,7 +194,13 @@ export default function AvailabilityScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.secondary]} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.secondary]}
+          />
+        }
       >
         {loading ? (
           <ActivityIndicator size="large" color={colors.secondary} style={{ marginTop: 24 }} />
@@ -184,14 +211,22 @@ export default function AvailabilityScreen() {
             <View key={slot.id} style={styles.card}>
               <View style={styles.cardMain}>
                 <Text style={styles.cardDay}>{DAYS[slot.dayOfWeek] ?? slot.dayOfWeek}</Text>
-                <Text style={styles.cardTime}>{slot.startTime} – {slot.endTime}</Text>
+                <Text style={styles.cardTime}>
+                  {slot.startTime} – {slot.endTime}
+                </Text>
               </View>
               <View style={styles.cardActions}>
                 <TouchableOpacity onPress={() => openEdit(slot)} style={styles.smallButton}>
                   <Text style={styles.smallButtonText}>Edit</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDelete(slot.id)} disabled={actionId === slot.id} style={[styles.smallButtonDanger, actionId === slot.id && styles.buttonDisabled]}>
-                  <Text style={styles.smallButtonDangerText}>{actionId === slot.id ? '…' : 'Delete'}</Text>
+                <TouchableOpacity
+                  onPress={() => handleDelete(slot.id)}
+                  disabled={actionId === slot.id}
+                  style={[styles.smallButtonDanger, actionId === slot.id && styles.buttonDisabled]}
+                >
+                  <Text style={styles.smallButtonDangerText}>
+                    {actionId === slot.id ? '…' : 'Delete'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -238,7 +273,12 @@ const styles = StyleSheet.create({
   formTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
   label: { fontSize: 12, color: colors.grey, marginTop: 8, marginBottom: 4 },
   dayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  dayChip: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, backgroundColor: '#f0f0f0' },
+  dayChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
   dayChipActive: { backgroundColor: colors.secondary },
   dayChipText: { fontSize: 12, color: colors.black },
   dayChipTextActive: { color: '#fff', fontWeight: '600' },
@@ -251,9 +291,21 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   formActions: { flexDirection: 'row', gap: 8, marginTop: 16 },
-  primaryButton: { padding: 12, borderRadius: 8, backgroundColor: colors.secondary, flex: 1, alignItems: 'center' },
+  primaryButton: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+    flex: 1,
+    alignItems: 'center',
+  },
   primaryButtonText: { fontSize: 14, fontWeight: '600', color: '#fff' },
-  cancelButton: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.grey, alignItems: 'center' },
+  cancelButton: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.grey,
+    alignItems: 'center',
+  },
   cancelButtonText: { fontSize: 14, color: colors.grey },
   buttonDisabled: { opacity: 0.6 },
   scroll: { flex: 1 },
@@ -277,8 +329,19 @@ const styles = StyleSheet.create({
   cardDay: { fontSize: 16, fontWeight: '600', color: colors.black },
   cardTime: { fontSize: 14, color: colors.grey, marginTop: 2 },
   cardActions: { flexDirection: 'row', gap: 8 },
-  smallButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: colors.secondary },
+  smallButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+  },
   smallButtonText: { fontSize: 12, fontWeight: '600', color: '#fff' },
-  smallButtonDanger: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#c00' },
+  smallButtonDanger: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c00',
+  },
   smallButtonDangerText: { fontSize: 12, fontWeight: '600', color: '#c00' },
 });

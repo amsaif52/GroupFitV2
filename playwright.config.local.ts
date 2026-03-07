@@ -15,7 +15,11 @@ export default defineConfig({
   timeout: 30000,
   expect: { timeout: 10000 },
   projects: [
-    { name: 'web', use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3000' }, testMatch: /web\.spec\.ts/ },
+    {
+      name: 'web',
+      use: { ...devices['Desktop Chrome'], baseURL: 'http://localhost:3000' },
+      testMatch: /web\.spec\.ts/,
+    },
     { name: 'api', use: { baseURL: 'http://localhost:3001' }, testMatch: /api\.spec\.ts/ },
   ],
   webServer: [],

@@ -57,7 +57,7 @@ export default function LoginPage() {
         setError(getApiErrorMessage(err, 'Google sign-in failed'));
       }
     },
-    [roleParam, router],
+    [roleParam, router]
   );
 
   const handleGoogleError = useCallback(() => {
@@ -77,18 +77,19 @@ export default function LoginPage() {
     }
   }
 
-  const googleButton =
-    googleClientId ? (
-      <GoogleLogin
-        onSuccess={(res: { credential?: string }) => res.credential && handleGoogleSuccess(res.credential)}
-        onError={handleGoogleError}
-        theme="outline"
-        size="large"
-        text="continue_with"
-        shape="rectangular"
-        width="320"
-      />
-    ) : null;
+  const googleButton = googleClientId ? (
+    <GoogleLogin
+      onSuccess={(res: { credential?: string }) =>
+        res.credential && handleGoogleSuccess(res.credential)
+      }
+      onError={handleGoogleError}
+      theme="outline"
+      size="large"
+      text="continue_with"
+      shape="rectangular"
+      width="320"
+    />
+  ) : null;
 
   const content = (
     <>
@@ -114,7 +115,10 @@ export default function LoginPage() {
         orLabel={t.auth.or}
       />
       <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
-        <Link href={ROUTES.serverUnavailable} style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}>
+        <Link
+          href={ROUTES.serverUnavailable}
+          style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}
+        >
           Having connection issues?
         </Link>
       </p>
@@ -131,11 +135,7 @@ export default function LoginPage() {
   );
 
   if (googleClientId) {
-    return (
-      <GoogleOAuthProvider clientId={googleClientId}>
-        {content}
-      </GoogleOAuthProvider>
-    );
+    return <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>;
   }
   return content;
 }

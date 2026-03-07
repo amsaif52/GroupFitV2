@@ -24,7 +24,10 @@ export function TrainerLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="gf-customer-layout">
-      <aside className="gf-customer-sidebar" style={{ backgroundColor: 'var(--groupfit-primary-dark)' }}>
+      <aside
+        className="gf-customer-sidebar"
+        style={{ backgroundColor: 'var(--groupfit-primary-dark)' }}
+      >
         <span className="gf-customer-sidebar__logo">GroupFit</span>
         <nav className="gf-customer-sidebar__nav" aria-label="Trainer navigation">
           {TRAINER_NAV.map(({ href, label }) => (

@@ -8,11 +8,7 @@ import { EntityNotFoundException } from '../exceptions';
  * @AssertNotNull('User', 'No user with this email')
  */
 export function AssertNotNull(entityName: string, customMessage?: string) {
-  return function (
-    _target: object,
-    _propertyKey: string,
-    descriptor: PropertyDescriptor,
-  ) {
+  return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor) {
     const original = descriptor.value;
     descriptor.value = async function (...args: unknown[]) {
       const result = await original.apply(this, args);

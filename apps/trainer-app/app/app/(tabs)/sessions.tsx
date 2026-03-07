@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { trainerApi } from '../../../lib/api';
@@ -27,12 +34,15 @@ export default function TrainerSessionsTab() {
         setUpcoming((upData.trainerSessionList as SessionItem[]) ?? []);
         setCompleted((compData.trainerSessionCompletedList as SessionItem[]) ?? []);
       } catch {
-        if (!cancelled) setUpcoming([]); setCompleted([]);
+        if (!cancelled) setUpcoming([]);
+        setCompleted([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const list = activeTab === 'upcoming' ? upcoming : completed;
@@ -52,13 +62,17 @@ export default function TrainerSessionsTab() {
           style={[styles.tab, activeTab === 'upcoming' && styles.tabActive]}
           onPress={() => setActiveTab('upcoming')}
         >
-          <Text style={[styles.tabText, activeTab === 'upcoming' && styles.tabTextActive]}>Upcoming</Text>
+          <Text style={[styles.tabText, activeTab === 'upcoming' && styles.tabTextActive]}>
+            Upcoming
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'completed' && styles.tabActive]}
           onPress={() => setActiveTab('completed')}
         >
-          <Text style={[styles.tabText, activeTab === 'completed' && styles.tabTextActive]}>Completed</Text>
+          <Text style={[styles.tabText, activeTab === 'completed' && styles.tabTextActive]}>
+            Completed
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -86,7 +100,10 @@ export default function TrainerSessionsTab() {
                   onPress={() => sessionId && router.push(`/app/session/${sessionId}`)}
                 >
                   <Text style={styles.cardTitle}>{String(row.sessionName ?? 'Session')}</Text>
-                  <Text style={styles.cardSub}>{String(row.customerName ?? '')} · {row.scheduledAt ? new Date(String(row.scheduledAt)).toLocaleString() : ''}</Text>
+                  <Text style={styles.cardSub}>
+                    {String(row.customerName ?? '')} ·{' '}
+                    {row.scheduledAt ? new Date(String(row.scheduledAt)).toLocaleString() : ''}
+                  </Text>
                 </TouchableOpacity>
               );
             })
@@ -111,9 +128,20 @@ const styles = StyleSheet.create({
   },
   logo: { fontSize: 20, fontWeight: '700', color: colors.white, letterSpacing: 0.5 },
   headerIcon: { fontSize: 22 },
-  title: { fontSize: 22, fontWeight: '700', color: colors.black, marginHorizontal: 16, marginTop: 16 },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.black,
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
   tabRow: { flexDirection: 'row', marginHorizontal: 16, marginTop: 12, gap: 8 },
-  tab: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: colors.white },
+  tab: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: colors.white,
+  },
   tabActive: { backgroundColor: colors.secondary },
   tabText: { fontSize: 14, fontWeight: '600', color: colors.grey },
   tabTextActive: { color: colors.white },

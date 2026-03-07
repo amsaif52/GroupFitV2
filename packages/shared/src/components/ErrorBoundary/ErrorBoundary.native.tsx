@@ -57,8 +57,25 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: colors.primaryLight,
   },
-  title: { fontSize: 20, fontWeight: '700', color: colors.black, marginBottom: 8, textAlign: 'center' },
-  message: { fontSize: 16, color: colors.grey, textAlign: 'center', marginBottom: 24, paddingHorizontal: 16 },
-  button: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, backgroundColor: colors.secondary },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.black,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 16,
+    color: colors.grey,
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+  },
   buttonText: { color: colors.white, fontWeight: '600', fontSize: 16 },
 });

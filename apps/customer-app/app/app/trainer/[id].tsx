@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors } from '@groupfit/shared/theme';
 import { customerApi } from '../../../lib/api';
@@ -18,7 +25,8 @@ export default function TrainerDetailScreen() {
       return;
     }
     let cancelled = false;
-    customerApi.viewTrainer(id)
+    customerApi
+      .viewTrainer(id)
       .then((res) => {
         if (cancelled) return;
         const data = res?.data as Record<string, unknown> | undefined;
@@ -36,8 +44,12 @@ export default function TrainerDetailScreen() {
           setDetail(null);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (!id) {
@@ -78,7 +90,10 @@ export default function TrainerDetailScreen() {
               <Text style={styles.value}>{String(detail.phone)}</Text>
             </>
           ) : null}
-          <TouchableOpacity onPress={() => router.push(`/app/book-session/${id}`)} style={styles.bookButton}>
+          <TouchableOpacity
+            onPress={() => router.push(`/app/book-session/${id}`)}
+            style={styles.bookButton}
+          >
             <Text style={styles.bookButtonText}>Book a session</Text>
           </TouchableOpacity>
         </View>
@@ -106,6 +121,12 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, color: colors.grey, marginTop: 12, marginBottom: 2 },
   value: { fontSize: 16, color: colors.black },
   error: { fontSize: 14, color: colors.grey },
-  bookButton: { marginTop: 20, padding: 12, borderRadius: 8, backgroundColor: colors.secondary, alignItems: 'center' },
+  bookButton: {
+    marginTop: 20,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+    alignItems: 'center',
+  },
   bookButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 });

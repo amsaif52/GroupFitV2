@@ -3,7 +3,6 @@
 ## Backend (API)
 
 1. **Environment variables** (e.g. in `.env` or your host):
-
    - `GOOGLE_CLIENT_ID` – OAuth 2.0 **Web client** ID from [Google Cloud Console](https://console.cloud.google.com/apis/credentials). Used to verify the Google ID token.
    - `APPLE_CLIENT_ID` – Your **Services ID** (or App Bundle ID) from [Apple Developer](https://developer.apple.com/account/resources/identifiers/list). Used to verify the Apple identity token.
 
@@ -16,7 +15,6 @@
    If you prefer to apply SQL yourself, see `apps/api/prisma/migrations/` (if present) or the schema changes in `apps/api/prisma/schema.prisma`.
 
 3. **Endpoints**:
-
    - `POST /auth/google` – body: `{ idToken: string, role?: 'customer' | 'trainer' | 'admin' }`. Verifies the Google ID token, finds or creates the user, returns JWT.
    - `POST /auth/apple` – body: `{ idToken: string, role?: 'customer' | 'trainer' | 'admin' }`. Same for Apple identity token.
 

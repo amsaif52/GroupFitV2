@@ -68,10 +68,7 @@ describe('CustomerService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CustomerService,
-        { provide: PrismaService, useValue: mockPrisma },
-      ],
+      providers: [CustomerService, { provide: PrismaService, useValue: mockPrisma }],
     }).compile();
 
     service = module.get<CustomerService>(CustomerService);
@@ -96,26 +93,26 @@ describe('CustomerService', () => {
       expect(result.mtype).toBe('success');
       expect(result.customerSessionList).toHaveLength(1);
       expect((result.customerSessionList as Record<string, unknown>[])[0].sessionName).toBe('Yoga');
-      expect((result.customerSessionList as Record<string, unknown>[])[0].trainerName).toBe('Trainer One');
+      expect((result.customerSessionList as Record<string, unknown>[])[0].trainerName).toBe(
+        'Trainer One'
+      );
       expect(mockPrisma.session.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { customerId: 'cust-1', status: { in: ['scheduled'] } },
-        }),
+        })
       );
     });
   });
 
   describe('customerSessionCompletedList', () => {
     it('returns completed sessions for the customer', async () => {
-      mockPrisma.session.findMany.mockResolvedValue([
-        { ...mockSession, status: 'completed' },
-      ]);
+      mockPrisma.session.findMany.mockResolvedValue([{ ...mockSession, status: 'completed' }]);
       const result = await service.customerSessionCompletedList('cust-1');
       expect(result.customerSessionCompletedList).toHaveLength(1);
       expect(mockPrisma.session.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { customerId: 'cust-1', status: 'completed' },
-        }),
+        })
       );
     });
   });
@@ -131,7 +128,7 @@ describe('CustomerService', () => {
             customerId: 'cust-1',
             status: 'scheduled',
           }),
-        }),
+        })
       );
     });
   });
@@ -200,9 +197,11 @@ describe('CustomerService', () => {
       mockPrisma.user.findMany.mockResolvedValue([mockUser]);
       const result = await service.topratedTrainersList();
       expect(result.topratedTrainersList).toHaveLength(1);
-      expect((result.topratedTrainersList as Record<string, unknown>[])[0].trainerName).toBe('Trainer One');
+      expect((result.topratedTrainersList as Record<string, unknown>[])[0].trainerName).toBe(
+        'Trainer One'
+      );
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { role: 'trainer' } }),
+        expect.objectContaining({ where: { role: 'trainer' } })
       );
     });
   });
@@ -262,7 +261,7 @@ describe('CustomerService', () => {
       expect((result.fetchallgroupslist as Record<string, unknown>[])[0].name).toBe('Morning Crew');
       expect((result.fetchallgroupslist as Record<string, unknown>[])[0].memberCount).toBe(2);
       expect(mockPrisma.group.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { ownerId: 'cust-1' } }),
+        expect.objectContaining({ where: { ownerId: 'cust-1' } })
       );
     });
   });
@@ -349,7 +348,9 @@ describe('CustomerService', () => {
       expect(result.mtype).toBe('success');
       expect(result.fetchgroupMembers).toHaveLength(1);
       expect((result.fetchgroupMembers as Record<string, unknown>[])[0].userName).toBe('Jane');
-      expect((result.fetchgroupMembers as Record<string, unknown>[])[0].userEmail).toBe('j@test.com');
+      expect((result.fetchgroupMembers as Record<string, unknown>[])[0].userEmail).toBe(
+        'j@test.com'
+      );
     });
   });
 
@@ -415,10 +416,14 @@ describe('CustomerService', () => {
       const result = await service.ReferralList('cust-1');
       expect(result.mtype).toBe('success');
       expect(result.ReferralList).toHaveLength(1);
-      expect((result.ReferralList as Record<string, unknown>[])[0].referredUserEmail).toBe('referred@test.com');
-      expect((result.ReferralList as Record<string, unknown>[])[0].referredUserName).toBe('Referred User');
+      expect((result.ReferralList as Record<string, unknown>[])[0].referredUserEmail).toBe(
+        'referred@test.com'
+      );
+      expect((result.ReferralList as Record<string, unknown>[])[0].referredUserName).toBe(
+        'Referred User'
+      );
       expect(mockPrisma.referral.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { referrerId: 'cust-1' } }),
+        expect.objectContaining({ where: { referrerId: 'cust-1' } })
       );
     });
   });
@@ -504,7 +509,9 @@ describe('CustomerService', () => {
       expect(result.mtype).toBe('success');
       expect(result.fetchTrainerRelatedReviews).toHaveLength(1);
       expect((result.fetchTrainerRelatedReviews as Record<string, unknown>[])[0].rating).toBe(5);
-      expect((result.fetchTrainerRelatedReviews as Record<string, unknown>[])[0].customerName).toBe('Customer');
+      expect((result.fetchTrainerRelatedReviews as Record<string, unknown>[])[0].customerName).toBe(
+        'Customer'
+      );
     });
   });
 
@@ -622,7 +629,7 @@ describe('CustomerService', () => {
         expect.objectContaining({
           where: { customerId: 'cust-1', amountCents: { not: null } },
           orderBy: { scheduledAt: 'desc' },
-        }),
+        })
       );
     });
 
@@ -659,11 +666,15 @@ describe('CustomerService', () => {
 
   describe('fetchContactLink', () => {
     it('returns success with contactEmail from DB or env', async () => {
-      (mockPrisma.contactSetting.findUnique as jest.Mock).mockResolvedValue({ value: 'support@test.com' });
+      (mockPrisma.contactSetting.findUnique as jest.Mock).mockResolvedValue({
+        value: 'support@test.com',
+      });
       const result = await service.fetchContactLink();
       expect(result.mtype).toBe('success');
       expect((result as Record<string, unknown>).contactEmail).toBe('support@test.com');
-      expect(mockPrisma.contactSetting.findUnique).toHaveBeenCalledWith({ where: { key: 'contact_email' } });
+      expect(mockPrisma.contactSetting.findUnique).toHaveBeenCalledWith({
+        where: { key: 'contact_email' },
+      });
     });
   });
 
@@ -688,7 +699,12 @@ describe('CustomerService', () => {
       mockPrisma.supportTicket.create.mockResolvedValue({ id: 'ticket-2' });
       await service.otherConcern('cust-1', 'Billing issue', 'Wrong charge');
       expect(mockPrisma.supportTicket.create).toHaveBeenCalledWith({
-        data: { userId: 'cust-1', subject: 'Billing issue', message: 'Wrong charge', status: 'open' },
+        data: {
+          userId: 'cust-1',
+          subject: 'Billing issue',
+          message: 'Wrong charge',
+          status: 'open',
+        },
       });
     });
   });

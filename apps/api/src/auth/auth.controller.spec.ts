@@ -66,7 +66,7 @@ describe('AuthController', () => {
         'jane@test.com',
         'password123',
         'Jane',
-        'customer',
+        'customer'
       );
       expect(result).toEqual(mockLoginResult);
     });
@@ -104,12 +104,12 @@ describe('AuthController', () => {
 
     it('throws when service throws UnauthorizedException', async () => {
       mockAuthService.verifyOtp.mockRejectedValue(
-        new UnauthorizedException('Otp verification failed. Please retry.'),
+        new UnauthorizedException('Otp verification failed. Please retry.')
       );
 
-      await expect(
-        controller.verifyOtp({ otp: '0000', userCode: 'user-123' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(controller.verifyOtp({ otp: '0000', userCode: 'user-123' })).rejects.toThrow(
+        UnauthorizedException
+      );
     });
   });
 
@@ -131,12 +131,12 @@ describe('AuthController', () => {
 
     it('throws when service throws BadRequestException', async () => {
       mockAuthService.resendOtp.mockRejectedValue(
-        new BadRequestException('User not found for this phone number'),
+        new BadRequestException('User not found for this phone number')
       );
 
-      await expect(
-        controller.resendOtp({ phoneNumber: '+449999999999' }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.resendOtp({ phoneNumber: '+449999999999' })).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 });

@@ -24,17 +24,26 @@ export default function EarningTab() {
         setEarningStats(getData(statsRes).earningStats ?? null);
         setReferralSummary(getData(refRes).referralSummary ?? null);
       } catch {
-        if (!cancelled) setCurrentEarning(null); setEarningStats(null); setReferralSummary(null);
+        if (!cancelled) setCurrentEarning(null);
+        setEarningStats(null);
+        setReferralSummary(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const amountStr = currentEarning != null && typeof currentEarning === 'object' && 'amount' in (currentEarning as object)
-    ? String((currentEarning as Record<string, unknown>).amount)
-    : currentEarning != null ? String(currentEarning) : '£0.00';
+  const amountStr =
+    currentEarning != null &&
+    typeof currentEarning === 'object' &&
+    'amount' in (currentEarning as object)
+      ? String((currentEarning as Record<string, unknown>).amount)
+      : currentEarning != null
+        ? String(currentEarning)
+        : '£0.00';
 
   return (
     <View style={styles.container}>
@@ -55,7 +64,9 @@ export default function EarningTab() {
           {(earningStats != null || referralSummary != null) && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Summary</Text>
-              <Text style={styles.cardSub}>{JSON.stringify(earningStats ?? referralSummary).slice(0, 120)}…</Text>
+              <Text style={styles.cardSub}>
+                {JSON.stringify(earningStats ?? referralSummary).slice(0, 120)}…
+              </Text>
             </View>
           )}
           <View style={{ height: 40 }} />
@@ -77,7 +88,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.blue,
   },
   logo: { fontSize: 20, fontWeight: '700', color: colors.white, letterSpacing: 0.5 },
-  title: { fontSize: 22, fontWeight: '700', color: colors.black, marginHorizontal: 16, marginTop: 16 },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.black,
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 24 },

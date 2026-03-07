@@ -44,10 +44,33 @@ export default function ServerOffScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: colors.primaryLight },
-  title: { fontSize: 20, fontWeight: '700', color: colors.black, marginBottom: 8, textAlign: 'center' },
-  message: { fontSize: 16, color: colors.grey, textAlign: 'center', marginBottom: 24, paddingHorizontal: 16 },
-  button: { paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, backgroundColor: colors.secondary },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: colors.primaryLight,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.black,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 16,
+    color: colors.grey,
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    backgroundColor: colors.secondary,
+  },
   buttonDisabled: { opacity: 0.7 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   errorText: { color: colors.secondary, marginTop: 16, fontSize: 14, textAlign: 'center' },

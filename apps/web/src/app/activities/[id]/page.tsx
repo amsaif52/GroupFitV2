@@ -22,7 +22,8 @@ export default function ActivityDetailPage() {
       return;
     }
     let cancelled = false;
-    customerApi.viewActivity(id ?? '')
+    customerApi
+      .viewActivity(id ?? '')
       .then((res) => {
         if (cancelled) return;
         const data = res?.data as Record<string, unknown> | undefined;
@@ -40,15 +41,29 @@ export default function ActivityDetailPage() {
           setDetail(null);
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (id === undefined) {
     return (
       <CustomerLayout>
         <p style={{ color: 'var(--groupfit-grey)' }}>Invalid activity.</p>
-        <Link href={ROUTES.activities} style={{ marginTop: 16, display: 'inline-block', color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Back to activities</Link>
+        <Link
+          href={ROUTES.activities}
+          style={{
+            marginTop: 16,
+            display: 'inline-block',
+            color: 'var(--groupfit-secondary)',
+            fontWeight: 600,
+          }}
+        >
+          ← Back to activities
+        </Link>
       </CustomerLayout>
     );
   }
@@ -56,7 +71,12 @@ export default function ActivityDetailPage() {
   return (
     <CustomerLayout>
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <Link href={ROUTES.activities} style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Activities</Link>
+        <Link
+          href={ROUTES.activities}
+          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+        >
+          ← Activities
+        </Link>
         <h1 style={{ fontSize: 22, fontWeight: 700, marginTop: 8 }}>Activity details</h1>
       </header>
       {loading ? (
@@ -64,14 +84,35 @@ export default function ActivityDetailPage() {
       ) : error ? (
         <div className="gf-home__empty">
           <p>{error}</p>
-          <Link href={ROUTES.activities} style={{ marginTop: 16, display: 'inline-block', color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Back to activities</Link>
+          <Link
+            href={ROUTES.activities}
+            style={{
+              marginTop: 16,
+              display: 'inline-block',
+              color: 'var(--groupfit-secondary)',
+              fontWeight: 600,
+            }}
+          >
+            ← Back to activities
+          </Link>
         </div>
       ) : detail ? (
         <div className="gf-home__empty" style={{ textAlign: 'left', padding: 20 }}>
-          <p><strong>Activity:</strong> {String(detail.activityName ?? detail.name ?? 'Activity')}</p>
-          {detail.description && <p><strong>Description:</strong> {String(detail.description)}</p>}
+          <p>
+            <strong>Activity:</strong> {String(detail.activityName ?? detail.name ?? 'Activity')}
+          </p>
+          {detail.description && (
+            <p>
+              <strong>Description:</strong> {String(detail.description)}
+            </p>
+          )}
           <div style={{ marginTop: 24 }}>
-            <Link href={ROUTES.activities} style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}>← Back to activities</Link>
+            <Link
+              href={ROUTES.activities}
+              style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}
+            >
+              ← Back to activities
+            </Link>
           </div>
         </div>
       ) : null}
