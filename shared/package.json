@@ -1,0 +1,94 @@
+{
+  "name": "@groupfit/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "require": "./src/index.ts"
+    },
+    "./components": {
+      "types": "./src/components/index.ts",
+      "import": "./src/components/index.ts",
+      "require": "./src/components/index.ts"
+    },
+    "./utils": {
+      "types": "./src/utils/index.ts",
+      "import": "./src/utils/index.ts",
+      "require": "./src/utils/index.ts"
+    },
+    "./i18n": {
+      "types": "./src/i18n/index.ts",
+      "import": "./src/i18n/index.ts",
+      "require": "./src/i18n/index.ts"
+    },
+    "./api": {
+      "types": "./src/api/index.ts",
+      "import": "./src/api/index.ts",
+      "require": "./src/api/index.ts"
+    },
+    "./timezone": {
+      "types": "./src/timezone/index.ts",
+      "import": "./src/timezone/index.ts",
+      "require": "./src/timezone/index.ts"
+    },
+    "./theme": {
+      "types": "./src/theme/index.ts",
+      "import": "./src/theme/index.ts",
+      "require": "./src/theme/index.ts"
+    },
+    "./components/native": {
+      "react-native": "./src/components/index.native.ts",
+      "types": "./src/components/index.native.ts",
+      "import": "./src/components/index.native.ts",
+      "require": "./src/components/index.native.ts"
+    }
+  },
+  "scripts": {
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 tsup",
+    "dev": "npm run storybook",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "zod": "^3.23.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.70.0",
+    "react-hook-form": "^7.53.0",
+    "@hookform/resolvers": "^3.9.0"
+  },
+  "peerDependenciesMeta": {
+    "react-native": {
+      "optional": true
+    },
+    "react-hook-form": {
+      "optional": true
+    },
+    "@hookform/resolvers": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "react-hook-form": "^7.53.0",
+    "@storybook/test": "^8.4.0",
+    "@storybook/react": "^8.4.0",
+    "@storybook/react-vite": "^8.4.0",
+    "@storybook/addon-essentials": "^8.4.0",
+    "@storybook/blocks": "^8.4.0",
+    "@types/react": "^18.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "storybook": "^8.4.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0"
+  }
+}

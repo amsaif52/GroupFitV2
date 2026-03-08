@@ -1,5 +1,7 @@
 {
+  "include": ["src/**/*", "../../shared/src/**/*"],
   "compilerOptions": {
+    "jsx": "react-jsx",
     "module": "commonjs",
     "declaration": true,
     "removeComments": true,
@@ -18,8 +20,8 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@groupfit/shared": ["../../packages/shared/src"],
-      "@groupfit/shared/*": ["../../packages/shared/src/*"]
+      "@groupfit/shared": ["../../shared/src"],
+      "@groupfit/shared/*": ["../../shared/src/*"]
     }
   }
 }

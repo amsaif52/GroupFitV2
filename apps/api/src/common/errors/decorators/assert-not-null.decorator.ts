@@ -1,4 +1,5 @@
 import { EntityNotFoundException } from '../exceptions';
+import type { ErrorDetails } from '../exceptions';
 
 /**
  * Method decorator: if the method returns null or undefined, throws EntityNotFoundException
@@ -13,7 +14,11 @@ export function AssertNotNull(entityName: string, customMessage?: string) {
     descriptor.value = async function (...args: unknown[]) {
       const result = await original.apply(this, args);
       if (result === null || result === undefined) {
-        throw new EntityNotFoundException(entityName, args[0], customMessage);
+        throw new EntityNotFoundException(
+          entityName,
+          args[0] as string | number | ErrorDetails | undefined,
+          customMessage
+        );
       }
       return result;
     };

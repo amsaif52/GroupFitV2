@@ -175,7 +175,7 @@ Clients store the JWT in memory and in persistent storage (localStorage on web, 
 - **API:** Types (`LoginRequest`, `LoginResponse`, `ApiUser`, etc.), `createApiClient` / `createAxiosApiClient` for consistent base URL and Bearer injection.
 - **Utils:** Constants (e.g. `ROLES`), timezone helpers, error handling (`getApiErrorMessage`, `API_ERROR_CODES`).
 
-Consumption: In development, web and RN apps resolve `@groupfit/shared` to `packages/shared/src` so edits apply without rebuilding. For production, run `npm run build:shared` before building apps.
+Consumption: In development, web and RN apps resolve `@groupfit/shared` to `shared/src` so edits apply without rebuilding. For production, run `npm run build:shared` before building apps.
 
 ---
 

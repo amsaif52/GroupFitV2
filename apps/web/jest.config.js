@@ -9,8 +9,8 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@groupfit/shared$': '<rootDir>/../../packages/shared/src',
-    '^@groupfit/shared/(.*)$': '<rootDir>/../../packages/shared/src/$1',
+    '^@groupfit/shared$': '<rootDir>/../../shared/src',
+    '^@groupfit/shared/(.*)$': '<rootDir>/../../shared/src/$1',
     '^react$': '<rootDir>/node_modules/react',
     '^react-dom$': '<rootDir>/node_modules/react-dom',
   },

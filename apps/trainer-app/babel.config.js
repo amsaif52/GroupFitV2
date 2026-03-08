@@ -8,7 +8,7 @@ module.exports = function (api) {
         'module-resolver',
         {
           alias: {
-            '@groupfit/shared': '../../packages/shared/src',
+            '@groupfit/shared': '../../shared/src',
           },
         },
       ],

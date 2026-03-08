@@ -1,16 +1,19 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useState, useCallback } from 'react';
-import { getTranslations, ROLES, type Role } from '@groupfit/shared';
-import { SignupScreen, Button } from '@groupfit/shared/components';
-import type { Locale } from '@groupfit/shared';
+import {
+  getTranslations,
+  ROLES,
+  ApiClientError,
+  decodeJwtPayload,
+  type Role,
+  type Locale,
+  type LoginResponse,
+  SignupScreen,
+} from '@groupfit/shared';
 import { api } from '@/lib/api';
-import { ROUTES } from '../routes';
 import { setStoredToken } from '@/lib/auth';
-import type { LoginResponse } from '@groupfit/shared';
-import { ApiClientError, decodeJwtPayload } from '@groupfit/shared';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? undefined;
@@ -19,7 +22,7 @@ export default function SignupPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const roleParam = (searchParams.get('role') as Role) ?? ROLES.CUSTOMER;
-  const [locale, setLocale] = useState<Locale>('en');
+  const [locale] = useState<Locale>('en');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const t = getTranslations(locale);
@@ -94,7 +97,6 @@ export default function SignupPage() {
   const content = (
     <>
       <SignupScreen
-        variant="admin"
         title={t.auth.signUp}
         subtitle={t.auth.enterDetailsToCreateAccount}
         nameLabel={t.auth.name}
@@ -121,15 +123,15 @@ export default function SignupPage() {
         continueWithAppleLabel={t.auth.continueWithApple}
         orLabel={t.auth.or}
       />
-      <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
+      {/* <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
         <Link
           href={ROUTES.serverUnavailable}
           style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}
         >
           Having connection issues?
         </Link>
-      </p>
-      <div className="gf-locale">
+      </p> */}
+      {/* <div className="gf-locale">
         <Button
           type="button"
           variant="ghost"
@@ -137,7 +139,7 @@ export default function SignupPage() {
           label={locale === 'en' ? 'Français' : 'English'}
           onPress={() => setLocale(locale === 'en' ? 'fr' : 'en')}
         />
-      </div>
+      </div> */}
     </>
   );
 

@@ -1,33 +1,35 @@
-import Link from 'next/link';
-import { Button, H1, Paragraph, YStack } from 'tamagui';
-import { ROLES } from '@groupfit/shared';
+'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ROLES } from '@groupfit/shared';
+import { ROUTES } from './routes';
+import { getStoredUser } from '@/lib/auth';
+
+/**
+ * Home: unauthenticated users go to login; authenticated users go to dashboard
+ * or choose-experience (if they have multiple roles, i.e. admin).
+ */
 export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const user = getStoredUser();
+    if (!user) {
+      router.replace(ROUTES.login);
+      return;
+    }
+    // Admin can choose customer/trainer/admin experience; others go to dashboard
+    if (user.role === ROLES.ADMIN) {
+      router.replace(ROUTES.chooseExperience);
+    } else {
+      router.replace(ROUTES.dashboard);
+    }
+  }, [router]);
+
   return (
-    <main>
-      <YStack padding="$4" maxWidth={600} margin="0 auto" gap="$3">
-        <H1 size="$8">GroupFit</H1>
-        <Paragraph theme="alt2" size="$4">
-          Sign in as:
-        </Paragraph>
-        <YStack flexDirection="row" flexWrap="wrap" gap="$2">
-          <Link href="/login?role=admin">
-            <Button theme="blue" size="$3">
-              {ROLES.ADMIN}
-            </Button>
-          </Link>
-          <Link href="/login?role=trainer">
-            <Button theme="green" size="$3">
-              {ROLES.TRAINER}
-            </Button>
-          </Link>
-          <Link href="/login?role=customer">
-            <Button theme="orange" size="$3">
-              {ROLES.CUSTOMER}
-            </Button>
-          </Link>
-        </YStack>
-      </YStack>
+    <main style={{ padding: 24, textAlign: 'center' }}>
+      <p>Loading…</p>
     </main>
   );
 }

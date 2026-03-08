@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 const MAX_HISTORY_MESSAGES = 20;
 
@@ -29,7 +29,7 @@ export class ConversationService {
       take: limit,
       select: { role: true, content: true },
     });
-    return messages.map((m) => ({
+    return messages.map((m: { role: string; content: string | null }) => ({
       role: m.role as 'user' | 'assistant' | 'system',
       content: m.content,
     }));

@@ -409,7 +409,7 @@ export class AdminService {
     code?: string,
     name?: string,
     description?: string,
-    defaultPriceCents?: number
+    defaultPriceCents?: number | null
   ) {
     const activity = await this.prisma.activity.findUnique({ where: { id } });
     if (!activity) return { mtype: 'error', message: 'Activity not found' };

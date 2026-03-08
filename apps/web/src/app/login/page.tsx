@@ -1,17 +1,19 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useState, useCallback } from 'react';
-import { getTranslations, ROLES, type Role } from '@groupfit/shared';
-import { LoginScreen, Button } from '@groupfit/shared/components';
-import type { Locale } from '@groupfit/shared';
+import {
+  getTranslations,
+  ROLES,
+  decodeJwtPayload,
+  getApiErrorMessage,
+  type Role,
+  type Locale,
+  type LoginResponse,
+} from '@groupfit/shared';
+import { LoginScreen } from '@/lib/shared-login';
 import { api } from '@/lib/api';
-import { ROUTES } from '../routes';
 import { setStoredToken } from '@/lib/auth';
-import type { LoginResponse } from '@groupfit/shared';
-import { decodeJwtPayload } from '@groupfit/shared';
-import { getApiErrorMessage } from '@groupfit/shared';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? undefined;
@@ -20,7 +22,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const roleParam = (searchParams.get('role') as Role) ?? ROLES.CUSTOMER;
-  const [locale, setLocale] = useState<Locale>('en');
+  const [locale] = useState<Locale>('en');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const t = getTranslations(locale);
@@ -29,7 +31,10 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { data } = await api.post<LoginResponse>('/auth/login', { email, password });
+      const { data } = await api.post<LoginResponse>('/auth/login', {
+        email,
+        password,
+      });
       setStoredToken(data.accessToken);
       const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
       router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
@@ -114,15 +119,15 @@ export default function LoginPage() {
         continueWithAppleLabel={t.auth.continueWithApple}
         orLabel={t.auth.or}
       />
-      <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
+      {/* <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
         <Link
           href={ROUTES.serverUnavailable}
           style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}
         >
           Having connection issues?
         </Link>
-      </p>
-      <div className="gf-locale">
+      </p> */}
+      {/* <div className="gf-locale">
         <Button
           type="button"
           variant="ghost"
@@ -130,7 +135,7 @@ export default function LoginPage() {
           label={locale === 'en' ? 'Français' : 'English'}
           onPress={() => setLocale(locale === 'en' ? 'fr' : 'en')}
         />
-      </div>
+      </div> */}
     </>
   );
 

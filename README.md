@@ -8,7 +8,7 @@ Monorepo for the GroupFit fitness platform.
 - **apps/web** – Next.js web app (admin, customer, trainer login)
 - **apps/customer-app** – React Native customer app
 - **apps/trainer-app** – React Native trainer app
-- **packages/shared** – Common components (atomic design), utils, i18n
+- **shared** – Common components (atomic design), utils, i18n (`@groupfit/shared`)
 
 **UI:** Web and both React Native apps use **Tamagui** for a shared design system (themes, layout, components). Each app has its own `tamagui.config.ts` using `@tamagui/config/v5`.
 
@@ -64,13 +64,13 @@ cd apps/api && npx prisma migrate dev   # first-time DB setup
 - **Session payment / Apple Pay / Google Pay:** Set `STRIPE_SECRET_KEY` on the API and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (web) or `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` (customer-app). Enable Apple Pay and Google Pay in the [Stripe Dashboard](https://dashboard.stripe.com/settings/payment_methods). For native Apple/Google Pay on RN, configure Apple Pay capability (iOS) and Google Pay in the Stripe Dashboard and app.
 - **Trainer location tracking (30 mins before session):** Ensure the migration that adds `trainer_session_location` has been applied (`cd apps/api && npx prisma migrate deploy` or `prisma migrate dev`). In the trainer app, run `npm install` so `expo-location` is installed. On web, trainers need browser location permission; on RN, the app will request foreground location permission when they tap “Share my location” on a session in the 30‑minute window.
 
-If you use **pnpm**, keep `pnpm-workspace.yaml` and run `pnpm install` then `pnpm build:shared`. Root scripts in `package.json` use npm; adjust for pnpm if needed (`pnpm --filter api dev`, etc.).
+If you use **pnpm**, keep `pnpm-workspace.yaml` and run `pnpm install` then `pnpm build:shared`. Root scripts in `package.json` use npm; adjust for pnpm if needed (`pnpm --filter api dev`, etc.). If you see **"double-loading config ... pnpm/rc as global, previously loaded as user"**, run root scripts with npm instead (e.g. `npm run dev:web` or `npm run dev:web:fresh`), or fix pnpm’s config so the same file isn’t used as both user and global (e.g. use only `~/.config/pnpm/rc` by setting `XDG_CONFIG_HOME=$HOME` and removing `~/Library/Preferences/pnpm/rc`, or the reverse).
 
-### Do I need to build `packages/shared` every time?
+### Do I need to build `shared` every time?
 
-**In development: no.** Web, customer-app, and trainer-app are configured to resolve `@groupfit/shared` to the **source** (`packages/shared/src`), so edits in the shared package are picked up on save/refresh without running `build:shared`. The API already used source via path mapping.
+**In development: no.** Web, API, customer-app, and trainer-app all resolve `@groupfit/shared` to **source** (`shared/src`) and compile it themselves, so edits in the shared package are picked up on save/refresh without running `build:shared`.
 
-**For production:** run `npm run build:shared` before building or deploying web/API (and before building the RN apps for release).
+**For production:** run `npm run build:shared` before building or deploying web/API, or before building the RN apps for release (e.g. EAS Build or `expo build`).
 
 ## Development
 

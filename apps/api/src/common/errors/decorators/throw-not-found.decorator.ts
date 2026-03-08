@@ -1,4 +1,5 @@
 import { EntityNotFoundException } from '../exceptions';
+import type { ErrorDetails } from '../exceptions';
 
 /**
  * Method decorator: if the method returns null or undefined, throws EntityNotFoundException.
@@ -19,7 +20,10 @@ export function ThrowNotFound(entityName: string = 'Resource') {
       const result = await original.apply(this, args);
       if (result === null || result === undefined) {
         const id = args[0];
-        throw new EntityNotFoundException(entityName, id);
+        throw new EntityNotFoundException(
+          entityName,
+          id as string | number | ErrorDetails | undefined
+        );
       }
       return result;
     };

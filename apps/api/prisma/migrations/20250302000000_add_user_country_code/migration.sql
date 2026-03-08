@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "user" ADD COLUMN IF NOT EXISTS "country_code" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "country_code" TEXT;

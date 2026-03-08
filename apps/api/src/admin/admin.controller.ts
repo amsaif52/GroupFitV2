@@ -194,7 +194,7 @@ export class AdminController {
       body?.code,
       body?.name,
       body?.description,
-      body?.defaultPriceCents
+      body?.defaultPriceCents ?? undefined
     );
   }
 

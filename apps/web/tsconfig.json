@@ -15,10 +15,16 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@groupfit/shared": ["../../packages/shared/src"],
-      "@groupfit/shared/*": ["../../packages/shared/src/*"]
+      "@groupfit/shared": ["../../shared/src"],
+      "@groupfit/shared/*": ["../../shared/src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../shared/src/**/*"
+  ],
   "exclude": ["node_modules"]
 }
