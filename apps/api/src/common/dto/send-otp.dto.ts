@@ -5,10 +5,9 @@ export class SendOtpDto {
   @ApiProperty({ example: '+447700900000', description: 'Phone number (E.164)' })
   @IsString()
   @Matches(/^\+?[\d\s-]{10,}$/, { message: 'Invalid phone number' })
-  phoneNumber!: string;
+  data!: string;
 
-  @ApiProperty({ example: 'customer', required: false })
-  @IsOptional()
+  @ApiProperty({ example: 'phone', description: 'Type of payload: phone or email' })
   @IsString()
-  role?: string;
+  type?: 'phone' | 'email';
 }

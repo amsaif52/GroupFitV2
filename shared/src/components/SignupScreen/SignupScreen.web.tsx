@@ -222,7 +222,6 @@ export function SignupScreenWeb({
             </span>
           )}
         </label>
-
         <label className="gf-auth__label">
           <input
             type="password"

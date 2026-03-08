@@ -163,7 +163,6 @@ export function SignupScreenNative({
             autoComplete="password-new"
             editable={!loading}
           />
-
           <Text style={styles.label}>{confirmPasswordLabel}</Text>
           <TextInput
             style={styles.input}

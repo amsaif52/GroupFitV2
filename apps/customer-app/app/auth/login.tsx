@@ -17,11 +17,11 @@ export default function LoginScreenRoute() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(email: string, password: string) {
+  async function handleSubmit(email: string) {
     setError(null);
     setLoading(true);
     try {
-      const { data } = await api.post<LoginResponse>('/auth/login', { email, password });
+      const { data } = await api.post<LoginResponse>('/auth/login', { email });
       await setStoredToken(data.accessToken);
       router.replace('/app/home');
     } catch (err) {

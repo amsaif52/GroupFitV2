@@ -33,6 +33,11 @@ export default {
     continueWithGoogle: 'Continuer avec Google',
     continueWithApple: 'Continuer avec Apple',
     or: 'ou',
+    phone: 'Numéro de téléphone',
+    sendCode: 'Envoyer le code',
+    otpPlaceholder: 'Entrez le code à 4 chiffres',
+    verify: 'Vérifier',
+    resendCode: 'Renvoyer le code',
   },
   roles: {
     admin: 'Administrateur',

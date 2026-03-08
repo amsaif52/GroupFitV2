@@ -19,9 +19,7 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? undefined;
 
 export default function LoginPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const roleParam = (searchParams.get('role') as Role) ?? ROLES.CUSTOMER;
   const [locale] = useState<Locale>('en');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,13 +44,33 @@ export default function LoginPage() {
     }
   }
 
+  async function handleSendOtp(payload: string, type: 'phone' | 'email') {
+    setError(null);
+    const { data } = await api.post<{ message: string; userCode: string }>('/auth/send-otp', {
+      data: payload.trim(),
+      type,
+    });
+    return { userCode: data.userCode };
+  }
+
+  async function handleVerifyOtp(otp: string, userCode: string) {
+    setError(null);
+    const { data } = await api.post<LoginResponse>('/auth/verify-otp', {
+      otp,
+      userCode,
+    });
+    setStoredToken(data.accessToken);
+    const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
+    router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
+    router.refresh();
+  }
+
   const handleGoogleSuccess = useCallback(
     async (credential: string) => {
       setError(null);
       try {
         const { data } = await api.post<LoginResponse>('/auth/google', {
           idToken: credential,
-          role: roleParam,
         });
         setStoredToken(data.accessToken);
         const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
@@ -62,7 +80,7 @@ export default function LoginPage() {
         setError(getApiErrorMessage(err, 'Google sign-in failed'));
       }
     },
-    [roleParam, router]
+    [router]
   );
 
   const handleGoogleError = useCallback(() => {
@@ -104,6 +122,13 @@ export default function LoginPage() {
         subtitle={t.auth.enterEmailPassword}
         emailLabel={t.auth.email}
         passwordLabel={t.auth.password}
+        phoneLabel={t.auth.phone}
+        sendCodeLabel={t.auth.sendCode}
+        otpPlaceholder={t.auth.otpPlaceholder}
+        verifyLabel={t.auth.verify}
+        resendCodeLabel={t.auth.resendCode}
+        phoneTabLabel={t.auth.phone}
+        emailTabLabel={t.auth.email}
         submitLabel={t.auth.login}
         loadingLabel={t.common.loading}
         footerPrompt="New here?"
@@ -118,6 +143,8 @@ export default function LoginPage() {
         continueWithGoogleLabel={t.auth.continueWithGoogle}
         continueWithAppleLabel={t.auth.continueWithApple}
         orLabel={t.auth.or}
+        onSendOtp={handleSendOtp}
+        onVerifyOtp={handleVerifyOtp}
       />
       {/* <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
         <Link

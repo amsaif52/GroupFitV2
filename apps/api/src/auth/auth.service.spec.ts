@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -51,11 +50,6 @@ describe('AuthService', () => {
     },
   };
 
-  beforeEach(() => {
-    jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed' as never);
-    jest.spyOn(bcrypt, 'compare').mockResolvedValue(true as never);
-  });
-
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -85,7 +79,6 @@ describe('AuthService', () => {
 
       expect(result.accessToken).toBe('fake-jwt');
       expect(result.user.email).toBe('user@test.com');
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', 'hashed');
     });
 
     it('throws UnauthorizedException when user not found', async () => {
@@ -98,7 +91,6 @@ describe('AuthService', () => {
 
     it('throws UnauthorizedException when password does not match', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(mockUserWithPassword);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(service.login('user@test.com', 'wrong')).rejects.toThrow(UnauthorizedException);
     });

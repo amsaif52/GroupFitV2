@@ -80,8 +80,8 @@ describe('AuthController', () => {
       });
 
       const result = await controller.sendOtp({
-        phoneNumber: '+447700900000',
-        role: 'customer',
+        data: '+447700900000',
+        type: 'phone',
       });
 
       expect(authService.sendOtp).toHaveBeenCalledWith('+447700900000', 'customer');

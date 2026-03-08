@@ -1,6 +1,6 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { API_PREFIXES } from '@groupfit/shared';
+import { API_PREFIXES } from '../../common/constants';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { TrainerGuard } from '../../auth/trainer.guard';
 import { CurrentUser } from '../../auth/current-user.decorator';

@@ -56,7 +56,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'OTP sent; returns message and userCode' })
   @ApiResponse({ status: 400, description: 'Invalid phone number' })
   async sendOtp(@Body() dto: SendOtpDto) {
-    return this.auth.sendOtp(dto.phoneNumber, dto.role);
+    return this.auth.sendOtp(dto.data, dto.type);
   }
 
   @Post('verify-otp')

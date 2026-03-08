@@ -135,6 +135,69 @@
 .gf-button--social {
   margin-top: 0;
 }
+/* Phone / Email tab switcher (login) */
+.gf-auth__tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 360px;
+}
+.gf-auth--admin .gf-auth__tabs {
+  max-width: 400px;
+}
+.gf-auth__tab {
+  flex: 1;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--groupfit-grey, #777);
+  background: transparent;
+  border: 2px solid var(--groupfit-border-light, rgba(44, 44, 46, 0.4));
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 0;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+.gf-auth__tab:first-of-type {
+  border-radius: 12px 0 0 12px;
+  border-right-width: 1px;
+}
+.gf-auth__tab:last-of-type {
+  border-radius: 0 12px 12px 0;
+  border-left-width: 1px;
+}
+.gf-auth__tab:hover {
+  color: var(--groupfit-black, #060606);
+  background: rgba(44, 44, 46, 0.06);
+}
+.gf-auth__tab--active {
+  color: var(--groupfit-primary-light, #fff);
+  background-color: var(--groupfit-secondary, #e21b22);
+  border-color: var(--groupfit-secondary, #e21b22);
+}
+.gf-auth__tab--active:hover {
+  background-color: var(--groupfit-secondary, #e21b22);
+  color: var(--groupfit-primary-light, #fff);
+}
+.gf-auth--admin .gf-auth__tab {
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.gf-auth--admin .gf-auth__tab:hover {
+  color: var(--groupfit-white);
+  background: rgba(255, 255, 255, 0.1);
+}
+.gf-auth--admin .gf-auth__tab--active {
+  color: #000023;
+  background-color: var(--groupfit-white);
+  border-color: var(--groupfit-white);
+}
+.gf-auth--admin .gf-auth__tab--active:hover {
+  background-color: var(--groupfit-white);
+  color: #000023;
+}
+
 .gf-auth__form {
   width: 100%;
   max-width: 360px;
@@ -159,6 +222,71 @@
   margin: 4px 0 0;
   color: var(--groupfit-error, #ec3d3d);
   font-size: 12px;
+}
+
+/* OTP verify step (LoginScreen phone flow) */
+.gf-auth__form--otp {
+  gap: 20px;
+}
+.gf-auth__otp-hint {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+}
+.gf-auth__form--otp .gf-auth__label-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--groupfit-white);
+}
+.gf-auth__input--otp {
+  border: none;
+  border-bottom: 2px solid #fff;
+  border-radius: 0;
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+.gf-auth__resend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.gf-auth__resend-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--groupfit-secondary, #e21b22);
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+}
+.gf-auth__resend-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.gf-auth__resend-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.gf-auth__change-number {
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--groupfit-white);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.gf-auth__change-number:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Verify number (OTP) screen */
@@ -277,6 +405,37 @@
 }
 .gf-auth--admin .gf-auth__input::placeholder {
   color: rgba(255, 255, 255, 0.6);
+}
+.gf-auth__phone-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+}
+.gf-auth__country-select {
+  flex-shrink: 0;
+  min-width: 0;
+  width: 140px;
+  padding: 12px 10px;
+  font-size: 16px;
+  border: 1px solid var(--groupfit-border-light, rgba(44, 44, 46, 0.4));
+  border-radius: 12px;
+  outline: none;
+  box-sizing: border-box;
+  background-color: var(--groupfit-white, #fff);
+  color: var(--groupfit-black);
+  cursor: pointer;
+}
+.gf-auth__input--phone {
+  flex: 1;
+  min-width: 0;
+}
+.gf-auth--admin .gf-auth__phone-row .gf-auth__country-select {
+  border: none;
+  border-bottom: 2px solid #fff;
+  border-radius: 0;
+  background-color: #000023;
+  color: var(--groupfit-white);
 }
 .gf-auth__footer {
   margin-top: 20px;
