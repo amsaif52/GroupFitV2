@@ -44,6 +44,7 @@ export const ROUTES = {
   adminCustomizeDashboard: '/admin/customize-dashboard',
   adminDiscount: '/admin/discount',
   adminDiscountDetail: (id: string) => `/admin/discount/${id}`,
+  adminDiscountVouchers: (id: string) => `/admin/discount/${id}/vouchers`,
   adminTrainers: '/admin/trainers',
   adminTrainerDetail: (id: string) => `/admin/trainers/${id}`,
   adminCustomers: '/admin/customers',
@@ -62,6 +63,7 @@ export const ROUTES = {
   adminSettingsFaq: '/admin/settings/faq',
   adminSettingsLanguage: '/admin/settings/language',
   adminSettingsContactUs: '/admin/settings/contact-us',
+  adminSettingsMisc: '/admin/settings/misc',
 } as const;
 
 /** Paths that have a real page (no 404). Use for <Link href={}> only when true. */
@@ -115,6 +117,7 @@ export const IMPLEMENTED = new Set<string>([
   ROUTES.adminSettingsFaq,
   ROUTES.adminSettingsLanguage,
   ROUTES.adminSettingsContactUs,
+  ROUTES.adminSettingsMisc,
 ]);
 
 /** Use for profile/nav: link to path if implemented, else to placeholder. */

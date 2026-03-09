@@ -41,6 +41,12 @@ const SECTIONS = [
     href: ROUTES.adminSettingsContactUs,
     label: 'Manage contact us',
   },
+  {
+    title: 'Misc',
+    description: 'Misc entries with name and type. Add, edit, or delete for dropdowns and config.',
+    href: ROUTES.adminSettingsMisc,
+    label: 'Manage misc',
+  },
 ] as const;
 
 export default function AdminSettingsPage() {

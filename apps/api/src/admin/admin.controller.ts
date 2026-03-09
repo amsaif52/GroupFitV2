@@ -106,6 +106,9 @@ export class AdminController {
       value?: number;
       validFrom?: string | null;
       validTo?: string | null;
+      isActive?: boolean;
+      allowedDays?: string | null;
+      singleUsePerCustomer?: boolean;
     }
   ) {
     return this.adminService.createDiscount(
@@ -113,7 +116,10 @@ export class AdminController {
       body?.type ?? 'percent',
       Number(body?.value ?? 0),
       body?.validFrom,
-      body?.validTo
+      body?.validTo,
+      body?.isActive,
+      body?.allowedDays,
+      body?.singleUsePerCustomer
     );
   }
 
@@ -129,6 +135,9 @@ export class AdminController {
       value?: number;
       validFrom?: string | null;
       validTo?: string | null;
+      isActive?: boolean;
+      allowedDays?: string | null;
+      singleUsePerCustomer?: boolean;
     }
   ) {
     return this.adminService.updateDiscount(
@@ -137,7 +146,10 @@ export class AdminController {
       body?.type,
       body?.value,
       body?.validFrom,
-      body?.validTo
+      body?.validTo,
+      body?.isActive,
+      body?.allowedDays,
+      body?.singleUsePerCustomer
     );
   }
 
@@ -146,6 +158,31 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete discount' })
   deleteDiscount(@Body() body: { id?: string }) {
     return this.adminService.deleteDiscount(body?.id ?? '');
+  }
+
+  @Post('voucherListByDiscount')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'List vouchers for a discount' })
+  voucherListByDiscount(@Body() body: { discountId?: string }) {
+    return this.adminService.voucherListByDiscount(body?.discountId ?? '');
+  }
+
+  @Post('createVoucher')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create a voucher for a discount' })
+  createVoucher(
+    @Body()
+    body: {
+      discountId?: string;
+      recipientName?: string | null;
+      recipientOrg?: string | null;
+    }
+  ) {
+    return this.adminService.createVoucher(
+      body?.discountId ?? '',
+      body?.recipientName,
+      body?.recipientOrg
+    );
   }
 
   @Post('earningReport')
@@ -418,6 +455,34 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete FAQ' })
   deleteFaq(@Body() body: { id?: string }) {
     return this.adminService.deleteFaq(body?.id ?? '');
+  }
+
+  @Post('miscList')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Misc list (name + type)' })
+  miscList(@Body() _body: Record<string, unknown>) {
+    return this.adminService.miscList();
+  }
+
+  @Post('createMisc')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create misc entry' })
+  createMisc(@Body() body: { name?: string; type?: string }) {
+    return this.adminService.createMisc(body?.name ?? '', body?.type ?? '');
+  }
+
+  @Post('updateMisc')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update misc entry' })
+  updateMisc(@Body() body: { id?: string; name?: string; type?: string }) {
+    return this.adminService.updateMisc(body?.id ?? '', body?.name, body?.type);
+  }
+
+  @Post('deleteMisc')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Delete misc entry' })
+  deleteMisc(@Body() body: { id?: string }) {
+    return this.adminService.deleteMisc(body?.id ?? '');
   }
 
   @Post('countryList')

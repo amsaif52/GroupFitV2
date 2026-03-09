@@ -236,14 +236,31 @@ model SupportTicket {
 }
 
 model Discount {
-  id        String    @id @default(cuid())
-  code      String    @unique
-  type      String    // percent | fixed
-  value     Decimal   @db.Decimal(10, 2)
-  validFrom DateTime? @map("valid_from")
-  validTo   DateTime? @map("valid_to")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                   String    @id @default(cuid())
+  code                 String    @unique
+  type                 String    // percent | fixed
+  value                Decimal   @db.Decimal(10, 2)
+  validFrom            DateTime? @map("valid_from")
+  validTo              DateTime? @map("valid_to")
+  isActive             Boolean   @default(true) @map("is_active")
+  allowedDays          String?   @map("allowed_days") @db.Text // comma-separated 0-6 (0=Sun, 6=Sat); null/empty = all days
+  singleUsePerCustomer Boolean   @default(false) @map("single_use_per_customer")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  vouchers             Voucher[]
+}
+
+// Vouchers generated from a discount for distribution to people/organizations (analytics).
+model Voucher {
+  id             String    @id @default(cuid())
+  discountId     String    @map("discount_id")
+  code           String    @unique // unique voucher code (e.g. SAVE10-X7K2M)
+  recipientName  String?   @map("recipient_name") // person or org for analytics
+  recipientOrg   String?   @map("recipient_org")
+  createdAt      DateTime  @default(now())
+  usedAt         DateTime? @map("used_at")
+  discount       Discount  @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  @@map("voucher")
 }
 
 // Activity types (master data). Admin CRUD; customer/trainer read via fetchAllActivity.
@@ -347,6 +364,16 @@ model Faq {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@map("faq")
+}
+
+// Admin: misc key-value entries (name + type, e.g. for dropdowns or config).
+model Misc {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // e.g. "category", "tag" – to group misc entries
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("misc")
 }
 
 // Admin: key-value settings (e.g. contact_email, customize_dashboard JSON).

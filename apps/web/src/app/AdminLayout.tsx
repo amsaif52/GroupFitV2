@@ -8,7 +8,6 @@ const ADMIN_NAV = [
   { href: ROUTES.adminDashboard, label: 'Dashboard' },
   { href: ROUTES.adminActivity, label: 'Activity' },
   { href: ROUTES.adminContactUs, label: 'Contact' },
-  { href: ROUTES.adminCustomizeDashboard, label: 'Customize dashboard' },
   { href: ROUTES.adminDiscount, label: 'Discount' },
   { href: ROUTES.adminTrainers, label: 'Trainers' },
   { href: ROUTES.adminCustomers, label: 'Customers' },

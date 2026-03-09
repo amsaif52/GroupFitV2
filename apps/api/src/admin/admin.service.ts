@@ -34,6 +34,9 @@ interface DiscountRow {
   value: unknown;
   validFrom: Date | null;
   validTo: Date | null;
+  isActive: boolean;
+  allowedDays: string | null;
+  singleUsePerCustomer: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -233,7 +236,11 @@ export class AdminService {
       value: Number(d.value),
       validFrom: d.validFrom?.toISOString() ?? null,
       validTo: d.validTo?.toISOString() ?? null,
+      isActive: d.isActive,
+      allowedDays: d.allowedDays ?? null,
+      singleUsePerCustomer: d.singleUsePerCustomer,
       createdAt: d.createdAt.toISOString(),
+      updatedAt: d.updatedAt.toISOString(),
     }));
     return { mtype: 'success', message: 'OK', list };
   }
@@ -252,6 +259,9 @@ export class AdminService {
       value: Number(discount.value),
       validFrom: discount.validFrom?.toISOString() ?? null,
       validTo: discount.validTo?.toISOString() ?? null,
+      isActive: discount.isActive,
+      allowedDays: discount.allowedDays ?? null,
+      singleUsePerCustomer: discount.singleUsePerCustomer,
       createdAt: discount.createdAt.toISOString(),
       updatedAt: discount.updatedAt.toISOString(),
     };
@@ -262,7 +272,10 @@ export class AdminService {
     type: string,
     value: number,
     validFrom?: string | null,
-    validTo?: string | null
+    validTo?: string | null,
+    isActive?: boolean,
+    allowedDays?: string | null,
+    singleUsePerCustomer?: boolean
   ) {
     const codeNorm = String(code ?? '').trim();
     if (!codeNorm) return { mtype: 'error', message: 'Code is required' };
@@ -276,6 +289,8 @@ export class AdminService {
     if (existing) return { mtype: 'error', message: 'Discount code already exists' };
     const validFromDate = validFrom ? new Date(validFrom) : null;
     const validToDate = validTo ? new Date(validTo) : null;
+    const allowedDaysNorm =
+      allowedDays !== undefined && allowedDays !== null ? String(allowedDays).trim() || null : null;
     const discount = await this.prisma.discount.create({
       data: {
         code: codeNorm,
@@ -283,6 +298,9 @@ export class AdminService {
         value: numValue,
         validFrom: validFromDate ?? undefined,
         validTo: validToDate ?? undefined,
+        isActive: isActive ?? true,
+        allowedDays: allowedDaysNorm,
+        singleUsePerCustomer: singleUsePerCustomer ?? false,
       },
     });
     return { mtype: 'success', message: 'OK', id: discount.id };
@@ -294,7 +312,10 @@ export class AdminService {
     type?: string,
     value?: number,
     validFrom?: string | null,
-    validTo?: string | null
+    validTo?: string | null,
+    isActive?: boolean,
+    allowedDays?: string | null,
+    singleUsePerCustomer?: boolean
   ) {
     const discount = await this.prisma.discount.findUnique({ where: { id } });
     if (!discount) return { mtype: 'error', message: 'Discount not found' };
@@ -312,6 +333,8 @@ export class AdminService {
     const validFromDate =
       validFrom !== undefined ? (validFrom ? new Date(validFrom) : null) : undefined;
     const validToDate = validTo !== undefined ? (validTo ? new Date(validTo) : null) : undefined;
+    const allowedDaysValue =
+      allowedDays === undefined ? undefined : String(allowedDays).trim() || null;
     await this.prisma.discount.update({
       where: { id },
       data: {
@@ -320,6 +343,9 @@ export class AdminService {
         ...(value !== undefined && { value: numValue }),
         ...(validFrom !== undefined && { validFrom: validFromDate }),
         ...(validTo !== undefined && { validTo: validToDate }),
+        ...(isActive !== undefined && { isActive }),
+        ...(allowedDays !== undefined && { allowedDays: allowedDaysValue }),
+        ...(singleUsePerCustomer !== undefined && { singleUsePerCustomer }),
       },
     });
     return { mtype: 'success', message: 'OK' };
@@ -330,6 +356,81 @@ export class AdminService {
     if (!discount) return { mtype: 'error', message: 'Discount not found' };
     await this.prisma.discount.delete({ where: { id } });
     return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Vouchers for a discount (list and create). */
+  async voucherListByDiscount(discountId: string) {
+    const discount = await this.prisma.discount.findUnique({
+      where: { id: discountId },
+      select: { id: true, code: true },
+    });
+    if (!discount) return { mtype: 'error', message: 'Discount not found' };
+    const list = await this.prisma.voucher.findMany({
+      where: { discountId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        code: true,
+        recipientName: true,
+        recipientOrg: true,
+        createdAt: true,
+        usedAt: true,
+      },
+    });
+    return {
+      mtype: 'success',
+      message: 'OK',
+      discountCode: discount.code,
+      list: list.map((v) => ({
+        id: v.id,
+        code: v.code,
+        recipientName: v.recipientName ?? null,
+        recipientOrg: v.recipientOrg ?? null,
+        createdAt: v.createdAt.toISOString(),
+        usedAt: v.usedAt?.toISOString() ?? null,
+      })),
+    };
+  }
+
+  private randomVoucherSuffix(length = 8): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let s = '';
+    for (let i = 0; i < length; i++) s += chars.charAt(Math.floor(Math.random() * chars.length));
+    return s;
+  }
+
+  async createVoucher(
+    discountId: string,
+    recipientName?: string | null,
+    recipientOrg?: string | null
+  ) {
+    const discount = await this.prisma.discount.findUnique({
+      where: { id: discountId },
+      select: { id: true, code: true },
+    });
+    if (!discount) return { mtype: 'error', message: 'Discount not found' };
+    const base = String(discount.code).trim().toUpperCase().replace(/\s+/g, '');
+    let code = `${base}-${this.randomVoucherSuffix()}`;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const existing = await this.prisma.voucher.findUnique({ where: { code } });
+      if (!existing) break;
+      code = `${base}-${this.randomVoucherSuffix()}`;
+    }
+    const voucher = await this.prisma.voucher.create({
+      data: {
+        discountId: discount.id,
+        code,
+        recipientName: recipientName != null ? String(recipientName).trim() || null : null,
+        recipientOrg: recipientOrg != null ? String(recipientOrg).trim() || null : null,
+      },
+    });
+    return {
+      mtype: 'success',
+      message: 'OK',
+      id: voucher.id,
+      code: voucher.code,
+      createdAt: voucher.createdAt.toISOString(),
+    };
   }
 
   async earningReport() {
@@ -880,6 +981,48 @@ export class AdminService {
     const existing = await this.prisma.faq.findUnique({ where: { id } });
     if (!existing) return { mtype: 'error', message: 'FAQ not found' };
     await this.prisma.faq.delete({ where: { id } });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Misc list (admin master data: name + type). */
+  async miscList() {
+    const list = await this.prisma.misc.findMany({
+      orderBy: [{ type: 'asc' }, { name: 'asc' }],
+      select: { id: true, name: true, type: true, updatedAt: true },
+    });
+    return { mtype: 'success', message: 'OK', list };
+  }
+
+  async createMisc(name: string, type: string) {
+    const n = String(name ?? '').trim();
+    const t = String(type ?? '').trim();
+    if (!n) return { mtype: 'error', message: 'Name is required' };
+    if (!t) return { mtype: 'error', message: 'Type is required' };
+    const misc = await this.prisma.misc.create({
+      data: { name: n, type: t },
+    });
+    return { mtype: 'success', message: 'OK', id: misc.id };
+  }
+
+  async updateMisc(id: string, name?: string, type?: string) {
+    const existing = await this.prisma.misc.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Misc not found' };
+    const data: { name?: string; type?: string } = {};
+    if (name !== undefined) data.name = String(name).trim();
+    if (type !== undefined) data.type = String(type).trim();
+    if (data.name === '') return { mtype: 'error', message: 'Name cannot be empty' };
+    if (data.type === '') return { mtype: 'error', message: 'Type cannot be empty' };
+    await this.prisma.misc.update({
+      where: { id },
+      data,
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  async deleteMisc(id: string) {
+    const existing = await this.prisma.misc.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Misc not found' };
+    await this.prisma.misc.delete({ where: { id } });
     return { mtype: 'success', message: 'OK' };
   }
 

@@ -223,6 +223,19 @@ export default function AdminDiscountDetailPage() {
             {discount.updatedAt ? new Date(String(discount.updatedAt)).toLocaleString() : '—'}
           </p>
           <p style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <Link
+              href={ROUTES.adminDiscountVouchers(id)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                border: '1px solid var(--groupfit-secondary)',
+                color: 'var(--groupfit-secondary)',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Voucher list
+            </Link>
             <button
               type="button"
               onClick={() => setEditing(true)}

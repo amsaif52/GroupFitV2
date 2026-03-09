@@ -2,76 +2,48 @@
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ROUTES } from '../../routes';
+import { ROUTES } from '@/app/routes';
 import { adminApi } from '@/lib/api';
-import { CloudinaryUploadButton } from '@/components/CloudinaryUploadButton';
 
-type ActivityItem = {
+type MiscRow = {
   id: string;
-  code: string;
   name: string;
-  description?: string;
-  defaultPriceCents?: number;
-  logoUrl?: string;
-  activityGroup?: string;
-  trainerSharePercent?: number;
-  status?: string;
-  createdBy?: string;
-  createdAt?: string;
-  updatedBy?: string;
+  type: string;
   updatedAt?: string;
 };
 
 const PAGE_SIZES = [10, 20, 50];
 
-type ActivityCategoryItem = { id: string; name: string };
-
-export default function AdminActivityPage() {
+export default function AdminSettingsMiscPage() {
   const [loading, setLoading] = useState(true);
-  const [list, setList] = useState<ActivityItem[]>([]);
-  const [categories, setCategories] = useState<ActivityCategoryItem[]>([]);
+  const [list, setList] = useState<MiscRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<ActivityItem | null>(null);
-  const [formCode, setFormCode] = useState('');
+  const [editing, setEditing] = useState<MiscRow | null>(null);
   const [formName, setFormName] = useState('');
-  const [formDescription, setFormDescription] = useState('');
-  const [formDefaultPriceCents, setFormDefaultPriceCents] = useState<string>('');
-  const [formLogoUrl, setFormLogoUrl] = useState('');
-  const [formActivityGroup, setFormActivityGroup] = useState('');
-  const [formTrainerSharePercent, setFormTrainerSharePercent] = useState<string>('');
-  const [formStatus, setFormStatus] = useState<string>('active');
+  const [formType, setFormType] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
-
-  const fetchCategories = useCallback(() => {
-    adminApi.activityCategoryList().then((res) => {
-      const data = res?.data as { mtype?: string; list?: { id: string; name: string }[] };
-      if (data?.mtype !== 'error' && data?.list) {
-        setCategories(data.list);
-      }
-    });
-  }, []);
 
   const fetchList = useCallback(() => {
     setLoading(true);
     adminApi
-      .activityList()
+      .miscList()
       .then((res) => {
-        const data = res?.data as Record<string, unknown> | undefined;
+        const data = res?.data as { mtype?: string; list?: MiscRow[] };
         if (data?.mtype === 'error') {
-          setError(String(data.message ?? 'Failed to load'));
+          setError(String((data as { message?: string }).message ?? 'Failed to load'));
           setList([]);
         } else {
-          setList((data?.list as ActivityItem[]) ?? []);
+          setList(data?.list ?? []);
           setError(null);
         }
       })
       .catch(() => {
-        setError('Failed to load activities');
+        setError('Failed to load misc');
         setList([]);
       })
       .finally(() => setLoading(false));
@@ -81,19 +53,11 @@ export default function AdminActivityPage() {
     fetchList();
   }, [fetchList]);
 
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
-
   const filtered = useMemo(() => {
     if (!search.trim()) return list;
     const q = search.trim().toLowerCase();
     return list.filter(
-      (row) =>
-        row.name.toLowerCase().includes(q) ||
-        (row.code ?? '').toLowerCase().includes(q) ||
-        (row.activityGroup ?? '').toLowerCase().includes(q) ||
-        (row.description ?? '').toLowerCase().includes(q)
+      (row) => row.name.toLowerCase().includes(q) || (row.type ?? '').toLowerCase().includes(q)
     );
   }, [list, search]);
 
@@ -105,74 +69,33 @@ export default function AdminActivityPage() {
 
   const openAdd = () => {
     setEditing(null);
-    setFormCode('');
     setFormName('');
-    setFormDescription('');
-    setFormDefaultPriceCents('');
-    setFormLogoUrl('');
-    setFormActivityGroup('');
-    setFormTrainerSharePercent('');
-    setFormStatus('active');
+    setFormType('');
     setShowModal(true);
   };
 
-  const openEdit = (row: ActivityItem) => {
+  const openEdit = (row: MiscRow) => {
     setEditing(row);
-    setFormCode(row.code);
     setFormName(row.name);
-    setFormDescription(row.description ?? '');
-    setFormDefaultPriceCents(row.defaultPriceCents != null ? String(row.defaultPriceCents) : '');
-    setFormLogoUrl(row.logoUrl ?? '');
-    setFormActivityGroup(row.activityGroup ?? '');
-    setFormTrainerSharePercent(
-      row.trainerSharePercent != null ? String(row.trainerSharePercent) : ''
-    );
-    setFormStatus(row.status ?? 'active');
+    setFormType(row.type);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditing(null);
-    setFormCode('');
     setFormName('');
-    setFormDescription('');
-    setFormDefaultPriceCents('');
-    setFormLogoUrl('');
-    setFormActivityGroup('');
-    setFormTrainerSharePercent('');
-    setFormStatus('active');
+    setFormType('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
-    const defaultPriceCentsCreate =
-      formDefaultPriceCents.trim() === ''
-        ? undefined
-        : Math.round(Number(formDefaultPriceCents)) || undefined;
-    const defaultPriceCentsUpdate =
-      formDefaultPriceCents.trim() === '' ? null : Math.round(Number(formDefaultPriceCents));
-    const trainerShare =
-      formTrainerSharePercent.trim() === ''
-        ? null
-        : Math.min(100, Math.max(0, Math.round(Number(formTrainerSharePercent))));
     if (editing) {
       adminApi
-        .updateActivity({
-          id: editing.id,
-          code: formCode.trim(),
-          name: formName.trim(),
-          description: formDescription.trim() || undefined,
-          defaultPriceCents:
-            formDefaultPriceCents.trim() === '' ? null : (defaultPriceCentsUpdate ?? null),
-          logoUrl: formLogoUrl.trim() || null,
-          activityGroup: formActivityGroup.trim() || null,
-          trainerSharePercent: trainerShare,
-          status: formStatus.trim() || 'active',
-        })
+        .updateMisc(editing.id, formName.trim(), formType.trim())
         .then((res) => {
-          const data = res?.data as Record<string, unknown>;
+          const data = res?.data as { mtype?: string; message?: string };
           if (data?.mtype === 'success') {
             closeModal();
             fetchList();
@@ -184,18 +107,9 @@ export default function AdminActivityPage() {
         .finally(() => setSubmitLoading(false));
     } else {
       adminApi
-        .createActivity({
-          code: formCode.trim(),
-          name: formName.trim(),
-          description: formDescription.trim() || undefined,
-          defaultPriceCents: defaultPriceCentsCreate,
-          logoUrl: formLogoUrl.trim() || undefined,
-          activityGroup: formActivityGroup.trim() || undefined,
-          trainerSharePercent: trainerShare ?? undefined,
-          status: formStatus.trim() || 'active',
-        })
+        .createMisc(formName.trim(), formType.trim())
         .then((res) => {
-          const data = res?.data as Record<string, unknown>;
+          const data = res?.data as { mtype?: string; message?: string };
           if (data?.mtype === 'success') {
             closeModal();
             fetchList();
@@ -209,12 +123,12 @@ export default function AdminActivityPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('Delete this activity? It may be used in sessions.')) return;
+    if (!confirm('Delete this misc entry?')) return;
     setActionId(id);
     adminApi
-      .deleteActivity(id)
+      .deleteMisc(id)
       .then((res) => {
-        const data = res?.data as Record<string, unknown>;
+        const data = res?.data as { mtype?: string; message?: string };
         if (data?.mtype === 'success') fetchList();
         else setError(String(data?.message ?? 'Delete failed'));
       })
@@ -235,10 +149,10 @@ export default function AdminActivityPage() {
     <>
       <header style={{ marginBottom: 24 }}>
         <Link
-          href={ROUTES.adminDashboard}
+          href={ROUTES.adminSettings}
           style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
         >
-          ← Dashboard
+          ← Settings
         </Link>
         <div
           style={{
@@ -250,7 +164,7 @@ export default function AdminActivityPage() {
             marginTop: 8,
           }}
         >
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Activity List</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Misc</h1>
           <button type="button" onClick={openAdd} className="gf-admin-btn gf-admin-btn--primary">
             + Add
           </button>
@@ -291,11 +205,11 @@ export default function AdminActivityPage() {
           </select>
         </span>
         <span style={{ marginLeft: 16 }}>
-          <label htmlFor="activity-search" style={{ marginRight: 8, fontSize: 14 }}>
+          <label htmlFor="misc-search" style={{ marginRight: 8, fontSize: 14 }}>
             Search:
           </label>
           <input
-            id="activity-search"
+            id="misc-search"
             type="search"
             value={search}
             onChange={(e) => {
@@ -328,7 +242,7 @@ export default function AdminActivityPage() {
                     <td style={{ maxWidth: 320 }}>
                       {row.name.length > 60 ? `${row.name.slice(0, 60)}…` : row.name}
                     </td>
-                    <td>{row.activityGroup || '—'}</td>
+                    <td>{row.type}</td>
                     <td
                       style={{
                         color: 'var(--groupfit-grey)',
@@ -433,7 +347,7 @@ export default function AdminActivityPage() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="activity-modal-title"
+          aria-labelledby="misc-modal-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -453,7 +367,7 @@ export default function AdminActivityPage() {
               background: '#fff',
               borderRadius: 12,
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
-              maxWidth: 520,
+              maxWidth: 480,
               width: '100%',
               maxHeight: '90vh',
               overflow: 'auto',
@@ -466,163 +380,38 @@ export default function AdminActivityPage() {
                 borderBottom: '1px solid var(--groupfit-border-light)',
               }}
             >
-              <h2 id="activity-modal-title" style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
-                {editing ? 'Edit Activity' : 'Add Activity'}
+              <h2 id="misc-modal-title" style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
+                {editing ? 'Edit Misc' : 'Add Misc'}
               </h2>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: 20 }}>
               <div className="gf-admin-field" style={{ marginBottom: 16 }}>
-                <label className="gf-admin-field__label" htmlFor="activity-code">
-                  Code
-                </label>
-                <input
-                  id="activity-code"
-                  type="text"
-                  required
-                  disabled={!!editing}
-                  className="gf-admin-field__input"
-                  value={formCode}
-                  onChange={(e) => setFormCode(e.target.value)}
-                  placeholder="e.g. yoga"
-                  style={{ maxWidth: 200 }}
-                />
-              </div>
-              <div className="gf-admin-field" style={{ marginBottom: 16 }}>
-                <label className="gf-admin-field__label" htmlFor="activity-name">
+                <label className="gf-admin-field__label" htmlFor="misc-name">
                   Name
                 </label>
                 <input
-                  id="activity-name"
+                  id="misc-name"
                   type="text"
                   required
                   className="gf-admin-field__input"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  placeholder="e.g. Yoga"
-                  style={{ maxWidth: 280 }}
-                />
-              </div>
-              <div className="gf-admin-field" style={{ marginBottom: 16 }}>
-                <label className="gf-admin-field__label" htmlFor="activity-desc">
-                  Description (optional)
-                </label>
-                <input
-                  id="activity-desc"
-                  type="text"
-                  className="gf-admin-field__input"
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="Short description"
-                />
-              </div>
-              <div className="gf-admin-field" style={{ marginBottom: 16 }}>
-                <label className="gf-admin-field__label" htmlFor="activity-price">
-                  Default price (cents, optional)
-                </label>
-                <input
-                  id="activity-price"
-                  type="number"
-                  min={0}
-                  className="gf-admin-field__input"
-                  value={formDefaultPriceCents}
-                  onChange={(e) => setFormDefaultPriceCents(e.target.value)}
-                  placeholder="e.g. 2500"
-                  style={{ maxWidth: 160 }}
-                />
-              </div>
-              <div className="gf-admin-field" style={{ marginBottom: 16 }}>
-                <label className="gf-admin-field__label">Logo (optional)</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <CloudinaryUploadButton
-                      onUpload={(url) => setFormLogoUrl(url)}
-                      label="Upload image"
-                    />
-                    {formLogoUrl && (
-                      <img
-                        src={formLogoUrl}
-                        alt=""
-                        style={{
-                          width: 36,
-                          height: 36,
-                          objectFit: 'contain',
-                          border: '1px solid var(--groupfit-border-light)',
-                          borderRadius: 6,
-                        }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <label
-                      htmlFor="activity-logo"
-                      style={{ fontSize: 13, color: 'var(--groupfit-grey)', whiteSpace: 'nowrap' }}
-                    >
-                      Or paste URL:
-                    </label>
-                    <input
-                      id="activity-logo"
-                      type="url"
-                      className="gf-admin-field__input"
-                      value={formLogoUrl}
-                      onChange={(e) => setFormLogoUrl(e.target.value)}
-                      placeholder="https://…"
-                      style={{ flex: 1, minWidth: 200 }}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="gf-admin-field" style={{ marginBottom: 16 }}>
-                <label className="gf-admin-field__label" htmlFor="activity-group">
-                  Activity group (optional)
-                </label>
-                <select
-                  id="activity-group"
-                  className="gf-admin-field__input"
-                  value={formActivityGroup}
-                  onChange={(e) => setFormActivityGroup(e.target.value)}
-                  style={{ padding: '10px 14px', maxWidth: 280 }}
-                >
-                  <option value="">— None —</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.name}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="gf-admin-field" style={{ marginBottom: 16 }}>
-                <label className="gf-admin-field__label" htmlFor="activity-share">
-                  Trainer share (%)
-                </label>
-                <input
-                  id="activity-share"
-                  type="number"
-                  min={0}
-                  max={100}
-                  className="gf-admin-field__input"
-                  value={formTrainerSharePercent}
-                  onChange={(e) => setFormTrainerSharePercent(e.target.value)}
-                  placeholder="0–100"
-                  style={{ maxWidth: 80 }}
+                  placeholder="e.g. General"
                 />
               </div>
               <div className="gf-admin-field" style={{ marginBottom: 20 }}>
-                <label className="gf-admin-field__label" htmlFor="activity-status">
-                  Status
+                <label className="gf-admin-field__label" htmlFor="misc-type">
+                  Type
                 </label>
-                <select
-                  id="activity-status"
+                <input
+                  id="misc-type"
+                  type="text"
+                  required
                   className="gf-admin-field__input"
-                  value={formStatus}
-                  onChange={(e) => setFormStatus(e.target.value)}
-                  style={{ padding: '10px 14px', maxWidth: 120 }}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  value={formType}
+                  onChange={(e) => setFormType(e.target.value)}
+                  placeholder="e.g. category, tag"
+                />
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button

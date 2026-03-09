@@ -641,6 +641,9 @@ export const adminApi = {
     value: number;
     validFrom?: string | null;
     validTo?: string | null;
+    isActive?: boolean;
+    allowedDays?: string | null;
+    singleUsePerCustomer?: boolean;
   }) => api.post<Record<string, unknown>>('/admin/createDiscount', body),
   updateDiscount: (body: {
     id: string;
@@ -649,9 +652,37 @@ export const adminApi = {
     value?: number;
     validFrom?: string | null;
     validTo?: string | null;
+    isActive?: boolean;
+    allowedDays?: string | null;
+    singleUsePerCustomer?: boolean;
   }) => api.post<Record<string, unknown>>('/admin/updateDiscount', body),
   deleteDiscount: (id: string) =>
     api.post<Record<string, unknown>>('/admin/deleteDiscount', { id }),
+  voucherListByDiscount: (discountId: string) =>
+    api.post<{
+      mtype: string;
+      discountCode?: string;
+      list?: {
+        id: string;
+        code: string;
+        recipientName?: string | null;
+        recipientOrg?: string | null;
+        createdAt: string;
+        usedAt?: string | null;
+      }[];
+    }>('/admin/voucherListByDiscount', { discountId }),
+  createVoucher: (body: {
+    discountId: string;
+    recipientName?: string | null;
+    recipientOrg?: string | null;
+  }) =>
+    api.post<{
+      mtype: string;
+      id?: string;
+      code?: string;
+      createdAt?: string;
+      message?: string;
+    }>('/admin/createVoucher', body),
   earningReport: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; data?: unknown }>('/admin/earningReport', body ?? {}),
 
@@ -784,6 +815,21 @@ export const adminApi = {
     }),
   deleteFaq: (id: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/deleteFaq', { id }),
+
+  miscList: (body?: Record<string, unknown>) =>
+    api.post<{
+      mtype: string;
+      list?: { id: string; name: string; type: string; updatedAt?: string }[];
+    }>('/admin/miscList', body ?? {}),
+  createMisc: (name: string, type: string) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/admin/createMisc', {
+      name,
+      type,
+    }),
+  updateMisc: (id: string, name?: string, type?: string) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateMisc', { id, name, type }),
+  deleteMisc: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/admin/deleteMisc', { id }),
 
   countryList: (body?: Record<string, unknown>) =>
     api.post<{
