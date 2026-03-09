@@ -268,6 +268,33 @@
   padding-left: 0;
   padding-right: 0;
 }
+.gf-auth__otp-cells {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+.gf-auth__otp-cell {
+  width: 52px;
+  height: 52px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--gf-radius-md, 8px);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 24px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--groupfit-white, #fff);
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.gf-auth__otp-cell:focus {
+  outline: none;
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+.gf-auth__otp-cell::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
 .gf-auth__resend-row {
   display: flex;
   align-items: center;

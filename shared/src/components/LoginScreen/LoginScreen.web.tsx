@@ -1,11 +1,13 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { LoginInput, LoginPhoneInput, VerifyOtpInput } from '../../utils/auth-schemas';
 import { loginSchema, loginPhoneSchema, verifyOtpSchema } from '../../utils/auth-schemas';
 import { COUNTRY_CODES } from '../../utils';
 import Button from '../atoms/Button.web';
+
+const OTP_LENGTH = 4;
 
 export type LoginMethod = 'phone' | 'email';
 
@@ -157,6 +159,49 @@ export function LoginScreenWeb({
     resolver: zodResolver(verifyOtpSchema),
     defaultValues: { otp: '', userCode: '' },
   });
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    if (otpStep) otpForm.setValue('otp', otpDigits.join(''), { shouldValidate: true });
+  }, [otpDigits, otpStep, otpForm]);
+
+  const setOtpDigit = useCallback((index: number, char: string) => {
+    const num = char.replace(/\D/g, '').slice(-1);
+    setOtpDigits((prev) => {
+      const next = [...prev];
+      next[index] = num;
+      return next;
+    });
+    if (num && index < OTP_LENGTH - 1) otpInputRefs.current[index + 1]?.focus();
+  }, []);
+
+  const handleOtpKeyDown = useCallback(
+    (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+        otpInputRefs.current[index - 1]?.focus();
+        setOtpDigits((prev) => {
+          const next = [...prev];
+          next[index - 1] = '';
+          return next;
+        });
+      }
+    },
+    [otpDigits]
+  );
+
+  const handleOtpPaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
+    const arr = pasted.split('');
+    setOtpDigits((prev) => {
+      const next = [...prev];
+      arr.forEach((c, i) => (next[i] = c));
+      return next;
+    });
+    const nextFocus = Math.min(pasted.length, OTP_LENGTH - 1);
+    otpInputRefs.current[nextFocus]?.focus();
+  }, []);
 
   const resolvedTitle = title;
   const resolvedSubtitle = subtitle;
@@ -177,6 +222,7 @@ export function LoginScreenWeb({
           : data.email.trim();
       const { userCode } = await onSendOtp(payload, 'phone' in data ? 'phone' : 'email');
       setOtpStep({ userCode, phone: payload });
+      setOtpDigits(Array(OTP_LENGTH).fill(''));
       otpForm.setValue('userCode', userCode);
       setResendCooldownSeconds(RESEND_COOLDOWN_SECONDS);
     } finally {
@@ -197,6 +243,7 @@ export function LoginScreenWeb({
   function handleBackFromOtp() {
     setOtpStep(null);
     setResendCooldownSeconds(0);
+    setOtpDigits(Array(OTP_LENGTH).fill(''));
     otpForm.reset({ otp: '', userCode: '' });
   }
 
@@ -378,16 +425,27 @@ export function LoginScreenWeb({
           <input type="hidden" {...otpForm.register('userCode')} />
           <label className="gf-auth__label">
             <span className="gf-auth__label-text">{otpPlaceholder}</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={4}
-              placeholder=""
-              className="gf-auth__input gf-auth__input--otp"
-              aria-invalid={Boolean(otpForm.formState.errors.otp)}
-              {...otpForm.register('otp')}
-            />
+            <div className="gf-auth__otp-cells" onPaste={handleOtpPaste}>
+              {otpDigits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={(el) => {
+                    otpInputRefs.current[i] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  autoComplete="one-time-code"
+                  className="gf-auth__otp-cell"
+                  value={d}
+                  onChange={(e) => setOtpDigit(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  disabled={otpLoading}
+                  aria-invalid={Boolean(otpForm.formState.errors.otp)}
+                  aria-label={`Digit ${i + 1}`}
+                />
+              ))}
+            </div>
             {otpForm.formState.errors.otp && (
               <span className="gf-auth__field-error" role="alert">
                 {otpForm.formState.errors.otp.message}

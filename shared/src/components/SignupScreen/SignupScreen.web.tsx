@@ -1,11 +1,13 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { SignupFormInput } from '../../utils/auth-schemas';
 import { signupFormSchema, SIGNUP_ROLES } from '../../utils/auth-schemas';
 import { COUNTRY_CODES, getSubdivisionsForCountry } from '../../utils';
 import Button from '../atoms/Button.web';
+
+const OTP_LENGTH = 4;
 
 export interface SignupScreenWebProps {
   /** When set with onVerifySignupOtp, form submit sends OTP first; then user verifies to create account. */
@@ -143,10 +145,48 @@ export function SignupScreenWeb({
   const [phoneDialCode, setPhoneDialCode] = useState(COUNTRY_CODES[0]?.dial ?? '+1');
   const [signupStep, setSignupStep] = useState<'form' | 'otp'>('form');
   const [pendingSignupData, setPendingSignupData] = useState<SignupFormInput | null>(null);
-  const [otpValue, setOtpValue] = useState('');
+  const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [otpError, setOtpError] = useState<string | null>(null);
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
   const useOtpFlow = Boolean(onSendSignupOtp && onVerifySignupOtp);
+
+  const setOtpDigit = useCallback((index: number, char: string) => {
+    const num = char.replace(/\D/g, '').slice(-1);
+    setOtpDigits((prev) => {
+      const next = [...prev];
+      next[index] = num;
+      return next;
+    });
+    if (num && index < OTP_LENGTH - 1) otpInputRefs.current[index + 1]?.focus();
+  }, []);
+
+  const handleOtpKeyDown = useCallback(
+    (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+        otpInputRefs.current[index - 1]?.focus();
+        setOtpDigits((prev) => {
+          const next = [...prev];
+          next[index - 1] = '';
+          return next;
+        });
+      }
+    },
+    [otpDigits]
+  );
+
+  const handleOtpPaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
+    const arr = pasted.split('');
+    setOtpDigits((prev) => {
+      const next = [...prev];
+      arr.forEach((c, i) => (next[i] = c));
+      return next;
+    });
+    const nextFocus = Math.min(pasted.length, OTP_LENGTH - 1);
+    otpInputRefs.current[nextFocus]?.focus();
+  }, []);
 
   useEffect(() => {
     if (resendCooldownSeconds <= 0) return;
@@ -199,7 +239,7 @@ export function SignupScreenWeb({
       await onSendSignupOtp(dataWithPhone);
       setPendingSignupData(dataWithPhone);
       setSignupStep('otp');
-      setOtpValue('');
+      setOtpDigits(Array(OTP_LENGTH).fill(''));
       setOtpError(null);
       setResendCooldownSeconds(RESEND_COOLDOWN_SECONDS);
     } else if (onSubmit) {
@@ -211,7 +251,7 @@ export function SignupScreenWeb({
     e.preventDefault();
     if (!pendingSignupData || !onVerifySignupOtp) return;
     setOtpError(null);
-    const code = otpValue.trim();
+    const code = otpDigits.join('').trim();
     if (!code) {
       setOtpError('Please enter the code');
       return;
@@ -260,17 +300,27 @@ export function SignupScreenWeb({
           <p className="gf-auth__otp-hint">Code sent to {pendingSignupData?.phone ?? ''}</p>
           <label className="gf-auth__label">
             <span className="gf-auth__label-text">{otpPlaceholder}</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={4}
-              value={otpValue}
-              onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder=""
-              className="gf-auth__input gf-auth__input--otp"
-              aria-invalid={Boolean(otpError)}
-            />
+            <div className="gf-auth__otp-cells" onPaste={handleOtpPaste}>
+              {otpDigits.map((d, i) => (
+                <input
+                  key={i}
+                  ref={(el) => {
+                    otpInputRefs.current[i] = el;
+                  }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  autoComplete="one-time-code"
+                  className="gf-auth__otp-cell"
+                  value={d}
+                  onChange={(e) => setOtpDigit(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  disabled={loading}
+                  aria-invalid={Boolean(otpError)}
+                  aria-label={`Digit ${i + 1}`}
+                />
+              ))}
+            </div>
           </label>
           <Button
             type="submit"
@@ -299,7 +349,7 @@ export function SignupScreenWeb({
               onClick={() => {
                 setSignupStep('form');
                 setPendingSignupData(null);
-                setOtpValue('');
+                setOtpDigits(Array(OTP_LENGTH).fill(''));
                 setOtpError(null);
                 setResendCooldownSeconds(0);
               }}
