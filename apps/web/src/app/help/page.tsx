@@ -170,7 +170,7 @@ export default function HelpPage() {
       )}
 
       {tab === 'Support' && user && (
-        <div className="gf-help__contact-list" style={{ maxWidth: 480 }}>
+        <div className="gf-help__contact-list">
           {supportSuccess ? (
             <p
               className="gf-help__empty"
@@ -269,7 +269,7 @@ export default function HelpPage() {
       {tab === 'Assistant' && user && (
         <div
           className="gf-help__contact-list"
-          style={{ maxWidth: 560, display: 'flex', flexDirection: 'column', height: 360 }}
+          style={{ display: 'flex', flexDirection: 'column', height: 360 }}
         >
           <HelpChat
             messages={chatMessages}

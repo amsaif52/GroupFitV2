@@ -2,26 +2,27 @@
 
 import { useState } from 'react';
 
-export type FaqItem = { id: string; question: string; description: string };
+export type FaqItem = { id: string; question: string; answer: string; sortOrder?: number };
 export type ContactItem = { heading: string; link: string };
 
 const DEFAULT_FAQS: FaqItem[] = [
   {
     id: '1',
     question: 'How do I book a session?',
-    description:
-      'Go to Activities or find a trainer, choose a time slot, and confirm your booking.',
+    answer: 'Go to Activities or find a trainer, choose a time slot, and confirm your booking.',
+    sortOrder: 1,
   },
   {
     id: '2',
     question: 'How do I cancel or reschedule?',
-    description:
-      'Open your session from Upcoming Sessions and use the cancel or reschedule option.',
+    answer: 'Open your session from Upcoming Sessions and use the cancel or reschedule option.',
+    sortOrder: 2,
   },
   {
     id: '3',
     question: 'Where can I see my payment history?',
-    description: 'Go to Account or Profile and tap Payment History.',
+    answer: 'Go to Account or Profile and tap Payment History.',
+    sortOrder: 3,
   },
 ];
 

@@ -46,7 +46,10 @@ const userSelect = {
   role: true,
   locale: true,
   phone: true,
+  countryCode: true,
+  state: true,
   trainerCanSetOwnPrice: true,
+  isActive: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -350,28 +353,47 @@ export class AdminService {
 
   /** Activity types (master data) */
   async activityList() {
-    const list = await this.prisma.activity.findMany({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const list = await (this.prisma.activity.findMany as any)({
       orderBy: { code: 'asc' },
+      include: {
+        createdBy: { select: { name: true, email: true } },
+        updatedBy: { select: { name: true, email: true } },
+      },
     });
     return {
       mtype: 'success',
       message: 'OK',
       list: list.map(
-        (a: {
-          id: string;
-          code: string;
-          name: string;
-          description: string | null;
-          defaultPriceCents: number | null;
-          createdAt: Date;
-          updatedAt: Date;
-        }) => ({
+        (
+          a: Record<string, unknown> & {
+            id: string;
+            code: string;
+            name: string;
+            description: string | null;
+            defaultPriceCents: number | null;
+            logoUrl?: string | null;
+            activityGroup?: string | null;
+            trainerSharePercent?: number | null;
+            status?: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            createdBy?: { name: string | null; email: string } | null;
+            updatedBy?: { name: string | null; email: string } | null;
+          }
+        ) => ({
           id: a.id,
           code: a.code,
           name: a.name,
           description: a.description ?? '',
           defaultPriceCents: a.defaultPriceCents ?? undefined,
+          logoUrl: a.logoUrl ?? undefined,
+          activityGroup: a.activityGroup ?? undefined,
+          trainerSharePercent: a.trainerSharePercent ?? undefined,
+          status: a.status ?? 'active',
+          createdBy: a.createdBy ? a.createdBy.name || a.createdBy.email : undefined,
           createdAt: a.createdAt.toISOString(),
+          updatedBy: a.updatedBy ? a.updatedBy.name || a.updatedBy.email : undefined,
           updatedAt: a.updatedAt.toISOString(),
         })
       ),
@@ -379,10 +401,15 @@ export class AdminService {
   }
 
   async createActivity(
+    adminUserId: string,
     code: string,
     name: string,
     description?: string,
-    defaultPriceCents?: number
+    defaultPriceCents?: number,
+    logoUrl?: string,
+    activityGroup?: string,
+    trainerSharePercent?: number | null,
+    status?: string | null
   ) {
     const codeNorm = String(code ?? '')
       .trim()
@@ -399,17 +426,33 @@ export class AdminService {
           defaultPriceCents !== null && {
             defaultPriceCents: Math.max(0, Math.round(defaultPriceCents)),
           }),
-      },
+        ...(logoUrl !== undefined && { logoUrl: logoUrl?.trim() || null }),
+        ...(activityGroup !== undefined && { activityGroup: activityGroup?.trim() || null }),
+        ...(trainerSharePercent !== undefined && {
+          trainerSharePercent:
+            trainerSharePercent == null
+              ? null
+              : Math.min(100, Math.max(0, Math.round(Number(trainerSharePercent)))),
+        }),
+        ...(status !== undefined && { status: status?.trim() || 'active' }),
+        createdById: adminUserId,
+        updatedById: adminUserId,
+      } as Parameters<typeof this.prisma.activity.create>[0]['data'],
     });
     return { mtype: 'success', message: 'OK', id: activity.id };
   }
 
   async updateActivity(
+    adminUserId: string,
     id: string,
     code?: string,
     name?: string,
     description?: string,
-    defaultPriceCents?: number | null
+    defaultPriceCents?: number | null,
+    logoUrl?: string | null,
+    activityGroup?: string | null,
+    trainerSharePercent?: number | null,
+    status?: string | null
   ) {
     const activity = await this.prisma.activity.findUnique({ where: { id } });
     if (!activity) return { mtype: 'error', message: 'Activity not found' };
@@ -428,7 +471,17 @@ export class AdminService {
           defaultPriceCents:
             defaultPriceCents == null ? null : Math.max(0, Math.round(Number(defaultPriceCents))),
         }),
-      },
+        ...(logoUrl !== undefined && { logoUrl: logoUrl?.trim() || null }),
+        ...(activityGroup !== undefined && { activityGroup: activityGroup?.trim() || null }),
+        ...(trainerSharePercent !== undefined && {
+          trainerSharePercent:
+            trainerSharePercent == null
+              ? null
+              : Math.min(100, Math.max(0, Math.round(Number(trainerSharePercent)))),
+        }),
+        ...(status !== undefined && { status: status?.trim() || 'active' }),
+        updatedById: adminUserId,
+      } as Parameters<typeof this.prisma.activity.update>[0]['data'],
     });
     return { mtype: 'success', message: 'OK' };
   }
@@ -450,6 +503,131 @@ export class AdminService {
       where: { id: trainerId },
       data: { trainerCanSetOwnPrice: canSetOwnPrice },
     });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** List activities for a trainer (admin). Returns activity name, default price, custom price. */
+  async trainerActivityList(adminUserId: string, trainerId: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const trainer = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { trainerCanSetOwnPrice: true },
+    });
+    if (!trainer) return { mtype: 'error', message: 'Trainer not found' };
+    const rows = await this.prisma.trainerActivity.findMany({
+      where: { trainerId },
+      orderBy: { createdAt: 'asc' },
+    });
+    const codes = [...new Set(rows.map((r) => r.activityCode))];
+    const activities =
+      codes.length > 0
+        ? await this.prisma.activity.findMany({ where: { code: { in: codes } } })
+        : [];
+    const byCode = Object.fromEntries(activities.map((a) => [a.code, a]));
+    const canSetOwnPrice = trainer.trainerCanSetOwnPrice ?? false;
+    const list = rows.map((r) => {
+      const a = byCode[r.activityCode];
+      const defaultPriceCents = a?.defaultPriceCents ?? null;
+      const effectivePriceCents =
+        canSetOwnPrice && r.priceCents != null ? r.priceCents : defaultPriceCents;
+      return {
+        id: r.id,
+        trainerId: r.trainerId,
+        activityCode: r.activityCode,
+        activityName: a?.name ?? r.activityCode,
+        defaultPriceCents: defaultPriceCents ?? undefined,
+        priceCents: r.priceCents ?? undefined,
+        canSetOwnPrice,
+        effectivePriceCents: effectivePriceCents ?? undefined,
+        createdAt: r.createdAt.toISOString(),
+      };
+    });
+    return { mtype: 'success', message: 'OK', list, canSetOwnPrice };
+  }
+
+  /** Add an activity to a trainer with optional custom price (admin). */
+  async addTrainerActivity(
+    adminUserId: string,
+    trainerId: string,
+    activityCode: string,
+    priceCents?: number | null
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const code = String(activityCode ?? '')
+      .trim()
+      .toLowerCase();
+    if (!code) return { mtype: 'error', message: 'Activity code is required' };
+    const [activity, trainer] = await Promise.all([
+      this.prisma.activity.findUnique({ where: { code } }),
+      this.prisma.user.findUnique({
+        where: { id: trainerId },
+        select: { role: true },
+      }),
+    ]);
+    if (!activity) return { mtype: 'error', message: 'Activity not found' };
+    if (!trainer || trainer.role !== 'trainer')
+      return { mtype: 'error', message: 'Trainer not found' };
+    const existing = await this.prisma.trainerActivity.findUnique({
+      where: { trainerId_activityCode: { trainerId, activityCode: code } },
+    });
+    if (existing) return { mtype: 'error', message: 'Trainer already has this activity' };
+    const data: { trainerId: string; activityCode: string; priceCents?: number | null } = {
+      trainerId,
+      activityCode: code,
+    };
+    if (priceCents !== undefined && priceCents !== null) {
+      data.priceCents = Math.max(0, Math.round(priceCents));
+    }
+    const ta = await this.prisma.trainerActivity.create({ data });
+    return { mtype: 'success', message: 'OK', id: ta.id };
+  }
+
+  /** Set custom price for a trainer's activity (admin). Creates TrainerActivity if missing. */
+  async setTrainerActivityPrice(
+    adminUserId: string,
+    trainerId: string,
+    activityCode: string,
+    priceCents: number | null
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const code = String(activityCode ?? '')
+      .trim()
+      .toLowerCase();
+    if (!code) return { mtype: 'error', message: 'Activity code is required' };
+    const activity = await this.prisma.activity.findUnique({ where: { code } });
+    if (!activity) return { mtype: 'error', message: 'Activity not found' };
+    const trainer = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { role: true },
+    });
+    if (!trainer || trainer.role !== 'trainer')
+      return { mtype: 'error', message: 'Trainer not found' };
+    const existing = await this.prisma.trainerActivity.findUnique({
+      where: { trainerId_activityCode: { trainerId, activityCode: code } },
+    });
+    const value = priceCents == null ? null : Math.max(0, Math.round(priceCents));
+    if (existing) {
+      await this.prisma.trainerActivity.update({
+        where: { id: existing.id },
+        data: { priceCents: value },
+      });
+    } else {
+      await this.prisma.trainerActivity.create({
+        data: { trainerId, activityCode: code, priceCents: value },
+      });
+    }
     return { mtype: 'success', message: 'OK' };
   }
 
@@ -495,35 +673,204 @@ export class AdminService {
     return { mtype: 'success', message: 'OK' };
   }
 
+  /** Create a customer (admin only). Email must be unique. */
+  async createCustomer(
+    adminUserId: string,
+    body: { email: string; name?: string; phone?: string }
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const email = (body.email ?? '').trim().toLowerCase();
+    if (!email) return { mtype: 'error', message: 'Email is required' };
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) return { mtype: 'error', message: 'Email already in use' };
+    const name = (body.name ?? '').trim() || null;
+    const phone = (body.phone ?? '').trim() || null;
+    if (phone) {
+      const existingPhone = await this.prisma.user.findUnique({ where: { phone } });
+      if (existingPhone) return { mtype: 'error', message: 'Phone already in use' };
+    }
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name,
+        phone,
+        role: 'customer',
+        locale: 'en',
+        isActive: true,
+      },
+      select: userSelect,
+    });
+    return { mtype: 'success', message: 'OK', ...user };
+  }
+
+  /** Update a customer (admin only). Only customers can be updated via this. */
+  async updateCustomer(
+    adminUserId: string,
+    customerId: string,
+    body: { name?: string; phone?: string }
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const target = await this.prisma.user.findUnique({
+      where: { id: customerId },
+      select: { role: true, id: true },
+    });
+    if (!target || target.role !== 'customer')
+      return { mtype: 'error', message: 'Customer not found' };
+    const name = body.name !== undefined ? String(body.name).trim() || null : undefined;
+    const phone = body.phone !== undefined ? String(body.phone).trim() || null : undefined;
+    if (phone !== undefined && phone) {
+      const existingPhone = await this.prisma.user.findFirst({
+        where: { phone, id: { not: customerId } },
+      });
+      if (existingPhone) return { mtype: 'error', message: 'Phone already in use' };
+    }
+    const user = await this.prisma.user.update({
+      where: { id: customerId },
+      data: { ...(name !== undefined && { name }), ...(phone !== undefined && { phone }) },
+      select: userSelect,
+    });
+    return { mtype: 'success', message: 'OK', ...user };
+  }
+
+  /** Create a trainer (admin only). Email must be unique. */
+  async createTrainer(adminUserId: string, body: { email: string; name?: string; phone?: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const email = (body.email ?? '').trim().toLowerCase();
+    if (!email) return { mtype: 'error', message: 'Email is required' };
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) return { mtype: 'error', message: 'Email already in use' };
+    const name = (body.name ?? '').trim() || null;
+    const phone = (body.phone ?? '').trim() || null;
+    if (phone) {
+      const existingPhone = await this.prisma.user.findUnique({ where: { phone } });
+      if (existingPhone) return { mtype: 'error', message: 'Phone already in use' };
+    }
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name,
+        phone,
+        role: 'trainer',
+        locale: 'en',
+        isActive: true,
+      },
+      select: userSelect,
+    });
+    return { mtype: 'success', message: 'OK', ...user };
+  }
+
+  /** Update a trainer (admin only). Only trainers can be updated via this. */
+  async updateTrainer(
+    adminUserId: string,
+    trainerId: string,
+    body: { name?: string; phone?: string }
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const target = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { role: true, id: true },
+    });
+    if (!target || target.role !== 'trainer')
+      return { mtype: 'error', message: 'Trainer not found' };
+    const name = body.name !== undefined ? String(body.name).trim() || null : undefined;
+    const phone = body.phone !== undefined ? String(body.phone).trim() || null : undefined;
+    if (phone !== undefined && phone) {
+      const existingPhone = await this.prisma.user.findFirst({
+        where: { phone, id: { not: trainerId } },
+      });
+      if (existingPhone) return { mtype: 'error', message: 'Phone already in use' };
+    }
+    const user = await this.prisma.user.update({
+      where: { id: trainerId },
+      data: { ...(name !== undefined && { name }), ...(phone !== undefined && { phone }) },
+      select: userSelect,
+    });
+    return { mtype: 'success', message: 'OK', ...user };
+  }
+
+  /** Set customer (or trainer) active/inactive (admin only). */
+  async setUserActive(adminUserId: string, targetUserId: string, isActive: boolean) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    if (adminUserId === targetUserId)
+      return { mtype: 'error', message: 'Cannot change your own status' };
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { role: true },
+    });
+    if (!target) return { mtype: 'error', message: 'User not found' };
+    if (target.role === 'admin') return { mtype: 'error', message: 'Cannot deactivate admin' };
+    await this.prisma.user.update({
+      where: { id: targetUserId },
+      data: { isActive },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
   /** FAQ list from DB (master data). */
   async faqList() {
     const list = await this.prisma.faq.findMany({
       orderBy: { sortOrder: 'asc' },
-      select: { id: true, question: true, answer: true, sortOrder: true },
+      select: {
+        id: true,
+        question: true,
+        answer: true,
+        sortOrder: true,
+        role: true,
+        updatedAt: true,
+      },
     });
     return { mtype: 'success', message: 'OK', list, faqList: list };
   }
 
-  async createFaq(question: string, answer: string, sortOrder?: number) {
+  async createFaq(question: string, answer: string, sortOrder?: number, role?: string) {
     const q = String(question ?? '').trim();
     const a = String(answer ?? '').trim();
     if (!q) return { mtype: 'error', message: 'Question is required' };
     if (!a) return { mtype: 'error', message: 'Answer is required' };
+    const roleVal = role !== undefined && role !== null ? String(role).trim() || null : null;
     const faq = await this.prisma.faq.create({
-      data: { question: q, answer: a, sortOrder: sortOrder ?? 0 },
+      data: { question: q, answer: a, sortOrder: sortOrder ?? 0, role: roleVal },
     });
     return { mtype: 'success', message: 'OK', id: faq.id };
   }
 
-  async updateFaq(id: string, question?: string, answer?: string, sortOrder?: number) {
+  async updateFaq(
+    id: string,
+    question?: string,
+    answer?: string,
+    sortOrder?: number,
+    role?: string
+  ) {
     const existing = await this.prisma.faq.findUnique({ where: { id } });
     if (!existing) return { mtype: 'error', message: 'FAQ not found' };
+    const roleVal = role !== undefined ? String(role).trim() || null : undefined;
     await this.prisma.faq.update({
       where: { id },
       data: {
         ...(question !== undefined && { question: String(question).trim() }),
         ...(answer !== undefined && { answer: String(answer).trim() }),
         ...(sortOrder !== undefined && { sortOrder: Number(sortOrder) }),
+        ...(roleVal !== undefined && { role: roleVal }),
       },
     });
     return { mtype: 'success', message: 'OK' };
@@ -533,6 +880,354 @@ export class AdminService {
     const existing = await this.prisma.faq.findUnique({ where: { id } });
     if (!existing) return { mtype: 'error', message: 'FAQ not found' };
     await this.prisma.faq.delete({ where: { id } });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Country CRUD (admin only). */
+  async countryList() {
+    const list = await this.prisma.country.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        isdCode: true,
+        updatedById: true,
+        updatedAt: true,
+        updatedBy: { select: { name: true } },
+      },
+    });
+    return { mtype: 'success', message: 'OK', list };
+  }
+
+  async createCountry(adminUserId: string, body: { name: string; isdCode: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const name = String(body?.name ?? '').trim();
+    const isdCode = String(body?.isdCode ?? '').trim();
+    if (!name) return { mtype: 'error', message: 'Country name is required' };
+    if (!isdCode) return { mtype: 'error', message: 'ISD code is required' };
+    const created = await this.prisma.country.create({
+      data: { name, isdCode, updatedById: adminUserId },
+    });
+    return { mtype: 'success', message: 'OK', id: created.id };
+  }
+
+  async updateCountry(adminUserId: string, id: string, body: { name?: string; isdCode?: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.country.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Country not found' };
+    const name = body.name !== undefined ? String(body.name).trim() : undefined;
+    const isdCode = body.isdCode !== undefined ? String(body.isdCode).trim() : undefined;
+    if (name !== undefined && !name) return { mtype: 'error', message: 'Country name is required' };
+    if (isdCode !== undefined && !isdCode)
+      return { mtype: 'error', message: 'ISD code is required' };
+    await this.prisma.country.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(isdCode !== undefined && { isdCode }),
+        updatedById: adminUserId,
+      },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  async deleteCountry(adminUserId: string, id: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.country.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Country not found' };
+    await this.prisma.country.delete({ where: { id } });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Language CRUD (admin only). */
+  async languageList() {
+    const list = await this.prisma.language.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        updatedById: true,
+        updatedAt: true,
+        updatedBy: { select: { name: true } },
+      },
+    });
+    return { mtype: 'success', message: 'OK', list };
+  }
+
+  async createLanguage(adminUserId: string, body: { name: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const name = String(body?.name ?? '').trim();
+    if (!name) return { mtype: 'error', message: 'Language name is required' };
+    const created = await this.prisma.language.create({
+      data: { name, updatedById: adminUserId },
+    });
+    return { mtype: 'success', message: 'OK', id: created.id };
+  }
+
+  async updateLanguage(adminUserId: string, id: string, body: { name?: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.language.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Language not found' };
+    const name = body.name !== undefined ? String(body.name).trim() : undefined;
+    if (name !== undefined && !name)
+      return { mtype: 'error', message: 'Language name is required' };
+    await this.prisma.language.update({
+      where: { id },
+      data: { ...(name !== undefined && { name }), updatedById: adminUserId },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  async deleteLanguage(adminUserId: string, id: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.language.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Language not found' };
+    await this.prisma.language.delete({ where: { id } });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** State CRUD (admin only). */
+  async stateList() {
+    const list = await this.prisma.state.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        countryId: true,
+        updatedById: true,
+        updatedAt: true,
+        updatedBy: { select: { name: true } },
+        country: { select: { name: true } },
+      },
+    });
+    return { mtype: 'success', message: 'OK', list };
+  }
+
+  async createState(adminUserId: string, body: { name: string; countryId?: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const name = String(body?.name ?? '').trim();
+    if (!name) return { mtype: 'error', message: 'State name is required' };
+    const countryId = body.countryId ? String(body.countryId).trim() || null : null;
+    const created = await this.prisma.state.create({
+      data: { name, countryId, updatedById: adminUserId },
+    });
+    return { mtype: 'success', message: 'OK', id: created.id };
+  }
+
+  async updateState(adminUserId: string, id: string, body: { name?: string; countryId?: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.state.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'State not found' };
+    const name = body.name !== undefined ? String(body.name).trim() : undefined;
+    if (name !== undefined && !name) return { mtype: 'error', message: 'State name is required' };
+    const countryId =
+      body.countryId !== undefined ? String(body.countryId).trim() || null : undefined;
+    await this.prisma.state.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(countryId !== undefined && { countryId }),
+        updatedById: adminUserId,
+      },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  async deleteState(adminUserId: string, id: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.state.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'State not found' };
+    await this.prisma.state.delete({ where: { id } });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Contact link CRUD (admin only): list, create, update, delete. */
+  async contactLinkList() {
+    const list = await this.prisma.contactLink.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        link: true,
+        iconUrl: true,
+        updatedById: true,
+        updatedAt: true,
+        updatedBy: { select: { name: true } },
+      },
+    });
+    return { mtype: 'success', message: 'OK', list };
+  }
+
+  async createContactLink(
+    adminUserId: string,
+    body: { name: string; link: string; iconUrl?: string }
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const name = String(body?.name ?? '').trim();
+    const link = String(body?.link ?? '').trim();
+    if (!name) return { mtype: 'error', message: 'Contact name is required' };
+    if (!link) return { mtype: 'error', message: 'Link is required' };
+    const iconUrl =
+      body.iconUrl !== undefined && body.iconUrl !== null
+        ? String(body.iconUrl).trim() || null
+        : null;
+    const created = await this.prisma.contactLink.create({
+      data: { name, link, iconUrl, updatedById: adminUserId },
+    });
+    return { mtype: 'success', message: 'OK', id: created.id };
+  }
+
+  async updateContactLink(
+    adminUserId: string,
+    id: string,
+    body: { name?: string; link?: string; iconUrl?: string }
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.contactLink.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Contact not found' };
+    const name = body.name !== undefined ? String(body.name).trim() : undefined;
+    const link = body.link !== undefined ? String(body.link).trim() : undefined;
+    const iconUrl = body.iconUrl !== undefined ? String(body.iconUrl).trim() || null : undefined;
+    if (name !== undefined && !name) return { mtype: 'error', message: 'Contact name is required' };
+    if (link !== undefined && !link) return { mtype: 'error', message: 'Link is required' };
+    await this.prisma.contactLink.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(link !== undefined && { link }),
+        ...(iconUrl !== undefined && { iconUrl }),
+        updatedById: adminUserId,
+      },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  async deleteContactLink(adminUserId: string, id: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.contactLink.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Contact not found' };
+    await this.prisma.contactLink.delete({ where: { id } });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Activity category CRUD (admin only). */
+  async activityCategoryList() {
+    const list = await this.prisma.activityCategory.findMany({
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        iconUrl: true,
+        updatedById: true,
+        updatedAt: true,
+        updatedBy: { select: { name: true } },
+      },
+    });
+    return { mtype: 'success', message: 'OK', list };
+  }
+
+  async createActivityCategory(adminUserId: string, body: { name: string; iconUrl?: string }) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const name = String(body?.name ?? '').trim();
+    if (!name) return { mtype: 'error', message: 'Activity type name is required' };
+    const iconUrl =
+      body.iconUrl !== undefined && body.iconUrl !== null
+        ? String(body.iconUrl).trim() || null
+        : null;
+    const created = await this.prisma.activityCategory.create({
+      data: { name, iconUrl, updatedById: adminUserId },
+    });
+    return { mtype: 'success', message: 'OK', id: created.id };
+  }
+
+  async updateActivityCategory(
+    adminUserId: string,
+    id: string,
+    body: { name?: string; iconUrl?: string }
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.activityCategory.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Activity category not found' };
+    const name = body.name !== undefined ? String(body.name).trim() : undefined;
+    const iconUrl = body.iconUrl !== undefined ? String(body.iconUrl).trim() || null : undefined;
+    if (name !== undefined && !name)
+      return { mtype: 'error', message: 'Activity type name is required' };
+    await this.prisma.activityCategory.update({
+      where: { id },
+      data: {
+        ...(name !== undefined && { name }),
+        ...(iconUrl !== undefined && { iconUrl }),
+        updatedById: adminUserId,
+      },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  async deleteActivityCategory(adminUserId: string, id: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const existing = await this.prisma.activityCategory.findUnique({ where: { id } });
+    if (!existing) return { mtype: 'error', message: 'Activity category not found' };
+    await this.prisma.activityCategory.delete({ where: { id } });
     return { mtype: 'success', message: 'OK' };
   }
 

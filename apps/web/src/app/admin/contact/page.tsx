@@ -48,10 +48,10 @@ export default function AdminContactPage() {
     <>
       <header style={{ marginBottom: 24 }}>
         <Link
-          href={ROUTES.adminMasterData}
+          href={ROUTES.adminSettings}
           style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
         >
-          ← Master data
+          ← Settings
         </Link>
         <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>Contact Us</h1>
         <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginTop: 8 }}>

@@ -61,6 +61,7 @@ export class TrainerService {
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
       countryCode: user.countryCode ?? undefined,
+      state: user.state ?? null,
       canSetOwnPrice: user.trainerCanSetOwnPrice ?? false,
     };
   }
@@ -75,6 +76,7 @@ export class TrainerService {
         ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
         ...(dto.countryCode !== undefined && { countryCode: dto.countryCode || null }),
+        ...(dto.state !== undefined && { state: dto.state }),
       },
     });
     return {

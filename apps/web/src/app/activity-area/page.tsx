@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { TrainerLayout } from '../TrainerLayout';
 import { trainerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
+
+/** Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local to enable address autocomplete (Places API). */
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
 type ServiceAreaItem = {
   id: string;
@@ -31,6 +34,8 @@ export default function ActivityAreaPage() {
   const [formRadiusKm, setFormRadiusKm] = useState<string>('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<unknown>(null);
 
   const fetchList = () => {
     trainerApi
@@ -58,6 +63,90 @@ export default function ActivityAreaPage() {
   useEffect(() => {
     fetchList();
   }, []);
+
+  // Load Google Maps Places and attach Autocomplete to address input when form is shown
+  useEffect(() => {
+    if (!showForm || !GOOGLE_MAPS_API_KEY || !addressInputRef.current) return;
+
+    const input = addressInputRef.current;
+
+    function initAutocomplete() {
+      const g =
+        typeof window !== 'undefined' &&
+        (
+          window as unknown as {
+            google?: {
+              maps: {
+                places: {
+                  Autocomplete: new (
+                    el: HTMLInputElement,
+                    opts?: { types?: string[] }
+                  ) => {
+                    addListener: (ev: string, fn: () => void) => void;
+                    getPlace: () => {
+                      formatted_address?: string;
+                      geometry?: { location: { lat: () => number; lng: () => number } };
+                    };
+                  };
+                };
+              };
+            };
+          }
+        ).google;
+      if (!g?.maps?.places?.Autocomplete) return;
+      const Autocomplete = g.maps.places.Autocomplete;
+      const autocomplete = new Autocomplete(input, { types: ['address'] });
+      autocompleteRef.current = autocomplete;
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.formatted_address) setFormAddress(place.formatted_address);
+        if (place.geometry?.location) {
+          setFormLatitude(String(place.geometry.location.lat()));
+          setFormLongitude(String(place.geometry.location.lng()));
+        }
+      });
+    }
+
+    if ((window as unknown as { google?: unknown }).google) {
+      initAutocomplete();
+      return () => {
+        autocompleteRef.current = null;
+      };
+    }
+
+    const scriptId = 'google-maps-places-script';
+    if (document.getElementById(scriptId)) {
+      const win = window as unknown as { google?: unknown };
+      if (win.google) {
+        initAutocomplete();
+      } else {
+        const retry = setInterval(() => {
+          if ((window as unknown as { google?: unknown }).google) {
+            clearInterval(retry);
+            initAutocomplete();
+          }
+        }, 100);
+        return () => {
+          clearInterval(retry);
+          autocompleteRef.current = null;
+        };
+      }
+      return () => {
+        autocompleteRef.current = null;
+      };
+    }
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => initAutocomplete();
+    document.head.appendChild(script);
+    return () => {
+      autocompleteRef.current = null;
+    };
+  }, [showForm]);
 
   const openAdd = () => {
     setEditing(null);
@@ -247,10 +336,14 @@ export default function ActivityAreaPage() {
               Address (optional)
             </label>
             <input
+              ref={addressInputRef}
               type="text"
               value={formAddress}
               onChange={(e) => setFormAddress(e.target.value)}
-              placeholder="Street, city"
+              placeholder={
+                GOOGLE_MAPS_API_KEY ? 'Start typing address for suggestions…' : 'Street, city'
+              }
+              autoComplete="off"
               style={{
                 padding: 8,
                 width: '100%',

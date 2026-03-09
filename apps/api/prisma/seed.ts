@@ -10,9 +10,23 @@ async function main() {
       email: 'customer@example.com',
       role: 'customer',
       locale: 'en',
+      state: 'CA',
     },
   });
-  console.log('Seeded user customer@example.com / password123');
+  console.log('Seeded user customer@example.com');
+
+  await prisma.user.upsert({
+    where: { email: 'admin@groupfitapp.com' },
+    update: {},
+    create: {
+      email: 'admin@groupfitapp.com',
+      name: 'Admin',
+      role: 'admin',
+      locale: 'en',
+      state: 'NA',
+    },
+  });
+  console.log('Seeded user admin@groupfitapp.com (admin role)');
 }
 
 main()

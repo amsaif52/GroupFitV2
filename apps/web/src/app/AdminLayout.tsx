@@ -6,9 +6,7 @@ import { ROUTES } from './routes';
 
 const ADMIN_NAV = [
   { href: ROUTES.adminDashboard, label: 'Dashboard' },
-  { href: ROUTES.adminMasterData, label: 'Master data' },
   { href: ROUTES.adminActivity, label: 'Activity' },
-  { href: ROUTES.adminFaq, label: 'FAQ' },
   { href: ROUTES.adminContactUs, label: 'Contact' },
   { href: ROUTES.adminCustomizeDashboard, label: 'Customize dashboard' },
   { href: ROUTES.adminDiscount, label: 'Discount' },
@@ -18,7 +16,7 @@ const ADMIN_NAV = [
   { href: ROUTES.adminEarning, label: 'Earning' },
   { href: ROUTES.adminSupport, label: 'Support' },
   { href: ROUTES.adminUsers, label: 'Users' },
-  { href: ROUTES.adminUserRoles, label: 'User Roles' },
+  { href: ROUTES.adminSettings, label: 'Settings' },
 ] as const;
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -26,10 +24,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="gf-customer-layout">
-      <aside
-        className="gf-customer-sidebar"
-        style={{ backgroundColor: 'var(--groupfit-primary-dark)', minWidth: 200 }}
-      >
+      <aside className="gf-customer-sidebar gf-admin-sidebar">
         <span className="gf-customer-sidebar__logo">GroupFit Admin</span>
         <nav className="gf-customer-sidebar__nav" aria-label="Admin navigation">
           {ADMIN_NAV.map(({ href, label }) => (

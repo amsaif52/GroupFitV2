@@ -294,10 +294,17 @@ export const trainerApi = {
       emailid?: string;
       phone?: string;
       locale?: string;
+      countryCode?: string | null;
+      state?: string | null;
       canSetOwnPrice?: boolean;
     }>('/trainer/viewProfile', {}),
-  editProfile: (body: { name?: string; phone?: string; locale?: string }) =>
-    api.post<{ mtype: string; message?: string }>('/trainer/editProfile', body),
+  editProfile: (body: {
+    name?: string;
+    phone?: string;
+    locale?: string;
+    countryCode?: string;
+    state?: string;
+  }) => api.post<{ mtype: string; message?: string }>('/trainer/editProfile', body),
 
   trainerSessionList: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; trainerSessionList?: unknown[] }>(
@@ -657,29 +664,37 @@ export const adminApi = {
         name: string;
         description?: string;
         defaultPriceCents?: number;
+        logoUrl?: string;
+        activityGroup?: string;
+        trainerSharePercent?: number;
+        status?: string;
+        createdBy?: string;
+        createdAt?: string;
+        updatedBy?: string;
+        updatedAt?: string;
       }[];
     }>('/admin/activityList', body ?? {}),
-  createActivity: (code: string, name: string, description?: string, defaultPriceCents?: number) =>
-    api.post<{ mtype: string; id?: string; message?: string }>('/admin/createActivity', {
-      code,
-      name,
-      description,
-      defaultPriceCents,
-    }),
-  updateActivity: (
-    id: string,
-    code?: string,
-    name?: string,
-    description?: string,
-    defaultPriceCents?: number | null
-  ) =>
-    api.post<{ mtype: string; message?: string }>('/admin/updateActivity', {
-      id,
-      code,
-      name,
-      description,
-      defaultPriceCents,
-    }),
+  createActivity: (body: {
+    code: string;
+    name: string;
+    description?: string;
+    defaultPriceCents?: number;
+    logoUrl?: string;
+    activityGroup?: string;
+    trainerSharePercent?: number | null;
+    status?: string | null;
+  }) => api.post<{ mtype: string; id?: string; message?: string }>('/admin/createActivity', body),
+  updateActivity: (body: {
+    id: string;
+    code?: string;
+    name?: string;
+    description?: string;
+    defaultPriceCents?: number | null;
+    logoUrl?: string | null;
+    activityGroup?: string | null;
+    trainerSharePercent?: number | null;
+    status?: string | null;
+  }) => api.post<{ mtype: string; message?: string }>('/admin/updateActivity', body),
   deleteActivity: (id: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/deleteActivity', { id }),
 
@@ -693,26 +708,176 @@ export const adminApi = {
   deleteAccount: (userId: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/DeleteAccount', { userId }),
 
+  createCustomer: (body: { email: string; name?: string; phone?: string }) =>
+    api.post<{ mtype: string; message?: string; id?: string }>('/admin/createCustomer', body),
+  updateCustomer: (customerId: string, body: { name?: string; phone?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateCustomer', {
+      customerId,
+      ...body,
+    }),
+  setUserActive: (userId: string, isActive: boolean) =>
+    api.post<{ mtype: string; message?: string }>('/admin/setUserActive', { userId, isActive }),
+
+  createTrainer: (body: { email: string; name?: string; phone?: string }) =>
+    api.post<{ mtype: string; message?: string; id?: string }>('/admin/createTrainer', body),
+  updateTrainer: (trainerId: string, body: { name?: string; phone?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateTrainer', {
+      trainerId,
+      ...body,
+    }),
+
+  trainerActivityList: (trainerId: string) =>
+    api.post<{
+      mtype: string;
+      message?: string;
+      list?: {
+        id: string;
+        activityCode: string;
+        activityName: string;
+        defaultPriceCents?: number;
+        priceCents?: number;
+        canSetOwnPrice?: boolean;
+        effectivePriceCents?: number;
+        createdAt?: string;
+      }[];
+      canSetOwnPrice?: boolean;
+    }>('/admin/trainerActivityList', { trainerId }),
+  addTrainerActivity: (trainerId: string, activityCode: string, priceCents?: number | null) =>
+    api.post<{ mtype: string; message?: string; id?: string }>('/admin/addTrainerActivity', {
+      trainerId,
+      activityCode,
+      priceCents,
+    }),
+  setTrainerActivityPrice: (trainerId: string, activityCode: string, priceCents: number | null) =>
+    api.post<{ mtype: string; message?: string }>('/admin/setTrainerActivityPrice', {
+      trainerId,
+      activityCode,
+      priceCents,
+    }),
+
   faqList: (body?: Record<string, unknown>) =>
     api.post<{
       mtype: string;
-      list?: { id: string; question: string; answer: string; sortOrder?: number }[];
+      list?: {
+        id: string;
+        question: string;
+        answer: string;
+        sortOrder?: number;
+        role?: string | null;
+        updatedAt?: string;
+      }[];
     }>('/admin/faqList', body ?? {}),
-  createFaq: (question: string, answer: string, sortOrder?: number) =>
+  createFaq: (question: string, answer: string, sortOrder?: number, role?: string) =>
     api.post<{ mtype: string; id?: string; message?: string }>('/admin/createFaq', {
       question,
       answer,
       sortOrder,
+      role,
     }),
-  updateFaq: (id: string, question?: string, answer?: string, sortOrder?: number) =>
+  updateFaq: (id: string, question?: string, answer?: string, sortOrder?: number, role?: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/updateFaq', {
       id,
       question,
       answer,
       sortOrder,
+      role,
     }),
   deleteFaq: (id: string) =>
     api.post<{ mtype: string; message?: string }>('/admin/deleteFaq', { id }),
+
+  countryList: (body?: Record<string, unknown>) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        name: string;
+        isdCode: string;
+        updatedAt?: string;
+        updatedBy?: { name: string | null };
+      }[];
+    }>('/admin/countryList', body ?? {}),
+  createCountry: (body: { name: string; isdCode: string }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/admin/createCountry', body),
+  updateCountry: (id: string, body: { name?: string; isdCode?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateCountry', { id, ...body }),
+  deleteCountry: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/admin/deleteCountry', { id }),
+
+  languageList: (body?: Record<string, unknown>) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        name: string;
+        updatedAt?: string;
+        updatedBy?: { name: string | null };
+      }[];
+    }>('/admin/languageList', body ?? {}),
+  createLanguage: (body: { name: string }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/admin/createLanguage', body),
+  updateLanguage: (id: string, body: { name?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateLanguage', { id, ...body }),
+  deleteLanguage: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/admin/deleteLanguage', { id }),
+
+  stateList: (body?: Record<string, unknown>) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        name: string;
+        countryId?: string | null;
+        updatedAt?: string;
+        updatedBy?: { name: string | null };
+        country?: { name: string } | null;
+      }[];
+    }>('/admin/stateList', body ?? {}),
+  createState: (body: { name: string; countryId?: string }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/admin/createState', body),
+  updateState: (id: string, body: { name?: string; countryId?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateState', { id, ...body }),
+  deleteState: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/admin/deleteState', { id }),
+
+  contactLinkList: (body?: Record<string, unknown>) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        name: string;
+        link: string;
+        iconUrl?: string | null;
+        updatedAt?: string;
+        updatedBy?: { name: string | null };
+      }[];
+    }>('/admin/contactLinkList', body ?? {}),
+  createContactLink: (body: { name: string; link: string; iconUrl?: string }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>('/admin/createContactLink', body),
+  updateContactLink: (id: string, body: { name?: string; link?: string; iconUrl?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateContactLink', { id, ...body }),
+  deleteContactLink: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/admin/deleteContactLink', { id }),
+
+  activityCategoryList: (body?: Record<string, unknown>) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        name: string;
+        iconUrl?: string | null;
+        updatedAt?: string;
+        updatedBy?: { name: string | null };
+      }[];
+    }>('/admin/activityCategoryList', body ?? {}),
+  createActivityCategory: (body: { name: string; iconUrl?: string }) =>
+    api.post<{ mtype: string; id?: string; message?: string }>(
+      '/admin/createActivityCategory',
+      body
+    ),
+  updateActivityCategory: (id: string, body: { name?: string; iconUrl?: string }) =>
+    api.post<{ mtype: string; message?: string }>('/admin/updateActivityCategory', { id, ...body }),
+  deleteActivityCategory: (id: string) =>
+    api.post<{ mtype: string; message?: string }>('/admin/deleteActivityCategory', { id }),
 
   contactUs: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; contactEmail?: string }>('/admin/contactUs', body ?? {}),

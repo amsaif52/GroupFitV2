@@ -20,4 +20,24 @@ export class SignupDto {
   @IsOptional()
   @IsString()
   role?: string;
+
+  @ApiProperty({ example: '+14155551234', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({ example: 'US', required: false })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiProperty({ example: 'California', required: false })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @ApiProperty({ example: 'REF123', required: false })
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ROUTES } from '../../../../routes';
+import { ROUTES } from '../../../routes';
 import { adminApi } from '@/lib/api';
 
 function formatDateInput(iso: string | null | undefined): string {

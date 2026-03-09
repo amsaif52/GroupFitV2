@@ -31,60 +31,44 @@ export default function AdminSessionsPage() {
 
   return (
     <>
-      <header style={{ marginBottom: 24 }}>
-        <Link
-          href={ROUTES.adminDashboard}
-          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-        >
-          ← Dashboard
-        </Link>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>Sessions</h1>
+      <header className="gf-admin-header">
+        <div className="gf-admin-header__left">
+          <Link href={ROUTES.adminDashboard} className="gf-admin-back">
+            ← Dashboard
+          </Link>
+          <h1 className="gf-admin-title">Sessions</h1>
+        </div>
       </header>
       {loading ? (
-        <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
+        <div className="gf-admin-empty">Loading…</div>
       ) : list.length === 0 ? (
-        <div className="gf-home__empty">No sessions.</div>
+        <div className="gf-admin-empty">No sessions.</div>
       ) : (
-        <div className="gf-home__empty" style={{ padding: 0, overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <div className="gf-admin-table-wrap" style={{ overflow: 'auto' }}>
+          <table className="gf-admin-table">
             <thead>
-              <tr
-                style={{
-                  borderBottom: '2px solid var(--groupfit-border-light)',
-                  textAlign: 'left',
-                }}
-              >
-                <th style={{ padding: '12px 16px' }}>Date / Time</th>
-                <th style={{ padding: '12px 16px' }}>Activity</th>
-                <th style={{ padding: '12px 16px' }}>Customer</th>
-                <th style={{ padding: '12px 16px' }}>Trainer</th>
-                <th style={{ padding: '12px 16px' }}>Status</th>
-                <th style={{ padding: '12px 16px' }}>Amount</th>
+              <tr>
+                <th>Date / Time</th>
+                <th>Specialization</th>
+                <th>Customer</th>
+                <th>Trainer</th>
+                <th>Status</th>
+                <th>Amount</th>
               </tr>
             </thead>
             <tbody>
               {list.map((row: Record<string, unknown>, i: number) => (
-                <tr
-                  key={(row.id as string) ?? i}
-                  style={{ borderBottom: '1px solid var(--groupfit-border-light)' }}
-                >
-                  <td style={{ padding: '12px 16px' }}>
-                    <Link
-                      href={ROUTES.adminSessionDetail((row.id as string) ?? '')}
-                      style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-                    >
+                <tr key={(row.id as string) ?? i}>
+                  <td>
+                    <Link href={ROUTES.adminSessionDetail((row.id as string) ?? '')}>
                       {row.scheduledAt ? new Date(String(row.scheduledAt)).toLocaleString() : ''}
                     </Link>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>{String(row.activityName ?? '—')}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {String(row.customerName ?? row.customerEmail ?? '')}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>
-                    {String(row.trainerName ?? row.trainerEmail ?? '')}
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>{String(row.status ?? '')}</td>
-                  <td style={{ padding: '12px 16px' }}>
+                  <td>{String(row.activityName ?? '—')}</td>
+                  <td>{String(row.customerName ?? row.customerEmail ?? '')}</td>
+                  <td>{String(row.trainerName ?? row.trainerEmail ?? '')}</td>
+                  <td>{String(row.status ?? '')}</td>
+                  <td>
                     {row.amountCents != null
                       ? `$${(Number(row.amountCents) / 100).toFixed(2)}`
                       : '—'}

@@ -10,6 +10,7 @@ import {
   type Role,
   type Locale,
   type LoginResponse,
+  type SignupFormInput,
   SignupScreen,
 } from '@groupfit/shared';
 import { api } from '@/lib/api';
@@ -27,15 +28,41 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const t = getTranslations(locale);
 
-  async function handleSubmit(data: { name: string; email: string; password: string }) {
+  async function handleSendSignupOtp(data: SignupFormInput) {
     setError(null);
     setLoading(true);
     try {
-      const { data: res } = await api.post<LoginResponse>('/auth/signup', {
+      await api.post('/auth/signup-send-otp', {
         name: data.name,
         email: data.email,
-        password: data.password,
-        role: roleParam,
+        phone: data.phone,
+        country: data.country,
+        state: data.state,
+        role: data.role ?? 'customer',
+        ...(data.referralCode && { referralCode: data.referralCode }),
+      });
+    } catch (err: unknown) {
+      setError(
+        err instanceof ApiClientError ? err.message : 'Failed to send code. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifySignupOtp(otp: string, data: SignupFormInput) {
+    setError(null);
+    setLoading(true);
+    try {
+      const { data: res } = await api.post<LoginResponse>('/auth/signup-verify', {
+        otp,
+        phone: data.phone,
+        name: data.name,
+        email: data.email,
+        country: data.country,
+        state: data.state,
+        role: data.role ?? 'customer',
+        ...(data.referralCode && { referralCode: data.referralCode }),
       });
       setStoredToken(res.accessToken);
       const role = res.user?.role ?? (decodeJwtPayload(res.accessToken)?.role as Role);
@@ -43,8 +70,9 @@ export default function SignupPage() {
       router.refresh();
     } catch (err: unknown) {
       setError(
-        err instanceof ApiClientError ? err.message : 'Something went wrong. Please try again.'
+        err instanceof ApiClientError ? err.message : 'Invalid or expired code. Please try again.'
       );
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -101,20 +129,30 @@ export default function SignupPage() {
         subtitle={t.auth.enterDetailsToCreateAccount}
         nameLabel={t.auth.name}
         emailLabel={t.auth.email}
-        passwordLabel={t.auth.password}
-        confirmPasswordLabel={t.auth.confirmPassword}
+        phoneLabel={t.auth.phone ?? 'Phone number'}
+        countryLabel={t.auth.country ?? 'Country'}
+        stateLabel={t.auth.state ?? 'State'}
+        referralCodeLabel={t.auth.referralCode ?? 'Referral code (optional)'}
         submitLabel={t.auth.createAccount}
         loadingLabel={t.common.loading}
         footerPrompt={t.auth.alreadyHaveAccount}
         footerLinkText={t.auth.login}
+        privacyLabel={t.auth.privacyAcceptPrefix ?? 'I accept the '}
+        privacyLinkText={t.auth.privacyLink ?? 'Privacy Policy'}
+        onPrivacyClick={() => window.open('https://groupfitapp.com/privacy-policy/', '_blank')}
         termsLabel={t.auth.termsAgreePrefix}
         termsLinkText={t.auth.termsLink}
         onTermsClick={() =>
           window.open('https://groupfitapp.com/app-user-terms-and-condition/', '_blank')
         }
-        onSubmit={handleSubmit}
+        onSendSignupOtp={handleSendSignupOtp}
+        onVerifySignupOtp={handleVerifySignupOtp}
         loading={loading}
         error={error}
+        otpPlaceholder={t.auth.otpPlaceholder ?? 'Enter 4-digit code'}
+        verifyLabel={t.auth.verify ?? 'Verify and create account'}
+        resendCodeLabel={t.auth.resendCode ?? 'Resend code'}
+        changeNumberLabel={t.auth.changeNumber ?? 'Change number'}
         onLoginClick={() => router.push('/login')}
         onGooglePress={googleButton ? undefined : handleGoogleSignupFallback}
         onApplePress={handleAppleSignup}
@@ -123,23 +161,6 @@ export default function SignupPage() {
         continueWithAppleLabel={t.auth.continueWithApple}
         orLabel={t.auth.or}
       />
-      {/* <p style={{ marginTop: 12, fontSize: 13, textAlign: 'center' }}>
-        <Link
-          href={ROUTES.serverUnavailable}
-          style={{ color: 'var(--groupfit-secondary)', fontWeight: 500 }}
-        >
-          Having connection issues?
-        </Link>
-      </p> */}
-      {/* <div className="gf-locale">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          label={locale === 'en' ? 'Français' : 'English'}
-          onPress={() => setLocale(locale === 'en' ? 'fr' : 'en')}
-        />
-      </div> */}
     </>
   );
 

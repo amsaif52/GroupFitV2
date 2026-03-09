@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { LoginInput, LoginPhoneInput, VerifyOtpInput } from '../../utils/auth-schemas';
@@ -69,6 +69,8 @@ export interface LoginScreenWebProps {
   onVerifyOtp?: (otp: string, userCode: string) => Promise<void>;
 }
 
+const RESEND_COOLDOWN_SECONDS = 60;
+
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden focusable="false">
     <path
@@ -134,7 +136,14 @@ export function LoginScreenWeb({
   const [otpStep, setOtpStep] = useState<{ userCode: string; phone: string } | null>(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [sendOtpLoading, setSendOtpLoading] = useState(false);
+  const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
   const [countryDial, setCountryDial] = useState('+1');
+
+  useEffect(() => {
+    if (resendCooldownSeconds <= 0) return;
+    const id = setInterval(() => setResendCooldownSeconds((s) => (s <= 1 ? 0 : s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldownSeconds]);
 
   const emailForm = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -169,6 +178,7 @@ export function LoginScreenWeb({
       const { userCode } = await onSendOtp(payload, 'phone' in data ? 'phone' : 'email');
       setOtpStep({ userCode, phone: payload });
       otpForm.setValue('userCode', userCode);
+      setResendCooldownSeconds(RESEND_COOLDOWN_SECONDS);
     } finally {
       setSendOtpLoading(false);
     }
@@ -186,16 +196,18 @@ export function LoginScreenWeb({
 
   function handleBackFromOtp() {
     setOtpStep(null);
+    setResendCooldownSeconds(0);
     otpForm.reset({ otp: '', userCode: '' });
   }
 
   async function handleResendOtp() {
-    if (!otpStep || !onSendOtp) return;
+    if (!otpStep || !onSendOtp || resendCooldownSeconds > 0) return;
     setSendOtpLoading(true);
     try {
       const { userCode } = await onSendOtp(otpStep.phone, 'phone');
       setOtpStep((prev) => (prev ? { ...prev, userCode } : null));
       otpForm.setValue('userCode', userCode);
+      setResendCooldownSeconds(RESEND_COOLDOWN_SECONDS);
     } finally {
       setSendOtpLoading(false);
     }
@@ -397,9 +409,11 @@ export function LoginScreenWeb({
               type="button"
               className="gf-auth__resend-link"
               onClick={handleResendOtp}
-              disabled={sendOtpLoading}
+              disabled={sendOtpLoading || resendCooldownSeconds > 0}
             >
-              {resendCodeLabel}
+              {resendCooldownSeconds > 0
+                ? `${resendCodeLabel} (${resendCooldownSeconds}s)`
+                : resendCodeLabel}
             </button>
             <button type="button" className="gf-auth__change-number" onClick={handleBackFromOtp}>
               Change number

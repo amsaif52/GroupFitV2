@@ -80,78 +80,61 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <header style={{ marginBottom: 24 }}>
-        <Link
-          href={ROUTES.adminDashboard}
-          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-        >
-          ← Dashboard
-        </Link>
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginTop: 8 }}>Users</h1>
+      <header className="gf-admin-header">
+        <div className="gf-admin-header__left">
+          <Link href={ROUTES.adminDashboard} className="gf-admin-back">
+            ← Dashboard
+          </Link>
+          <h1 className="gf-admin-title">Users</h1>
+        </div>
       </header>
-      {error && <p style={{ color: '#c00', marginBottom: 16 }}>{error}</p>}
+      {error && <p className="gf-admin-error">{error}</p>}
       {list.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 20 }}>
           <input
             type="search"
             placeholder="Search by email, name, role…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              width: '100%',
-              maxWidth: 320,
-              borderRadius: 8,
-              border: '1px solid var(--groupfit-border-light)',
-            }}
+            className="gf-admin-input"
           />
         </div>
       )}
       {loading ? (
-        <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
+        <div className="gf-admin-empty">Loading…</div>
       ) : filtered.length === 0 ? (
-        <div className="gf-home__empty">No users.{search ? ' Try a different search.' : ''}</div>
+        <div className="gf-admin-empty">No users.{search ? ' Try a different search.' : ''}</div>
       ) : (
-        <div className="gf-home__empty" style={{ padding: 0, overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <div className="gf-admin-table-wrap" style={{ overflow: 'auto' }}>
+          <table className="gf-admin-table">
             <thead>
-              <tr
-                style={{
-                  borderBottom: '2px solid var(--groupfit-border-light)',
-                  textAlign: 'left',
-                }}
-              >
-                <th style={{ padding: '12px 16px' }}>Email</th>
-                <th style={{ padding: '12px 16px' }}>Name</th>
-                <th style={{ padding: '12px 16px' }}>Role</th>
-                <th style={{ padding: '12px 16px' }}>Created</th>
+              <tr>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Created</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((row: Record<string, unknown>, i: number) => (
-                <tr
-                  key={(row.id as string) ?? i}
-                  style={{ borderBottom: '1px solid var(--groupfit-border-light)' }}
-                >
-                  <td style={{ padding: '12px 16px' }}>
-                    <Link
-                      href={ROUTES.adminUserDetail((row.id as string) ?? '')}
-                      style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-                    >
+                <tr key={(row.id as string) ?? i}>
+                  <td>
+                    <Link href={ROUTES.adminUserDetail((row.id as string) ?? '')}>
                       {String(row.email ?? '')}
                     </Link>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>{String(row.name ?? '')}</td>
-                  <td style={{ padding: '12px 16px' }}>
+                  <td>{String(row.name ?? '')}</td>
+                  <td>
                     <select
                       value={String(row.role ?? '')}
                       onChange={(e) => handleRoleChange(row.id as string, e.target.value)}
                       disabled={updatingId === row.id}
                       style={{
-                        padding: '6px 8px',
-                        borderRadius: 6,
+                        padding: '6px 10px',
+                        borderRadius: 8,
                         border: '1px solid var(--groupfit-border-light)',
                         background: '#fff',
+                        fontSize: 14,
                       }}
                     >
                       {ROLES.map((r) => (
@@ -166,7 +149,7 @@ export default function AdminUsersPage() {
                       </span>
                     )}
                   </td>
-                  <td style={{ padding: '12px 16px', color: 'var(--groupfit-grey)' }}>
+                  <td style={{ color: 'var(--groupfit-grey)' }}>
                     {row.createdAt ? new Date(String(row.createdAt)).toLocaleDateString() : ''}
                   </td>
                 </tr>

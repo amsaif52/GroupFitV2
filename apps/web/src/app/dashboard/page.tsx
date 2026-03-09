@@ -269,26 +269,6 @@ export default function DashboardPage() {
           </p>
         )}
         <TrainerDashboardContent />
-        <div className="gf-home__nav-links" style={{ marginTop: 16 }}>
-          {switchExperienceLink}
-          <Link href={ROUTES.profile}>{t.nav.profile}</Link>
-          <Link href={ROUTES.account}>Account</Link>
-          <button
-            type="button"
-            onClick={handleLogout}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              font: 'inherit',
-              color: 'var(--groupfit-secondary)',
-              cursor: 'pointer',
-              fontWeight: 600,
-            }}
-          >
-            Log out
-          </button>
-        </div>
       </TrainerLayout>
     );
   }
@@ -314,26 +294,6 @@ export default function DashboardPage() {
         </p>
       )}
       <CustomerDashboardContent />
-      <div className="gf-home__nav-links" style={{ marginTop: 16 }}>
-        {switchExperienceLink}
-        <Link href={ROUTES.profile}>{t.nav.profile}</Link>
-        <Link href={ROUTES.account}>Account</Link>
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            font: 'inherit',
-            color: 'var(--groupfit-secondary)',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          Log out
-        </button>
-      </div>
     </CustomerLayout>
   );
 }

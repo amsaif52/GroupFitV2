@@ -28,7 +28,7 @@ function SessionsTable({ list }: { list: Record<string, unknown>[] }) {
         <thead>
           <tr style={{ borderBottom: '2px solid var(--groupfit-border-light)', textAlign: 'left' }}>
             <th style={{ padding: '12px 16px' }}>Date / Time</th>
-            <th style={{ padding: '12px 16px' }}>Activity</th>
+            <th style={{ padding: '12px 16px' }}>Specialization</th>
             <th style={{ padding: '12px 16px' }}>Customer</th>
             <th style={{ padding: '12px 16px' }}>Trainer</th>
             <th style={{ padding: '12px 16px' }}>Status</th>

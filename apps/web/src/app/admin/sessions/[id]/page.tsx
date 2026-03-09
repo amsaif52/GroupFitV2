@@ -93,7 +93,7 @@ export default function AdminSessionDetailPage() {
             {detail.scheduledAt ? new Date(String(detail.scheduledAt)).toLocaleString() : '—'}
           </p>
           <p>
-            <strong>Activity</strong> {String(detail.activityName ?? '—')}
+            <strong>Specialization</strong> {String(detail.activityName ?? '—')}
           </p>
           <p>
             <strong>Status</strong> {String(detail.status ?? '')}

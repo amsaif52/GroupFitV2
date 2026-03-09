@@ -20,8 +20,7 @@ export default function AdminRootLayout({ children }: { children: React.ReactNod
     }
   }, [user, router]);
 
-  if (!user) return null;
-  if (user.role !== ROLES.ADMIN) return null;
-
+  // Always render the same layout so server and client HTML match (avoids hydration error).
+  // Redirect happens in useEffect when user is missing or not admin.
   return <AdminLayout>{children}</AdminLayout>;
 }

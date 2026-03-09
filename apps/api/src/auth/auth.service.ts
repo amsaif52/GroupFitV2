@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import verifyAppleToken from 'verify-apple-id-token';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { JwtPayload } from './jwt.strategy';
 import { Twilio } from 'twilio';
@@ -19,7 +20,19 @@ export interface LoginResult {
 
 const DEFAULT_ROLE = 'customer';
 const OTP_EXPIRY_MINUTES = 5;
+const SIGNUP_OTP_EXPIRY_MS = 10 * 60 * 1000; // 10 min for signup
 const OTP_EMAIL_DOMAIN = '@otp.groupfit.local';
+
+interface PendingSignup {
+  otp: string;
+  expiresAt: number;
+  name: string;
+  email: string;
+  country: string;
+  state: string;
+  role: string;
+  referralCode?: string;
+}
 
 /** Generate a 4-digit OTP. */
 function generateOtp(): string {
@@ -43,6 +56,8 @@ function emailForPhone(phone: string): string {
 @Injectable()
 export class AuthService {
   private twilioClient: Twilio;
+  private readonly pendingSignups = new Map<string, PendingSignup>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
@@ -158,6 +173,88 @@ export class AuthService {
       });
     }
 
+    return this.issueToken(user);
+  }
+
+  /**
+   * Signup step 1: validate signup data, send OTP to phone. Phone/email must not already be registered.
+   */
+  async signupSendOtp(data: {
+    name: string;
+    email: string;
+    phone: string;
+    country: string;
+    state: string;
+    role: string;
+    referralCode?: string;
+  }): Promise<{ message: string }> {
+    const phone = normalizePhone(data.phone);
+    if (phone.length < 10) {
+      throw new BadRequestException('Invalid phone number');
+    }
+    const email = data.email.trim().toLowerCase();
+    const existingByEmail = await this.prisma.user.findUnique({ where: { email } });
+    if (existingByEmail) {
+      throw new ConflictException('An account with this email already exists.');
+    }
+    const existingByPhone = await this.prisma.user.findUnique({ where: { phone } });
+    if (existingByPhone) {
+      throw new ConflictException('An account with this phone number already exists.');
+    }
+    const otp = generateOtp();
+    const expiresAt = Date.now() + SIGNUP_OTP_EXPIRY_MS;
+    this.pendingSignups.set(phone, {
+      otp,
+      expiresAt,
+      name: data.name,
+      email,
+      country: data.country,
+      state: data.state,
+      role: data.role === 'trainer' ? 'trainer' : 'customer',
+      referralCode: data.referralCode,
+    });
+    await this.sendOtpSms(phone, otp);
+    return { message: 'OTP sent successfully' };
+  }
+
+  /**
+   * Signup step 2: verify OTP and create account. Returns JWT.
+   */
+  async signupVerify(data: {
+    otp: string;
+    phone: string;
+    name: string;
+    email: string;
+    country: string;
+    state: string;
+    role: string;
+    referralCode?: string;
+  }): Promise<LoginResult> {
+    const phone = normalizePhone(data.phone);
+    const pending = this.pendingSignups.get(phone);
+    if (!pending) {
+      throw new UnauthorizedException('OTP expired or not found. Please request a new code.');
+    }
+    if (Date.now() > pending.expiresAt) {
+      this.pendingSignups.delete(phone);
+      throw new UnauthorizedException('OTP has expired. Please request a new code.');
+    }
+    if (pending.otp !== data.otp) {
+      throw new UnauthorizedException('Invalid OTP.');
+    }
+    this.pendingSignups.delete(phone);
+    const email = data.email.trim().toLowerCase();
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        name: data.name,
+        phone,
+        countryCode: data.country,
+        state: data.state,
+        role: data.role,
+        locale: 'en',
+      } as Prisma.UserCreateInput,
+    });
     return this.issueToken(user);
   }
 

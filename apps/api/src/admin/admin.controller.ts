@@ -166,13 +166,29 @@ export class AdminController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Create activity type' })
   createActivity(
-    @Body() body: { code?: string; name?: string; description?: string; defaultPriceCents?: number }
+    @CurrentUser('sub') adminUserId: string,
+    @Body()
+    body: {
+      code?: string;
+      name?: string;
+      description?: string;
+      defaultPriceCents?: number;
+      logoUrl?: string;
+      activityGroup?: string;
+      trainerSharePercent?: number | null;
+      status?: string | null;
+    }
   ) {
     return this.adminService.createActivity(
+      adminUserId,
       body?.code ?? '',
       body?.name ?? '',
       body?.description,
-      body?.defaultPriceCents
+      body?.defaultPriceCents,
+      body?.logoUrl,
+      body?.activityGroup,
+      body?.trainerSharePercent,
+      body?.status
     );
   }
 
@@ -180,6 +196,7 @@ export class AdminController {
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Update activity type' })
   updateActivity(
+    @CurrentUser('sub') adminUserId: string,
     @Body()
     body: {
       id?: string;
@@ -187,14 +204,23 @@ export class AdminController {
       name?: string;
       description?: string;
       defaultPriceCents?: number | null;
+      logoUrl?: string | null;
+      activityGroup?: string | null;
+      trainerSharePercent?: number | null;
+      status?: string | null;
     }
   ) {
     return this.adminService.updateActivity(
+      adminUserId,
       body?.id ?? '',
       body?.code,
       body?.name,
       body?.description,
-      body?.defaultPriceCents ?? undefined
+      body?.defaultPriceCents ?? undefined,
+      body?.logoUrl,
+      body?.activityGroup,
+      body?.trainerSharePercent,
+      body?.status
     );
   }
 
@@ -209,6 +235,46 @@ export class AdminController {
       adminUserId,
       body?.trainerId ?? '',
       !!body?.canSetOwnPrice
+    );
+  }
+
+  @Post('trainerActivityList')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'List activities for a trainer (admin)' })
+  trainerActivityList(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string }
+  ) {
+    return this.adminService.trainerActivityList(adminUserId, body?.trainerId ?? '');
+  }
+
+  @Post('addTrainerActivity')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Add activity to trainer with optional custom price (admin)' })
+  addTrainerActivity(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string; activityCode?: string; priceCents?: number | null }
+  ) {
+    return this.adminService.addTrainerActivity(
+      adminUserId,
+      body?.trainerId ?? '',
+      body?.activityCode ?? '',
+      body?.priceCents
+    );
+  }
+
+  @Post('setTrainerActivityPrice')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Set custom price for trainer activity (admin)' })
+  setTrainerActivityPrice(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string; activityCode?: string; priceCents?: number | null }
+  ) {
+    return this.adminService.setTrainerActivityPrice(
+      adminUserId,
+      body?.trainerId ?? '',
+      body?.activityCode ?? '',
+      body?.priceCents ?? null
     );
   }
 
@@ -236,6 +302,74 @@ export class AdminController {
     return this.adminService.deleteUser(adminUserId, body?.userId ?? '');
   }
 
+  @Post('createCustomer')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create customer (admin only)' })
+  createCustomer(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { email?: string; name?: string; phone?: string }
+  ) {
+    return this.adminService.createCustomer(adminUserId, {
+      email: body?.email ?? '',
+      name: body?.name,
+      phone: body?.phone,
+    });
+  }
+
+  @Post('updateCustomer')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update customer (admin only)' })
+  updateCustomer(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { customerId?: string; name?: string; phone?: string }
+  ) {
+    return this.adminService.updateCustomer(adminUserId, body?.customerId ?? '', {
+      name: body?.name,
+      phone: body?.phone,
+    });
+  }
+
+  @Post('setUserActive')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Set user active/inactive (admin only)' })
+  setUserActive(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { userId?: string; isActive?: boolean }
+  ) {
+    return this.adminService.setUserActive(
+      adminUserId,
+      body?.userId ?? '',
+      body?.isActive ?? false
+    );
+  }
+
+  @Post('createTrainer')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create trainer (admin only)' })
+  createTrainer(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { email?: string; name?: string; phone?: string }
+  ) {
+    return this.adminService.createTrainer(adminUserId, {
+      email: body?.email ?? '',
+      name: body?.name,
+      phone: body?.phone,
+    });
+  }
+
+  @Post('updateTrainer')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update trainer (admin only)' })
+  updateTrainer(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string; name?: string; phone?: string }
+  ) {
+    return this.adminService.updateTrainer(adminUserId, body?.trainerId ?? '', {
+      name: body?.name,
+      phone: body?.phone,
+    });
+  }
+
   @Post('faqList')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'FAQ list from DB' })
@@ -246,8 +380,15 @@ export class AdminController {
   @Post('createFaq')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'Create FAQ' })
-  createFaq(@Body() body: { question?: string; answer?: string; sortOrder?: number }) {
-    return this.adminService.createFaq(body?.question ?? '', body?.answer ?? '', body?.sortOrder);
+  createFaq(
+    @Body() body: { question?: string; answer?: string; sortOrder?: number; role?: string }
+  ) {
+    return this.adminService.createFaq(
+      body?.question ?? '',
+      body?.answer ?? '',
+      body?.sortOrder,
+      body?.role
+    );
   }
 
   @Post('updateFaq')
@@ -260,13 +401,15 @@ export class AdminController {
       question?: string;
       answer?: string;
       sortOrder?: number;
+      role?: string;
     }
   ) {
     return this.adminService.updateFaq(
       body?.id ?? '',
       body?.question,
       body?.answer,
-      body?.sortOrder
+      body?.sortOrder,
+      body?.role
     );
   }
 
@@ -275,6 +418,199 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete FAQ' })
   deleteFaq(@Body() body: { id?: string }) {
     return this.adminService.deleteFaq(body?.id ?? '');
+  }
+
+  @Post('countryList')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Country list' })
+  countryList(@Body() _body: Record<string, unknown>) {
+    return this.adminService.countryList();
+  }
+
+  @Post('createCountry')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create country' })
+  createCountry(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { name?: string; isdCode?: string }
+  ) {
+    return this.adminService.createCountry(adminUserId, {
+      name: body?.name ?? '',
+      isdCode: body?.isdCode ?? '',
+    });
+  }
+
+  @Post('updateCountry')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update country' })
+  updateCountry(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { id?: string; name?: string; isdCode?: string }
+  ) {
+    return this.adminService.updateCountry(adminUserId, body?.id ?? '', {
+      name: body?.name,
+      isdCode: body?.isdCode,
+    });
+  }
+
+  @Post('deleteCountry')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Delete country' })
+  deleteCountry(@CurrentUser('sub') adminUserId: string, @Body() body: { id?: string }) {
+    return this.adminService.deleteCountry(adminUserId, body?.id ?? '');
+  }
+
+  @Post('languageList')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Language list' })
+  languageList(@Body() _body: Record<string, unknown>) {
+    return this.adminService.languageList();
+  }
+
+  @Post('createLanguage')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create language' })
+  createLanguage(@CurrentUser('sub') adminUserId: string, @Body() body: { name?: string }) {
+    return this.adminService.createLanguage(adminUserId, { name: body?.name ?? '' });
+  }
+
+  @Post('updateLanguage')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update language' })
+  updateLanguage(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { id?: string; name?: string }
+  ) {
+    return this.adminService.updateLanguage(adminUserId, body?.id ?? '', { name: body?.name });
+  }
+
+  @Post('deleteLanguage')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Delete language' })
+  deleteLanguage(@CurrentUser('sub') adminUserId: string, @Body() body: { id?: string }) {
+    return this.adminService.deleteLanguage(adminUserId, body?.id ?? '');
+  }
+
+  @Post('stateList')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'State list' })
+  stateList(@Body() _body: Record<string, unknown>) {
+    return this.adminService.stateList();
+  }
+
+  @Post('createState')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create state' })
+  createState(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { name?: string; countryId?: string }
+  ) {
+    return this.adminService.createState(adminUserId, {
+      name: body?.name ?? '',
+      countryId: body?.countryId,
+    });
+  }
+
+  @Post('updateState')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update state' })
+  updateState(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { id?: string; name?: string; countryId?: string }
+  ) {
+    return this.adminService.updateState(adminUserId, body?.id ?? '', {
+      name: body?.name,
+      countryId: body?.countryId,
+    });
+  }
+
+  @Post('deleteState')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Delete state' })
+  deleteState(@CurrentUser('sub') adminUserId: string, @Body() body: { id?: string }) {
+    return this.adminService.deleteState(adminUserId, body?.id ?? '');
+  }
+
+  @Post('contactLinkList')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Contact link list' })
+  contactLinkList(@Body() _body: Record<string, unknown>) {
+    return this.adminService.contactLinkList();
+  }
+
+  @Post('createContactLink')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create contact link' })
+  createContactLink(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { name?: string; link?: string; iconUrl?: string }
+  ) {
+    return this.adminService.createContactLink(adminUserId, {
+      name: body?.name ?? '',
+      link: body?.link ?? '',
+      iconUrl: body?.iconUrl,
+    });
+  }
+
+  @Post('updateContactLink')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update contact link' })
+  updateContactLink(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { id?: string; name?: string; link?: string; iconUrl?: string }
+  ) {
+    return this.adminService.updateContactLink(adminUserId, body?.id ?? '', {
+      name: body?.name,
+      link: body?.link,
+      iconUrl: body?.iconUrl,
+    });
+  }
+
+  @Post('deleteContactLink')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Delete contact link' })
+  deleteContactLink(@CurrentUser('sub') adminUserId: string, @Body() body: { id?: string }) {
+    return this.adminService.deleteContactLink(adminUserId, body?.id ?? '');
+  }
+
+  @Post('activityCategoryList')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Activity category list' })
+  activityCategoryList(@Body() _body: Record<string, unknown>) {
+    return this.adminService.activityCategoryList();
+  }
+
+  @Post('createActivityCategory')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Create activity category' })
+  createActivityCategory(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { name?: string; iconUrl?: string }
+  ) {
+    return this.adminService.createActivityCategory(adminUserId, {
+      name: body?.name ?? '',
+      iconUrl: body?.iconUrl,
+    });
+  }
+
+  @Post('updateActivityCategory')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Update activity category' })
+  updateActivityCategory(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { id?: string; name?: string; iconUrl?: string }
+  ) {
+    return this.adminService.updateActivityCategory(adminUserId, body?.id ?? '', {
+      name: body?.name,
+      iconUrl: body?.iconUrl,
+    });
+  }
+
+  @Post('deleteActivityCategory')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Delete activity category' })
+  deleteActivityCategory(@CurrentUser('sub') adminUserId: string, @Body() body: { id?: string }) {
+    return this.adminService.deleteActivityCategory(adminUserId, body?.id ?? '');
   }
 
   @Post('contactUs')

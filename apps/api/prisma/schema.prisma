@@ -18,10 +18,12 @@ model User {
   role          String         // admin | trainer | customer
   locale        String?        @default("en")
   countryCode   String?        @map("country_code") // ISO 3166-1 alpha-2 (e.g. US, GB) for payments/location
+  state         String?       // state / province / region (e.g. CA, NSW)
   trainerCanSetOwnPrice Boolean? @map("trainer_can_set_own_price") // when true, trainer can set price per activity; else use activity default
   phone         String?        @unique // for OTP login
   otp           String?       // 4-digit OTP
   otpSentAt     DateTime?     @map("otp_sent_at") // expiry check (5 min)
+  isActive      Boolean       @default(true) @map("is_active") // admin can deactivate customer/trainer
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   conversations Conversation[]
@@ -44,6 +46,75 @@ model User {
   bankDetails          TrainerBankDetail?
   serviceAreas         TrainerServiceArea[]
   customerLocations    CustomerLocation[]
+  activitiesCreated    Activity[]         @relation("ActivityCreatedBy")
+  activitiesUpdated    Activity[]         @relation("ActivityUpdatedBy")
+  countriesUpdated     Country[]          @relation("CountryUpdatedBy")
+  languagesUpdated     Language[]         @relation("LanguageUpdatedBy")
+  statesUpdated        State[]            @relation("StateUpdatedBy")
+  contactLinksUpdated  ContactLink[]      @relation("ContactLinkUpdatedBy")
+  activityCategoriesUpdated ActivityCategory[] @relation("ActivityCategoryUpdatedBy")
+}
+
+// Admin master data: countries (name, ISD code).
+model Country {
+  id          String   @id @default(cuid())
+  name        String
+  isdCode     String   @map("isd_code") // e.g. "+1"
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   User?    @relation("CountryUpdatedBy", fields: [updatedById], references: [id])
+  states      State[]
+  @@map("country")
+}
+
+// Admin master data: supported languages.
+model Language {
+  id          String   @id @default(cuid())
+  name        String
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   User?    @relation("LanguageUpdatedBy", fields: [updatedById], references: [id])
+  @@map("language")
+}
+
+// Admin master data: states/provinces (optional link to country).
+model State {
+  id          String   @id @default(cuid())
+  name        String
+  countryId   String?  @map("country_id")
+  country     Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   User?    @relation("StateUpdatedBy", fields: [updatedById], references: [id])
+  @@map("state")
+}
+
+// Admin: activity categories (e.g. Cardio and Endurance, Individual Sports). Activity.activityGroup can match name.
+model ActivityCategory {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "Cardio and Endurance"
+  iconUrl     String?  @map("icon_url") @db.Text // optional icon image URL
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   User?    @relation("ActivityCategoryUpdatedBy", fields: [updatedById], references: [id])
+  @@map("activity_category")
+}
+
+// Admin: contact us entries (name, link, optional icon URL).
+model ContactLink {
+  id          String   @id @default(cuid())
+  name        String   // e.g. "Customer Service", "Facebook"
+  link        String   @db.Text // URL or mailto:
+  iconUrl     String?  @map("icon_url") @db.Text // optional icon image URL
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   User?    @relation("ContactLinkUpdatedBy", fields: [updatedById], references: [id])
+  @@map("contact_link")
 }
 
 // When a user signs up with a referral code, create a Referral linking referrer and referred user.
@@ -177,13 +248,21 @@ model Discount {
 
 // Activity types (master data). Admin CRUD; customer/trainer read via fetchAllActivity.
 model Activity {
-  id                String   @id @default(cuid())
-  code              String   @unique
-  name              String
-  description       String?  @db.Text
-  defaultPriceCents Int?     @map("default_price_cents") // default session price when trainer does not set own
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  code                String    @unique
+  name                String
+  description         String?   @db.Text
+  defaultPriceCents   Int?      @map("default_price_cents") // default session price when trainer does not set own
+  logoUrl             String?   @map("logo_url")
+  activityGroup       String?   @map("activity_group")
+  trainerSharePercent Int?      @map("trainer_share_percent") // 0-100
+  status              String?   @default("active") // active | inactive
+  createdById         String?   @map("created_by_id")
+  updatedById         String?   @map("updated_by_id")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  createdBy           User?     @relation("ActivityCreatedBy", fields: [createdById], references: [id])
+  updatedBy           User?     @relation("ActivityUpdatedBy", fields: [updatedById], references: [id])
   @@map("activity")
 }
 
@@ -264,6 +343,7 @@ model Faq {
   question  String   @db.Text
   answer    String   @db.Text
   sortOrder Int      @default(0) @map("sort_order")
+  role      String?  // e.g. "all" | "customer" | "trainer" – which audience sees this FAQ
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@map("faq")

@@ -39,9 +39,7 @@ export const ROUTES = {
   earning: '/earning',
 
   adminDashboard: '/admin/dashboard',
-  adminMasterData: '/admin/master-data',
   adminActivity: '/admin/activity',
-  adminFaq: '/admin/faq',
   adminContactUs: '/admin/contact',
   adminCustomizeDashboard: '/admin/customize-dashboard',
   adminDiscount: '/admin/discount',
@@ -57,7 +55,13 @@ export const ROUTES = {
   adminSupportDetail: (id: string) => `/admin/support/${id}`,
   adminUsers: '/admin/users',
   adminUserDetail: (id: string) => `/admin/users/${id}`,
-  adminUserRoles: '/admin/user-roles',
+  adminSettings: '/admin/settings',
+  adminSettingsCountry: '/admin/settings/country',
+  adminSettingsStates: '/admin/settings/states',
+  adminSettingsActivityCategory: '/admin/settings/activity-category',
+  adminSettingsFaq: '/admin/settings/faq',
+  adminSettingsLanguage: '/admin/settings/language',
+  adminSettingsContactUs: '/admin/settings/contact-us',
 } as const;
 
 /** Paths that have a real page (no 404). Use for <Link href={}> only when true. */
@@ -94,9 +98,7 @@ export const IMPLEMENTED = new Set<string>([
   ROUTES.earning,
 
   ROUTES.adminDashboard,
-  ROUTES.adminMasterData,
   ROUTES.adminActivity,
-  ROUTES.adminFaq,
   ROUTES.adminContactUs,
   ROUTES.adminCustomizeDashboard,
   ROUTES.adminDiscount,
@@ -106,7 +108,13 @@ export const IMPLEMENTED = new Set<string>([
   ROUTES.adminEarning,
   ROUTES.adminSupport,
   ROUTES.adminUsers,
-  ROUTES.adminUserRoles,
+  ROUTES.adminSettings,
+  ROUTES.adminSettingsCountry,
+  ROUTES.adminSettingsStates,
+  ROUTES.adminSettingsActivityCategory,
+  ROUTES.adminSettingsFaq,
+  ROUTES.adminSettingsLanguage,
+  ROUTES.adminSettingsContactUs,
 ]);
 
 /** Use for profile/nav: link to path if implemented, else to placeholder. */

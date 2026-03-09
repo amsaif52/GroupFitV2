@@ -1,13 +1,19 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { SignupFormInput } from '../../utils/auth-schemas';
-import { signupFormSchema } from '../../utils/auth-schemas';
+import { signupFormSchema, SIGNUP_ROLES } from '../../utils/auth-schemas';
+import { COUNTRY_CODES, getSubdivisionsForCountry } from '../../utils';
 import Button from '../atoms/Button.web';
 
 export interface SignupScreenWebProps {
-  onSubmit: (data: { name: string; email: string; password: string }) => void | Promise<void>;
+  /** When set with onVerifySignupOtp, form submit sends OTP first; then user verifies to create account. */
+  onSendSignupOtp?: (data: SignupFormInput) => void | Promise<void>;
+  /** Called with OTP and form data after user enters code. Create account and redirect. */
+  onVerifySignupOtp?: (otp: string, data: SignupFormInput) => void | Promise<void>;
+  /** Legacy: single-step signup (no OTP). Used when onSendSignupOtp/onVerifySignupOtp not provided. */
+  onSubmit?: (data: SignupFormInput) => void | Promise<void>;
   loading?: boolean;
   error?: string | null;
   onLoginClick?: () => void;
@@ -17,12 +23,21 @@ export interface SignupScreenWebProps {
   subtitle?: string;
   nameLabel?: string;
   emailLabel?: string;
-  passwordLabel?: string;
-  confirmPasswordLabel?: string;
+  phoneLabel?: string;
+  countryLabel?: string;
+  stateLabel?: string;
+  /** Label for role select (e.g. "I am a") */
+  roleLabel?: string;
+  referralCodeLabel?: string;
   submitLabel?: string;
   loadingLabel?: string;
   footerPrompt?: string;
   footerLinkText?: string;
+  /** Privacy checkbox label (e.g. "I accept the "); required */
+  privacyLabel?: string;
+  /** Link text for privacy policy (e.g. "Privacy Policy"); shown when onPrivacyClick is set */
+  privacyLinkText?: string;
+  onPrivacyClick?: () => void;
   /** Terms checkbox label (e.g. "I agree to the"); if not provided, checkbox is hidden */
   termsLabel?: string;
   /** Link text after termsLabel (e.g. "Terms and Conditions"); shown when onTermsClick is set */
@@ -41,7 +56,17 @@ export interface SignupScreenWebProps {
   orLabel?: string;
   googleButton?: React.ReactNode;
   appleButton?: React.ReactNode;
+  /** OTP step: placeholder for code input */
+  otpPlaceholder?: string;
+  /** OTP step: verify button label */
+  verifyLabel?: string;
+  /** OTP step: resend code link text */
+  resendCodeLabel?: string;
+  /** OTP step: change number button text */
+  changeNumberLabel?: string;
 }
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden focusable="false">
@@ -74,20 +99,28 @@ const AppleIcon = () => (
 );
 
 export function SignupScreenWeb({
+  onSendSignupOtp,
+  onVerifySignupOtp,
   onSubmit,
   loading = false,
   error = null,
   onLoginClick,
   title,
   subtitle,
-  nameLabel: _nameLabel = 'Name',
-  emailLabel: _emailLabel = 'Email',
-  passwordLabel: _passwordLabel = 'Password',
-  confirmPasswordLabel: _confirmPasswordLabel = 'Confirm password',
+  nameLabel = 'Full name',
+  emailLabel = 'Email address',
+  phoneLabel = 'Phone number',
+  countryLabel = 'Country',
+  stateLabel = 'State / Province / Region',
+  roleLabel = 'I am a',
+  referralCodeLabel = 'Referral code (optional)',
   submitLabel = 'Create account',
   loadingLabel = 'Loading...',
   footerPrompt = 'Already a member?',
   footerLinkText = 'Log in',
+  privacyLabel = 'I accept the ',
+  privacyLinkText = 'Privacy Policy',
+  onPrivacyClick,
   termsLabel,
   termsLinkText = 'Terms and Conditions',
   onTermsClick,
@@ -100,27 +133,57 @@ export function SignupScreenWeb({
   orLabel = 'or',
   googleButton,
   appleButton,
+  otpPlaceholder = 'Enter 4-digit code',
+  verifyLabel = 'Verify and create account',
+  resendCodeLabel = 'Resend code',
+  changeNumberLabel = 'Change number',
 }: SignupScreenWebProps) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
+  const [phoneDialCode, setPhoneDialCode] = useState(COUNTRY_CODES[0]?.dial ?? '+1');
+  const [signupStep, setSignupStep] = useState<'form' | 'otp'>('form');
+  const [pendingSignupData, setPendingSignupData] = useState<SignupFormInput | null>(null);
+  const [otpValue, setOtpValue] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
+  const useOtpFlow = Boolean(onSendSignupOtp && onVerifySignupOtp);
+
+  useEffect(() => {
+    if (resendCooldownSeconds <= 0) return;
+    const id = setInterval(() => setResendCooldownSeconds((s) => (s <= 1 ? 0 : s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldownSeconds]);
 
   const {
     register,
     handleSubmit: rhfHandleSubmit,
     formState: { errors },
+    watch,
+    setValue,
   } = useForm<SignupFormInput>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
       name: '',
       email: '',
-      password: '',
-      confirmPassword: '',
+      phone: '',
+      country: '',
+      state: '',
+      role: 'customer',
+      referralCode: '',
     },
   });
+  const selectedCountry = watch('country');
+  const stateOptions = selectedCountry ? getSubdivisionsForCountry(selectedCountry) : undefined;
 
   const resolvedTitle = title;
   const resolvedSubtitle = subtitle;
   const showSocial = Boolean(onGooglePress || onApplePress || googleButton || appleButton);
+
+  const { onChange: countryOnChange, ...countryRegister } = register('country');
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    countryOnChange(e);
+    setValue('state', '');
+  };
 
   async function handleSubmit(data: SignupFormInput) {
     setTermsError(null);
@@ -128,7 +191,47 @@ export function SignupScreenWeb({
       setTermsError('Please accept the terms to continue');
       return;
     }
-    await onSubmit({ name: data.name, email: data.email, password: data.password });
+    const phoneDigits = (data.phone ?? '').replace(/\D/g, '');
+    const fullPhone = phoneDigits ? `${phoneDialCode}${phoneDigits}` : '';
+    const dataWithPhone = { ...data, phone: fullPhone };
+
+    if (useOtpFlow && onSendSignupOtp) {
+      await onSendSignupOtp(dataWithPhone);
+      setPendingSignupData(dataWithPhone);
+      setSignupStep('otp');
+      setOtpValue('');
+      setOtpError(null);
+      setResendCooldownSeconds(RESEND_COOLDOWN_SECONDS);
+    } else if (onSubmit) {
+      await onSubmit(dataWithPhone);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendingSignupData || !onVerifySignupOtp) return;
+    setOtpError(null);
+    const code = otpValue.trim();
+    if (!code) {
+      setOtpError('Please enter the code');
+      return;
+    }
+    try {
+      await onVerifySignupOtp(code, pendingSignupData);
+    } catch (err: unknown) {
+      setOtpError(err instanceof Error ? err.message : 'Invalid or expired code');
+    }
+  }
+
+  async function handleResendOtp() {
+    if (!pendingSignupData || !onSendSignupOtp || resendCooldownSeconds > 0) return;
+    setOtpError(null);
+    try {
+      await onSendSignupOtp(pendingSignupData);
+      setResendCooldownSeconds(RESEND_COOLDOWN_SECONDS);
+    } catch (err: unknown) {
+      setOtpError(err instanceof Error ? err.message : 'Failed to resend');
+    }
   }
 
   const displayError = error ?? termsError;
@@ -136,152 +239,306 @@ export function SignupScreenWeb({
 
   const formContent = (
     <div className="gf-auth gf-auth--admin">
-      <div className="gf-auth__header">
-        <h1 className="gf-auth__title">{resolvedTitle}</h1>
-        {showSubtitle && <p className="gf-auth__subtitle">{resolvedSubtitle}</p>}
-      </div>
-
-      {showSocial && (
-        <div className="gf-auth__social">
-          {googleButton != null ? (
-            <div className="gf-button--full gf-button--social">{googleButton}</div>
-          ) : onGooglePress ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              label={continueWithGoogleLabel}
-              onPress={onGooglePress}
-              className="gf-button--full gf-button--social"
-              icon={<GoogleIcon />}
-            />
-          ) : null}
-          {appleButton != null ? (
-            <div className="gf-button--full gf-button--social">{appleButton}</div>
-          ) : onApplePress ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="md"
-              label={continueWithAppleLabel}
-              onPress={onApplePress}
-              className="gf-button--full gf-button--social"
-              icon={<AppleIcon />}
-            />
-          ) : null}
-          <p className="gf-auth__or" aria-hidden>
-            {orLabel}
-          </p>
+      {signupStep !== 'otp' && (
+        <div className="gf-auth__header">
+          <h1 className="gf-auth__title">{resolvedTitle}</h1>
+          {showSubtitle && <p className="gf-auth__subtitle">{resolvedSubtitle}</p>}
         </div>
       )}
 
-      <form onSubmit={rhfHandleSubmit(handleSubmit)} noValidate className="gf-auth__form">
-        {displayError && <p className="gf-auth__error">{displayError}</p>}
-
-        <label className="gf-auth__label">
-          <input
-            type="text"
-            {...register('name')}
-            placeholder="Full name"
-            className="gf-auth__input"
-            aria-invalid={Boolean(errors.name)}
-          />
-          {errors.name && (
-            <span className="gf-auth__field-error" role="alert">
-              {errors.name.message}
-            </span>
-          )}
-        </label>
-
-        <label className="gf-auth__label">
-          <input
-            type="email"
-            {...register('email')}
-            placeholder={'Enter your email here'}
-            className="gf-auth__input"
-            aria-invalid={Boolean(errors.email)}
-          />
-          {errors.email && (
-            <span className="gf-auth__field-error" role="alert">
-              {errors.email.message}
-            </span>
-          )}
-        </label>
-
-        <label className="gf-auth__label">
-          <input
-            type="password"
-            {...register('password')}
-            placeholder={'Enter your password here'}
-            className="gf-auth__input"
-            aria-invalid={Boolean(errors.password)}
-          />
-          {errors.password && (
-            <span className="gf-auth__field-error" role="alert">
-              {errors.password.message}
-            </span>
-          )}
-        </label>
-        <label className="gf-auth__label">
-          <input
-            type="password"
-            {...register('confirmPassword')}
-            placeholder={'Confirm your password'}
-            className="gf-auth__input"
-            aria-invalid={Boolean(errors.confirmPassword)}
-          />
-          {errors.confirmPassword && (
-            <span className="gf-auth__field-error" role="alert">
-              {errors.confirmPassword.message}
-            </span>
-          )}
-        </label>
-
-        {termsLabel && (
-          <label className="gf-auth__terms">
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="gf-auth__terms-checkbox"
-            />
-            <span className="gf-auth__terms-text">
-              {termsLabel}
-              {onTermsClick && termsLinkText && (
-                <>
-                  {' '}
-                  <button type="button" onClick={onTermsClick} className="gf-auth__terms-link">
-                    {termsLinkText}
-                  </button>
-                </>
-              )}
-            </span>
-          </label>
-        )}
-
-        <Button
-          type="submit"
-          variant="primary"
-          size="lg"
-          disabled={loading}
-          loading={loading}
-          loadingLabel={loadingLabel}
-          label={submitLabel}
-          className="gf-button--full gf-button--mt"
-        />
-      </form>
-
-      {onLoginClick && (
-        <p className="gf-auth__footer">
-          <span className="gf-auth__footer-text">{footerPrompt}</span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            label={footerLinkText}
-            onPress={onLoginClick}
-          />
+      {signupStep !== 'otp' && (
+        <p className="gf-auth__or" aria-hidden>
+          {orLabel}
         </p>
+      )}
+
+      {signupStep === 'otp' ? (
+        <form onSubmit={handleVerifyOtp} noValidate className="gf-auth__form gf-auth__form--otp">
+          {(displayError || otpError) && (
+            <p className="gf-auth__error">{otpError ?? displayError}</p>
+          )}
+          <p className="gf-auth__otp-hint">Code sent to {pendingSignupData?.phone ?? ''}</p>
+          <label className="gf-auth__label">
+            <span className="gf-auth__label-text">{otpPlaceholder}</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={4}
+              value={otpValue}
+              onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder=""
+              className="gf-auth__input gf-auth__input--otp"
+              aria-invalid={Boolean(otpError)}
+            />
+          </label>
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            disabled={loading}
+            loading={loading}
+            loadingLabel={loadingLabel}
+            label={verifyLabel}
+            className="gf-button--full gf-button--mt"
+          />
+          <div className="gf-auth__resend-row">
+            <button
+              type="button"
+              className="gf-auth__resend-link"
+              onClick={handleResendOtp}
+              disabled={loading || resendCooldownSeconds > 0}
+            >
+              {resendCooldownSeconds > 0
+                ? `${resendCodeLabel} (${resendCooldownSeconds}s)`
+                : resendCodeLabel}
+            </button>
+            <button
+              type="button"
+              className="gf-auth__change-number"
+              onClick={() => {
+                setSignupStep('form');
+                setPendingSignupData(null);
+                setOtpValue('');
+                setOtpError(null);
+                setResendCooldownSeconds(0);
+              }}
+            >
+              {changeNumberLabel}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          {showSocial && (
+            <div className="gf-auth__social">
+              {googleButton != null ? (
+                <div className="gf-button--full gf-button--social">{googleButton}</div>
+              ) : onGooglePress ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  label={continueWithGoogleLabel}
+                  onPress={onGooglePress}
+                  className="gf-button--full gf-button--social"
+                  icon={<GoogleIcon />}
+                />
+              ) : null}
+              {appleButton != null ? (
+                <div className="gf-button--full gf-button--social">{appleButton}</div>
+              ) : onApplePress ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  label={continueWithAppleLabel}
+                  onPress={onApplePress}
+                  className="gf-button--full gf-button--social"
+                  icon={<AppleIcon />}
+                />
+              ) : null}
+              <p className="gf-auth__or" aria-hidden>
+                {orLabel}
+              </p>
+            </div>
+          )}
+
+          <form onSubmit={rhfHandleSubmit(handleSubmit)} noValidate className="gf-auth__form">
+            {displayError && <p className="gf-auth__error">{displayError}</p>}
+
+            <label className="gf-auth__label">
+              <input
+                type="text"
+                {...register('name')}
+                placeholder={nameLabel}
+                className="gf-auth__input"
+                aria-invalid={Boolean(errors.name)}
+              />
+              {errors.name && (
+                <span className="gf-auth__field-error" role="alert">
+                  {errors.name.message}
+                </span>
+              )}
+            </label>
+
+            <label className="gf-auth__label">
+              <input
+                type="email"
+                {...register('email')}
+                placeholder={emailLabel}
+                className="gf-auth__input"
+                aria-invalid={Boolean(errors.email)}
+              />
+              {errors.email && (
+                <span className="gf-auth__field-error" role="alert">
+                  {errors.email.message}
+                </span>
+              )}
+            </label>
+
+            <label className="gf-auth__label">
+              <div className="gf-auth__phone-row">
+                <select
+                  value={phoneDialCode}
+                  onChange={(e) => setPhoneDialCode(e.target.value)}
+                  className="gf-auth__country-select"
+                  aria-label="Country code"
+                >
+                  {COUNTRY_CODES.map(({ code, dial, name }) => (
+                    <option key={code} value={dial}>
+                      {dial} {name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="tel"
+                  {...register('phone')}
+                  placeholder={phoneLabel}
+                  className="gf-auth__input gf-auth__input--phone"
+                  aria-invalid={Boolean(errors.phone)}
+                />
+              </div>
+              {errors.phone && (
+                <span className="gf-auth__field-error" role="alert">
+                  {errors.phone.message}
+                </span>
+              )}
+            </label>
+
+            <label className="gf-auth__label">
+              <select
+                {...countryRegister}
+                onChange={handleCountryChange}
+                className="gf-auth__input"
+                aria-invalid={Boolean(errors.country)}
+              >
+                <option value="">{countryLabel}</option>
+                {COUNTRY_CODES.map(({ code, name }) => (
+                  <option key={code} value={code}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              {errors.country && (
+                <span className="gf-auth__field-error" role="alert">
+                  {errors.country.message}
+                </span>
+              )}
+            </label>
+
+            <label className="gf-auth__label">
+              {stateOptions ? (
+                <select
+                  {...register('state')}
+                  className="gf-auth__input"
+                  aria-invalid={Boolean(errors.state)}
+                >
+                  <option value="">{stateLabel}</option>
+                  {stateOptions.map(({ code, name }) => (
+                    <option key={code} value={code}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  {...register('state')}
+                  placeholder={stateLabel}
+                  className="gf-auth__input"
+                  aria-invalid={Boolean(errors.state)}
+                />
+              )}
+              {errors.state && (
+                <span className="gf-auth__field-error" role="alert">
+                  {errors.state.message}
+                </span>
+              )}
+            </label>
+
+            <label className="gf-auth__label">
+              <span className="gf-auth__label-text">{roleLabel}</span>
+              <select
+                {...register('role')}
+                className="gf-auth__input"
+                aria-invalid={Boolean(errors.role)}
+              >
+                {SIGNUP_ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </option>
+                ))}
+              </select>
+              {errors.role && (
+                <span className="gf-auth__field-error" role="alert">
+                  {errors.role.message}
+                </span>
+              )}
+            </label>
+
+            <label className="gf-auth__label">
+              <input
+                type="text"
+                {...register('referralCode')}
+                placeholder={referralCodeLabel}
+                className="gf-auth__input"
+                aria-invalid={Boolean(errors.referralCode)}
+              />
+              {errors.referralCode && (
+                <span className="gf-auth__field-error" role="alert">
+                  {errors.referralCode.message}
+                </span>
+              )}
+            </label>
+
+            {termsLabel && (
+              <label className="gf-auth__terms">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="gf-auth__terms-checkbox"
+                />
+                <span className="gf-auth__terms-text">
+                  {termsLabel}
+                  {onTermsClick && termsLinkText && (
+                    <>
+                      {' '}
+                      <button type="button" onClick={onTermsClick} className="gf-auth__terms-link">
+                        {termsLinkText}
+                      </button>
+                    </>
+                  )}
+                </span>
+              </label>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={loading}
+              loading={loading}
+              loadingLabel={loadingLabel}
+              label={submitLabel}
+              className="gf-button--full gf-button--mt"
+            />
+          </form>
+
+          {onLoginClick && (
+            <p className="gf-auth__footer">
+              <span className="gf-auth__footer-text">{footerPrompt}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                label={footerLinkText}
+                onPress={onLoginClick}
+              />
+            </p>
+          )}
+        </>
       )}
     </div>
   );

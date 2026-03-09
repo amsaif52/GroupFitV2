@@ -27,4 +27,10 @@ export class EditProfileDto {
   @MinLength(2)
   @MaxLength(2)
   countryCode?: string;
+
+  @ApiProperty({ example: 'CA', description: 'State / Province / Region', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  state?: string;
 }

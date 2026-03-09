@@ -17,17 +17,37 @@ type SlotItem = {
   createdAt: string;
 };
 
+const TIME_STEP_MINUTES = 15;
+
+/** Format time string to HH:MM and snap to nearest 15-minute step for display. */
 function formatTimeForInput(s: string): string {
   if (!s) return '';
   const match = /^(\d{1,2}):(\d{2})/.exec(s);
   if (match) {
-    const h = match[1].padStart(2, '0');
-    const m = (match[2] || '00').padStart(2, '00');
-    return `${h}:${m}`;
+    const h = parseInt(match[1], 10);
+    const m = parseInt(match[2] || '0', 10);
+    const totalMins = h * 60 + m;
+    const stepped = Math.round(totalMins / TIME_STEP_MINUTES) * TIME_STEP_MINUTES;
+    const steppedH = Math.floor(stepped / 60) % 24;
+    const steppedM = stepped % 60;
+    return `${String(steppedH).padStart(2, '0')}:${String(steppedM).padStart(2, '0')}`;
   }
   if (s.length >= 5 && s[2] === ':') return s.slice(0, 5);
   return s;
 }
+
+/** Generate 15-minute time options from 00:00 to 23:45. */
+function getTimeOptions(): string[] {
+  const options: string[] = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += TIME_STEP_MINUTES) {
+      options.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    }
+  }
+  return options;
+}
+
+const TIME_OPTIONS = getTimeOptions();
 
 export default function AvailabilityPage() {
   const [loading, setLoading] = useState(true);
@@ -92,8 +112,8 @@ export default function AvailabilityPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const start = formStart.trim();
-    const end = formEnd.trim();
+    const start = formatTimeForInput(formStart.trim());
+    const end = formatTimeForInput(formEnd.trim());
     if (!start || !end) {
       setError('Start and end time are required');
       return;
@@ -159,11 +179,6 @@ export default function AvailabilityPage() {
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
         <span className="gf-home__logo">Availability</span>
       </header>
-
-      <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 16 }}>
-        Set your weekly availability. Customers can book sessions within these time slots. Day 0 =
-        Sunday, 6 = Saturday.
-      </p>
 
       <Link
         href={ROUTES.dashboard}
@@ -232,10 +247,9 @@ export default function AvailabilityPage() {
               ))}
             </select>
             <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Start time
+              Start time (15-min steps)
             </label>
-            <input
-              type="time"
+            <select
               value={formStart}
               onChange={(e) => setFormStart(e.target.value)}
               required
@@ -246,12 +260,17 @@ export default function AvailabilityPage() {
                 borderRadius: 6,
                 border: '1px solid var(--groupfit-border-light)',
               }}
-            />
+            >
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
             <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              End time
+              End time (15-min steps)
             </label>
-            <input
-              type="time"
+            <select
               value={formEnd}
               onChange={(e) => setFormEnd(e.target.value)}
               required
@@ -262,7 +281,13 @@ export default function AvailabilityPage() {
                 borderRadius: 6,
                 border: '1px solid var(--groupfit-border-light)',
               }}
-            />
+            >
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="submit"

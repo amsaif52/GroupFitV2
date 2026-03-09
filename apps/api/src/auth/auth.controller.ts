@@ -8,6 +8,8 @@ import { AppleAuthDto } from '../common/dto/apple-auth.dto';
 import { VerifyOtpDto } from '../common/dto/verify-otp.dto';
 import { ResendOtpDto } from '../common/dto/resend-otp.dto';
 import { SendOtpDto } from '../common/dto/send-otp.dto';
+import { SignupSendOtpDto } from '../common/dto/signup-send-otp.dto';
+import { SignupVerifyDto } from '../common/dto/signup-verify.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -30,6 +32,26 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email already registered' })
   async signup(@Body() dto: SignupDto) {
     return this.auth.signup(dto.email, dto.password, dto.name, dto.role);
+  }
+
+  @Post('signup-send-otp')
+  @ApiOperation({
+    summary: 'Send OTP to phone for new user signup; validate email/phone not taken',
+  })
+  @ApiBody({ type: SignupSendOtpDto })
+  @ApiResponse({ status: 200, description: 'OTP sent' })
+  @ApiResponse({ status: 409, description: 'Email or phone already registered' })
+  async signupSendOtp(@Body() dto: SignupSendOtpDto) {
+    return this.auth.signupSendOtp(dto);
+  }
+
+  @Post('signup-verify')
+  @ApiOperation({ summary: 'Verify signup OTP and create account; returns JWT' })
+  @ApiBody({ type: SignupVerifyDto })
+  @ApiResponse({ status: 201, description: 'Returns accessToken and user' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired OTP' })
+  async signupVerify(@Body() dto: SignupVerifyDto) {
+    return this.auth.signupVerify(dto);
   }
 
   @Post('google')
