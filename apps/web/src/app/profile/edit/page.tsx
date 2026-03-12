@@ -12,6 +12,9 @@ import { customerApi, trainerApi } from '@/lib/api';
 import { COUNTRY_CODES, CountryCode, getSubdivisionsForCountry, ROLES } from '@groupfit/shared';
 import { getApiErrorMessage } from '@groupfit/shared';
 import { CloudinaryUploadButton } from '@/components/CloudinaryUploadButton';
+import { CustomerLayout } from '../../CustomerLayout';
+import { TrainerLayout } from '../../TrainerLayout';
+import { ROUTES } from '../../routes';
 
 const GENDER_OPTIONS = [
   { value: '', label: 'Select…' },
@@ -218,11 +221,15 @@ export default function ProfileEditPage() {
     }
   }
 
+  const Layout = role === ROLES.TRAINER ? TrainerLayout : CustomerLayout;
+
   if (loading) {
     return (
-      <main className="gf-profile-main" style={{ padding: '2rem', textAlign: 'center' }}>
-        <p>Loading...</p>
-      </main>
+      <Layout>
+        <main className="gf-profile-main" style={{ padding: '2rem', textAlign: 'center' }}>
+          <p>Loading...</p>
+        </main>
+      </Layout>
     );
   }
 
@@ -242,373 +249,380 @@ export default function ProfileEditPage() {
   };
 
   return (
-    <main className="gf-profile-main" style={{ margin: '0 auto', padding: '2rem', maxWidth: 480 }}>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <Link href="/profile" style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}>
-          ← Back to Profile
-        </Link>
-      </div>
-      <h1 style={{ marginBottom: '1rem' }}>Edit Profile</h1>
-      {submitError && (
-        <p style={{ color: 'var(--groupfit-secondary)', marginBottom: '1rem' }}>{submitError}</p>
-      )}
+    <Layout>
+      <header className="gf-home__header" style={{ marginBottom: 20 }}>
+        <span className="gf-home__logo">Edit Profile</span>
+        <div className="gf-home__header-actions">
+          <Link href={ROUTES.profile} className="gf-home__header-link">
+            ← Back to Profile
+          </Link>
+        </div>
+      </header>
+      <main
+        className="gf-profile-main"
+        style={{ margin: '0 auto', padding: '0 2rem 2rem', maxWidth: 480 }}
+      >
+        {submitError && (
+          <p style={{ color: 'var(--groupfit-secondary)', marginBottom: '1rem' }}>{submitError}</p>
+        )}
 
-      {role === ROLES.CUSTOMER ? (
-        <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 12,
-              flexDirection: 'column',
-            }}
-          >
-            <label style={labelStyle}>Profile picture</label>
+        {role === ROLES.CUSTOMER ? (
+          <form onSubmit={customerForm.handleSubmit(onCustomerSubmit)}>
             <div
               style={{
                 display: 'flex',
+                justifyContent: 'center',
                 alignItems: 'center',
                 gap: 12,
-                flexWrap: 'wrap',
                 flexDirection: 'column',
-                justifyContent: 'center',
               }}
             >
-              {(() => {
-                const avatarUrl = customerForm.watch('avatarUrl');
-                if (avatarUrl) {
+              <label style={labelStyle}>Profile picture</label>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
+                {(() => {
+                  const avatarUrl = customerForm.watch('avatarUrl');
+                  if (avatarUrl) {
+                    return (
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: 80,
+                          height: 80,
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Image
+                          src={avatarUrl}
+                          alt="Profile"
+                          fill
+                          style={{ objectFit: 'cover' }}
+                          unoptimized
+                        />
+                      </div>
+                    );
+                  }
                   return (
                     <div
                       style={{
-                        position: 'relative',
                         width: 80,
                         height: 80,
                         borderRadius: '50%',
-                        overflow: 'hidden',
+                        background: 'var(--groupfit-border-light, #eee)',
                         flexShrink: 0,
                       }}
-                    >
-                      <Image
-                        src={avatarUrl}
-                        alt="Profile"
-                        fill
-                        style={{ objectFit: 'cover' }}
-                        unoptimized
-                      />
-                    </div>
+                      aria-hidden
+                    />
                   );
-                }
-                return (
-                  <div
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: '50%',
-                      background: 'var(--groupfit-border-light, #eee)',
-                      flexShrink: 0,
-                    }}
-                    aria-hidden
+                })()}
+                <div>
+                  <CloudinaryUploadButton
+                    onUpload={(url) => customerForm.setValue('avatarUrl', url)}
+                    label="Upload photo"
                   />
-                );
-              })()}
-              <div>
-                <CloudinaryUploadButton
-                  onUpload={(url) => customerForm.setValue('avatarUrl', url)}
-                  label="Upload photo"
-                />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div style={fieldStyle}>
-            <label htmlFor="customer-name" style={labelStyle}>
-              Name
-            </label>
-            <input
-              id="customer-name"
-              type="text"
-              {...customerForm.register('name')}
-              placeholder="Your name"
-              style={inputStyle}
-              aria-invalid={Boolean(customerForm.formState.errors.name)}
-            />
-            {customerForm.formState.errors.name && (
-              <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                {customerForm.formState.errors.name.message}
-              </span>
-            )}
-          </div>
-
-          <div style={fieldStyle}>
-            <label htmlFor="customer-email" style={labelStyle}>
-              Email
-            </label>
-            <input
-              id="customer-email"
-              type="email"
-              {...customerForm.register('email')}
-              readOnly
-              style={readOnlyInputStyle}
-              title="Email cannot be changed"
-            />
-          </div>
-
-          <div style={fieldStyle}>
-            <label htmlFor="customer-phone" style={labelStyle}>
-              Phone number
-            </label>
-            <input
-              id="customer-phone"
-              type="tel"
-              {...customerForm.register('phone')}
-              readOnly
-              style={readOnlyInputStyle}
-              title="Phone cannot be changed"
-            />
-          </div>
-
-          <div style={fieldStyle}>
-            <label htmlFor="customer-gender" style={labelStyle}>
-              Gender
-            </label>
-            <select
-              id="customer-gender"
-              {...customerForm.register('gender')}
-              style={inputStyle}
-              aria-invalid={Boolean(customerForm.formState.errors.gender)}
-            >
-              {GENDER_OPTIONS.map((opt) => (
-                <option key={opt.value || 'empty'} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={fieldStyle}>
-            <label htmlFor="customer-dob" style={labelStyle}>
-              Date of birth
-            </label>
-            <input
-              id="customer-dob"
-              type="date"
-              {...customerForm.register('dateOfBirth')}
-              style={inputStyle}
-              aria-invalid={Boolean(customerForm.formState.errors.dateOfBirth)}
-            />
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 12,
-              marginBottom: '1rem',
-            }}
-          >
-            <div>
-              <label htmlFor="customer-height" style={labelStyle}>
-                Height (cm)
+            <div style={fieldStyle}>
+              <label htmlFor="customer-name" style={labelStyle}>
+                Name
               </label>
               <input
-                id="customer-height"
-                type="number"
-                min={50}
-                max={300}
-                step={1}
-                placeholder="170"
-                {...customerForm.register('heightCm', { valueAsNumber: true })}
+                id="customer-name"
+                type="text"
+                {...customerForm.register('name')}
+                placeholder="Your name"
                 style={inputStyle}
-                aria-invalid={Boolean(customerForm.formState.errors.heightCm)}
+                aria-invalid={Boolean(customerForm.formState.errors.name)}
               />
-              {customerForm.formState.errors.heightCm && (
+              {customerForm.formState.errors.name && (
                 <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                  {customerForm.formState.errors.heightCm.message}
+                  {customerForm.formState.errors.name.message}
                 </span>
               )}
             </div>
-            <div>
-              <label htmlFor="customer-weight" style={labelStyle}>
-                Weight (kg)
+
+            <div style={fieldStyle}>
+              <label htmlFor="customer-email" style={labelStyle}>
+                Email
               </label>
               <input
-                id="customer-weight"
-                type="number"
-                min={20}
-                max={500}
-                step={0.1}
-                placeholder="70"
-                {...customerForm.register('weightKg', { valueAsNumber: true })}
-                style={inputStyle}
-                aria-invalid={Boolean(customerForm.formState.errors.weightKg)}
+                id="customer-email"
+                type="email"
+                {...customerForm.register('email')}
+                readOnly
+                style={readOnlyInputStyle}
+                title="Email cannot be changed"
               />
-              {customerForm.formState.errors.weightKg && (
-                <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                  {customerForm.formState.errors.weightKg.message}
-                </span>
-              )}
             </div>
-          </div>
 
-          <div style={fieldStyle}>
-            <label htmlFor="customer-conditions" style={labelStyle}>
-              Pre-existing conditions
-            </label>
-            <textarea
-              id="customer-conditions"
-              {...customerForm.register('preExistingConditions')}
-              placeholder="Any medical or health conditions we should know about (optional)"
-              rows={3}
-              style={{ ...inputStyle, resize: 'vertical' }}
-              aria-invalid={Boolean(customerForm.formState.errors.preExistingConditions)}
-            />
-            {customerForm.formState.errors.preExistingConditions && (
-              <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                {customerForm.formState.errors.preExistingConditions.message}
-              </span>
-            )}
-          </div>
+            <div style={fieldStyle}>
+              <label htmlFor="customer-phone" style={labelStyle}>
+                Phone number
+              </label>
+              <input
+                id="customer-phone"
+                type="tel"
+                {...customerForm.register('phone')}
+                readOnly
+                style={readOnlyInputStyle}
+                title="Phone cannot be changed"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={customerForm.formState.isSubmitting}
-            style={{
-              padding: '0.5rem 1.5rem',
-              background: 'var(--groupfit-secondary)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              fontWeight: 600,
-              cursor: customerForm.formState.isSubmitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {customerForm.formState.isSubmitting ? 'Saving...' : 'Save'}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={trainerForm.handleSubmit(onTrainerSubmit)}>
-          <div style={fieldStyle}>
-            <label htmlFor="name" style={labelStyle}>
-              Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              {...trainerForm.register('name')}
-              placeholder="Your name"
-              style={inputStyle}
-              aria-invalid={Boolean(trainerForm.formState.errors.name)}
-            />
-            {trainerForm.formState.errors.name && (
-              <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                {trainerForm.formState.errors.name.message}
-              </span>
-            )}
-          </div>
-          <div style={fieldStyle}>
-            <label htmlFor="email" style={labelStyle}>
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              {...trainerForm.register('email')}
-              readOnly
-              style={readOnlyInputStyle}
-            />
-          </div>
-          <div style={fieldStyle}>
-            <label htmlFor="phone" style={labelStyle}>
-              Phone
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              {...trainerForm.register('phone')}
-              placeholder="+44 7700 900000"
-              style={inputStyle}
-              aria-invalid={Boolean(trainerForm.formState.errors.phone)}
-            />
-            {trainerForm.formState.errors.phone && (
-              <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                {trainerForm.formState.errors.phone.message}
-              </span>
-            )}
-          </div>
-          <div style={fieldStyle}>
-            <label htmlFor="countryCode" style={labelStyle}>
-              Country
-            </label>
-            <select
-              id="countryCode"
-              {...countryRegister}
-              onChange={handleCountryChange}
-              style={inputStyle}
-              aria-invalid={Boolean(trainerForm.formState.errors.countryCode)}
-            >
-              {COUNTRY_CODES.map((country: CountryCode) => (
-                <option key={country.code} value={country.code}>
-                  {country.name}
-                </option>
-              ))}
-            </select>
-            {trainerForm.formState.errors.countryCode && (
-              <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                {trainerForm.formState.errors.countryCode.message}
-              </span>
-            )}
-          </div>
-          <div style={fieldStyle}>
-            <label htmlFor="state" style={labelStyle}>
-              State
-            </label>
-            {stateOptions ? (
+            <div style={fieldStyle}>
+              <label htmlFor="customer-gender" style={labelStyle}>
+                Gender
+              </label>
               <select
-                id="state"
-                {...trainerForm.register('state')}
+                id="customer-gender"
+                {...customerForm.register('gender')}
                 style={inputStyle}
-                aria-invalid={Boolean(trainerForm.formState.errors.state)}
+                aria-invalid={Boolean(customerForm.formState.errors.gender)}
               >
-                {stateOptions.map((opt) => (
-                  <option key={opt.code} value={opt.code}>
-                    {opt.name}
+                {GENDER_OPTIONS.map((opt) => (
+                  <option key={opt.value || 'empty'} value={opt.value}>
+                    {opt.label}
                   </option>
                 ))}
               </select>
-            ) : (
+            </div>
+
+            <div style={fieldStyle}>
+              <label htmlFor="customer-dob" style={labelStyle}>
+                Date of birth
+              </label>
               <input
-                id="state"
-                type="text"
-                {...trainerForm.register('state')}
-                placeholder="State / Province"
+                id="customer-dob"
+                type="date"
+                {...customerForm.register('dateOfBirth')}
                 style={inputStyle}
-                aria-invalid={Boolean(trainerForm.formState.errors.state)}
+                aria-invalid={Boolean(customerForm.formState.errors.dateOfBirth)}
               />
-            )}
-            {trainerForm.formState.errors.state && (
-              <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
-                {trainerForm.formState.errors.state.message}
-              </span>
-            )}
-          </div>
-          <button
-            type="submit"
-            disabled={trainerForm.formState.isSubmitting}
-            style={{
-              padding: '0.5rem 1.5rem',
-              background: 'var(--groupfit-secondary)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              fontWeight: 600,
-              cursor: trainerForm.formState.isSubmitting ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {trainerForm.formState.isSubmitting ? 'Saving...' : 'Save'}
-          </button>
-        </form>
-      )}
-    </main>
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 12,
+                marginBottom: '1rem',
+              }}
+            >
+              <div>
+                <label htmlFor="customer-height" style={labelStyle}>
+                  Height (cm)
+                </label>
+                <input
+                  id="customer-height"
+                  type="number"
+                  min={50}
+                  max={300}
+                  step={1}
+                  placeholder="170"
+                  {...customerForm.register('heightCm', { valueAsNumber: true })}
+                  style={inputStyle}
+                  aria-invalid={Boolean(customerForm.formState.errors.heightCm)}
+                />
+                {customerForm.formState.errors.heightCm && (
+                  <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
+                    {customerForm.formState.errors.heightCm.message}
+                  </span>
+                )}
+              </div>
+              <div>
+                <label htmlFor="customer-weight" style={labelStyle}>
+                  Weight (kg)
+                </label>
+                <input
+                  id="customer-weight"
+                  type="number"
+                  min={20}
+                  max={500}
+                  step={0.1}
+                  placeholder="70"
+                  {...customerForm.register('weightKg', { valueAsNumber: true })}
+                  style={inputStyle}
+                  aria-invalid={Boolean(customerForm.formState.errors.weightKg)}
+                />
+                {customerForm.formState.errors.weightKg && (
+                  <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
+                    {customerForm.formState.errors.weightKg.message}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div style={fieldStyle}>
+              <label htmlFor="customer-conditions" style={labelStyle}>
+                Pre-existing conditions
+              </label>
+              <textarea
+                id="customer-conditions"
+                {...customerForm.register('preExistingConditions')}
+                placeholder="Any medical or health conditions we should know about (optional)"
+                rows={3}
+                style={{ ...inputStyle, resize: 'vertical' }}
+                aria-invalid={Boolean(customerForm.formState.errors.preExistingConditions)}
+              />
+              {customerForm.formState.errors.preExistingConditions && (
+                <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
+                  {customerForm.formState.errors.preExistingConditions.message}
+                </span>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={customerForm.formState.isSubmitting}
+              style={{
+                padding: '0.5rem 1.5rem',
+                background: 'var(--groupfit-secondary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: customerForm.formState.isSubmitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {customerForm.formState.isSubmitting ? 'Saving...' : 'Save'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={trainerForm.handleSubmit(onTrainerSubmit)}>
+            <div style={fieldStyle}>
+              <label htmlFor="name" style={labelStyle}>
+                Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                {...trainerForm.register('name')}
+                placeholder="Your name"
+                style={inputStyle}
+                aria-invalid={Boolean(trainerForm.formState.errors.name)}
+              />
+              {trainerForm.formState.errors.name && (
+                <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
+                  {trainerForm.formState.errors.name.message}
+                </span>
+              )}
+            </div>
+            <div style={fieldStyle}>
+              <label htmlFor="email" style={labelStyle}>
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                {...trainerForm.register('email')}
+                readOnly
+                style={readOnlyInputStyle}
+              />
+            </div>
+            <div style={fieldStyle}>
+              <label htmlFor="phone" style={labelStyle}>
+                Phone
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                {...trainerForm.register('phone')}
+                placeholder="+44 7700 900000"
+                style={inputStyle}
+                aria-invalid={Boolean(trainerForm.formState.errors.phone)}
+              />
+              {trainerForm.formState.errors.phone && (
+                <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
+                  {trainerForm.formState.errors.phone.message}
+                </span>
+              )}
+            </div>
+            <div style={fieldStyle}>
+              <label htmlFor="countryCode" style={labelStyle}>
+                Country
+              </label>
+              <select
+                id="countryCode"
+                {...countryRegister}
+                onChange={handleCountryChange}
+                style={inputStyle}
+                aria-invalid={Boolean(trainerForm.formState.errors.countryCode)}
+              >
+                {COUNTRY_CODES.map((country: CountryCode) => (
+                  <option key={country.code} value={country.code}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+              {trainerForm.formState.errors.countryCode && (
+                <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
+                  {trainerForm.formState.errors.countryCode.message}
+                </span>
+              )}
+            </div>
+            <div style={fieldStyle}>
+              <label htmlFor="state" style={labelStyle}>
+                State
+              </label>
+              {stateOptions ? (
+                <select
+                  id="state"
+                  {...trainerForm.register('state')}
+                  style={inputStyle}
+                  aria-invalid={Boolean(trainerForm.formState.errors.state)}
+                >
+                  {stateOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  id="state"
+                  type="text"
+                  {...trainerForm.register('state')}
+                  placeholder="State / Province"
+                  style={inputStyle}
+                  aria-invalid={Boolean(trainerForm.formState.errors.state)}
+                />
+              )}
+              {trainerForm.formState.errors.state && (
+                <span style={{ color: 'var(--groupfit-secondary)', fontSize: '0.875rem' }}>
+                  {trainerForm.formState.errors.state.message}
+                </span>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={trainerForm.formState.isSubmitting}
+              style={{
+                padding: '0.5rem 1.5rem',
+                background: 'var(--groupfit-secondary)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: trainerForm.formState.isSubmitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {trainerForm.formState.isSubmitting ? 'Saving...' : 'Save'}
+            </button>
+          </form>
+        )}
+      </main>
+    </Layout>
   );
 }
