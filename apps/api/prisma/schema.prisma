@@ -23,6 +23,13 @@ model User {
   phone         String?        @unique // for OTP login
   otp           String?       // 4-digit OTP
   otpSentAt     DateTime?     @map("otp_sent_at") // expiry check (5 min)
+  // Customer profile (optional for all users)
+  avatarUrl     String?        @map("avatar_url") @db.Text
+  gender        String?        // e.g. male, female, other, prefer_not_to_say
+  dateOfBirth   DateTime?     @map("date_of_birth")
+  heightCm      Float?         @map("height_cm")
+  weightKg      Float?         @map("weight_kg")
+  preExistingConditions String? @map("pre_existing_conditions") @db.Text
   isActive      Boolean       @default(true) @map("is_active") // admin can deactivate customer/trainer
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

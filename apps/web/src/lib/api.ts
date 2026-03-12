@@ -26,6 +26,12 @@ export const customerApi = {
       phone?: string;
       locale?: string;
       countryCode?: string;
+      avatarUrl?: string;
+      gender?: string;
+      dateOfBirth?: string;
+      heightCm?: number;
+      weightKg?: number;
+      preExistingConditions?: string;
     }>('/customer/viewProfile', {}),
   /** Create Stripe PaymentIntent; returns clientSecret for Payment Element. */
   paymentSheet: (body: { amountCents?: number; currency?: string }) =>
@@ -34,8 +40,18 @@ export const customerApi = {
     api.post<{ mtype: string; status?: string }>('/customer/PaymentStatus', { paymentIntentId }),
   sessionPayment: (body: { sessionId?: string; paymentIntentId?: string }) =>
     api.post<{ mtype: string; paid?: boolean }>('/customer/sessionPayment', body),
-  editProfile: (body: { name?: string; phone?: string; locale?: string; countryCode?: string }) =>
-    api.post<{ mtype: string; message?: string }>('/customer/editProfile', body),
+  editProfile: (body: {
+    name?: string;
+    phone?: string;
+    locale?: string;
+    countryCode?: string;
+    avatarUrl?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    heightCm?: number;
+    weightKg?: number;
+    preExistingConditions?: string;
+  }) => api.post<{ mtype: string; message?: string }>('/customer/editProfile', body),
   paymentList: () => api.post<{ mtype: string; list?: unknown[] }>('/customer/PaymentList', {}),
 
   customerSessionList: (body: { status?: string }) =>

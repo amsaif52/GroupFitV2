@@ -378,26 +378,6 @@ export default function LocationsPage() {
       .finally(() => setActionId(null));
   };
 
-  const inputStyle = {
-    padding: 8,
-    width: '100%' as const,
-    maxWidth: 400,
-    marginBottom: 12,
-    borderRadius: 6,
-    border: '1px solid var(--groupfit-border-light)',
-  };
-  const labelStyle = { display: 'block' as const, marginBottom: 4, fontSize: 14, fontWeight: 600 };
-  const tabStyle = (active: boolean) => ({
-    padding: '10px 16px',
-    fontSize: 14,
-    fontWeight: 600,
-    border: '2px solid var(--groupfit-border-light)',
-    background: active ? 'var(--groupfit-secondary)' : '#fff',
-    color: active ? '#fff' : 'var(--groupfit-grey-dark)',
-    cursor: 'pointer' as const,
-    borderRadius: 6,
-  });
-
   const displayAddress = (row: LocationItem) =>
     row.address ||
     formatAddressFromParts({
@@ -411,7 +391,7 @@ export default function LocationsPage() {
 
   return (
     <CustomerLayout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
+      <header className="gf-home__header gf-locations__header">
         <span className="gf-home__logo">My Locations</span>
         <div className="gf-home__header-actions">
           <Link
@@ -421,288 +401,261 @@ export default function LocationsPage() {
           >
             🔔
           </Link>
+          <button
+            type="button"
+            onClick={openAdd}
+            className="gf-locations__add-btn gf-locations__add-btn--header"
+          >
+            + Add location
+          </button>
         </div>
       </header>
 
-      <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 16 }}>
-        Saved addresses for sessions. Add with Google search or enter manually. Choose a default.
-      </p>
+      <div className="gf-locations">
+        <p className="gf-locations__intro">
+          Saved addresses for sessions. Add with Google search or enter manually. Choose a default.
+        </p>
 
-      <Link
-        href={ROUTES.dashboard}
-        style={{
-          fontSize: 14,
-          color: 'var(--groupfit-secondary)',
-          fontWeight: 600,
-          marginBottom: 16,
-          display: 'inline-block',
-        }}
-      >
-        ← Dashboard
-      </Link>
+        <Link href={ROUTES.profile} className="gf-locations__back">
+          ← Profile
+        </Link>
 
-      {error && <p style={{ color: '#c00', marginBottom: 16 }}>{error}</p>}
+        {error && (
+          <div className="gf-locations__error" role="alert">
+            {error}
+          </div>
+        )}
 
-      <button
-        type="button"
-        onClick={openAdd}
-        style={{
-          marginBottom: 20,
-          padding: '10px 16px',
-          borderRadius: 8,
-          border: 'none',
-          background: 'var(--groupfit-secondary)',
-          color: '#fff',
-          fontWeight: 600,
-          cursor: 'pointer',
-        }}
-      >
-        Add location
-      </button>
-
-      {showForm && (
-        <div
-          style={{
-            marginBottom: 24,
-            padding: 20,
-            border: '1px solid var(--groupfit-border-light)',
-            borderRadius: 8,
-          }}
-        >
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
-            {editing ? 'Edit location' : 'New location'}
-          </h2>
-          <form onSubmit={handleSubmit}>
-            <label style={labelStyle}>Label *</label>
-            <input
-              type="text"
-              value={formLabel}
-              onChange={(e) => setFormLabel(e.target.value)}
-              placeholder="e.g. Home, Gym"
-              required
-              style={{ ...inputStyle, maxWidth: 280 }}
-            />
-
-            <p style={{ ...labelStyle, marginTop: 8 }}>Address</p>
-            {!GOOGLE_MAPS_API_KEY && (
-              <p style={{ fontSize: 13, color: 'var(--groupfit-grey)', marginBottom: 8 }}>
-                Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to use address search.
-              </p>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <button
-                type="button"
-                style={tabStyle(inputMode === 'autocomplete')}
-                onClick={() => setInputMode('autocomplete')}
-              >
-                Search with Google
-              </button>
-              <button
-                type="button"
-                style={tabStyle(inputMode === 'manual')}
-                onClick={() => setInputMode('manual')}
-              >
-                Enter manually
-              </button>
-            </div>
-
-            {inputMode === 'autocomplete' ? (
-              <>
-                <label style={labelStyle} htmlFor="locations-address-search">
-                  {GOOGLE_MAPS_API_KEY ? 'Search address' : 'Address'}
-                </label>
-                <input
-                  id="locations-address-search"
-                  ref={addressInputRef}
-                  type="text"
-                  value={formAddress}
-                  onChange={(e) => setFormAddress(e.target.value)}
-                  placeholder={GOOGLE_MAPS_API_KEY ? 'Start typing address…' : 'Street, city'}
-                  autoComplete="off"
-                  style={inputStyle}
-                />
-                <p style={{ fontSize: 12, color: 'var(--groupfit-grey)', marginTop: -4 }}>
-                  Selecting an address fills street, city, state, country and coordinates.
-                </p>
-              </>
-            ) : (
-              <>
-                <label style={labelStyle}>Street line 1 *</label>
-                <input
-                  type="text"
-                  value={formStreetLine1}
-                  onChange={(e) => setFormStreetLine1(e.target.value)}
-                  placeholder="Street number and name"
-                  style={inputStyle}
-                />
-                <label style={labelStyle}>Street line 2</label>
-                <input
-                  type="text"
-                  value={formStreetLine2}
-                  onChange={(e) => setFormStreetLine2(e.target.value)}
-                  placeholder="Apt, suite, unit, building (optional)"
-                  style={inputStyle}
-                />
-                <label style={labelStyle}>City *</label>
-                <input
-                  type="text"
-                  value={formCity}
-                  onChange={(e) => setFormCity(e.target.value)}
-                  placeholder="City"
-                  style={inputStyle}
-                />
-                <label style={labelStyle}>State / Province</label>
-                <input
-                  type="text"
-                  value={formStateProvince}
-                  onChange={(e) => setFormStateProvince(e.target.value)}
-                  placeholder="State or province"
-                  style={inputStyle}
-                />
-                <label style={labelStyle}>Postal code</label>
-                <input
-                  type="text"
-                  value={formPostalCode}
-                  onChange={(e) => setFormPostalCode(e.target.value)}
-                  placeholder="ZIP / postal code"
-                  style={inputStyle}
-                />
-                <label style={labelStyle}>Country</label>
-                <input
-                  type="text"
-                  value={formCountry}
-                  onChange={(e) => setFormCountry(e.target.value)}
-                  placeholder="Country"
-                  style={inputStyle}
-                />
-              </>
-            )}
-
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button
-                type="submit"
-                disabled={submitLoading}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'var(--groupfit-secondary)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  cursor: submitLoading ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
-              </button>
-              <button
-                type="button"
-                onClick={closeForm}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  border: '1px solid #666',
-                  background: '#fff',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {loading ? (
-        <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
-      ) : list.length === 0 ? (
-        <div className="gf-home__empty">No saved locations. Add one above.</div>
-      ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {list.map((row) => (
-            <li
-              key={row.id}
-              style={{
-                padding: 16,
-                marginBottom: 12,
-                border: '1px solid var(--groupfit-border-light)',
-                borderRadius: 8,
-              }}
+        {showForm && (
+          <div
+            className="gf-locations-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gf-locations-modal-title"
+          >
+            <div className="gf-locations-modal__backdrop" onClick={closeForm} aria-hidden />
+            <div
+              className="gf-locations-modal__box"
+              role="document"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontWeight: 600 }}>{row.label}</span>
-                {(row.isDefault || defaultLocation?.id === row.id) && (
-                  <span
-                    style={{ fontSize: 12, fontWeight: 600, color: 'var(--groupfit-secondary)' }}
-                  >
-                    Default
-                  </span>
-                )}
+              <button
+                type="button"
+                className="gf-locations-modal__close"
+                onClick={closeForm}
+                aria-label="Close"
+              >
+                ×
+              </button>
+              <div className="gf-locations-form">
+                <h2 id="gf-locations-modal-title" className="gf-locations-form__title">
+                  {editing ? 'Edit location' : 'New location'}
+                </h2>
+                <form onSubmit={handleSubmit}>
+                  <label className="gf-locations-form__label" htmlFor="locations-label">
+                    Label *
+                  </label>
+                  <input
+                    id="locations-label"
+                    type="text"
+                    value={formLabel}
+                    onChange={(e) => setFormLabel(e.target.value)}
+                    placeholder="e.g. Home, Gym"
+                    required
+                    className="gf-locations-form__input gf-locations-form__input--narrow"
+                  />
+
+                  <div className="gf-locations-form__section">
+                    <span className="gf-locations-form__section-title">Address</span>
+                    {!GOOGLE_MAPS_API_KEY && (
+                      <p className="gf-locations-form__hint">
+                        Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to use address search.
+                      </p>
+                    )}
+                    <div className="gf-locations-form__tabs" role="tablist">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={inputMode === 'autocomplete'}
+                        className={`gf-locations-form__tab${inputMode === 'autocomplete' ? ' gf-locations-form__tab--active' : ''}`}
+                        onClick={() => setInputMode('autocomplete')}
+                      >
+                        Search with Google
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={inputMode === 'manual'}
+                        className={`gf-locations-form__tab${inputMode === 'manual' ? ' gf-locations-form__tab--active' : ''}`}
+                        onClick={() => setInputMode('manual')}
+                      >
+                        Enter manually
+                      </button>
+                    </div>
+
+                    {inputMode === 'autocomplete' ? (
+                      <>
+                        <label
+                          className="gf-locations-form__label"
+                          htmlFor="locations-address-search"
+                        >
+                          {GOOGLE_MAPS_API_KEY ? 'Search address' : 'Address'}
+                        </label>
+                        <input
+                          id="locations-address-search"
+                          ref={addressInputRef}
+                          type="text"
+                          value={formAddress}
+                          onChange={(e) => setFormAddress(e.target.value)}
+                          placeholder={
+                            GOOGLE_MAPS_API_KEY ? 'Start typing address…' : 'Street, city'
+                          }
+                          autoComplete="off"
+                          className="gf-locations-form__input"
+                        />
+                        <p className="gf-locations-form__hint">
+                          Selecting an address fills street, city, state, country and coordinates.
+                        </p>
+                      </>
+                    ) : (
+                      <div className="gf-locations-form__grid">
+                        <div className="gf-locations-form__field gf-locations-form__field--full">
+                          <label className="gf-locations-form__label">Street line 1 *</label>
+                          <input
+                            type="text"
+                            value={formStreetLine1}
+                            onChange={(e) => setFormStreetLine1(e.target.value)}
+                            placeholder="Street number and name"
+                            className="gf-locations-form__input"
+                          />
+                        </div>
+                        <div className="gf-locations-form__field gf-locations-form__field--full">
+                          <label className="gf-locations-form__label">Street line 2</label>
+                          <input
+                            type="text"
+                            value={formStreetLine2}
+                            onChange={(e) => setFormStreetLine2(e.target.value)}
+                            placeholder="Apt, suite, unit, building (optional)"
+                            className="gf-locations-form__input"
+                          />
+                        </div>
+                        <div className="gf-locations-form__field">
+                          <label className="gf-locations-form__label">City *</label>
+                          <input
+                            type="text"
+                            value={formCity}
+                            onChange={(e) => setFormCity(e.target.value)}
+                            placeholder="City"
+                            className="gf-locations-form__input"
+                          />
+                        </div>
+                        <div className="gf-locations-form__field">
+                          <label className="gf-locations-form__label">State / Province</label>
+                          <input
+                            type="text"
+                            value={formStateProvince}
+                            onChange={(e) => setFormStateProvince(e.target.value)}
+                            placeholder="State or province"
+                            className="gf-locations-form__input"
+                          />
+                        </div>
+                        <div className="gf-locations-form__field">
+                          <label className="gf-locations-form__label">Postal code</label>
+                          <input
+                            type="text"
+                            value={formPostalCode}
+                            onChange={(e) => setFormPostalCode(e.target.value)}
+                            placeholder="ZIP / postal code"
+                            className="gf-locations-form__input"
+                          />
+                        </div>
+                        <div className="gf-locations-form__field">
+                          <label className="gf-locations-form__label">Country</label>
+                          <input
+                            type="text"
+                            value={formCountry}
+                            onChange={(e) => setFormCountry(e.target.value)}
+                            placeholder="Country"
+                            className="gf-locations-form__input"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="gf-locations-form__actions">
+                    <button
+                      type="submit"
+                      disabled={submitLoading}
+                      className="gf-locations-btn gf-locations-btn--primary"
+                    >
+                      {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={closeForm}
+                      className="gf-locations-btn gf-locations-btn--secondary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </div>
-              {displayAddress(row) && (
-                <div style={{ fontSize: 14, color: 'var(--groupfit-grey)' }}>
-                  {displayAddress(row)}
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <p className="gf-locations-loading">Loading…</p>
+        ) : list.length === 0 ? (
+          <div className="gf-home__empty">No saved locations. Add one above.</div>
+        ) : (
+          <ul className="gf-locations-list">
+            {list.map((row) => (
+              <li key={row.id} className="gf-locations-card">
+                <div className="gf-locations-card__head">
+                  <span className="gf-locations-card__title">{row.label}</span>
+                  {(row.isDefault || defaultLocation?.id === row.id) && (
+                    <span className="gf-locations-card__badge">Default</span>
+                  )}
                 </div>
-              )}
-              <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  onClick={() => handleSetDefault(row)}
-                  disabled={
-                    actionId === row.id || (row.isDefault ?? defaultLocation?.id === row.id)
-                  }
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: 13,
-                    borderRadius: 6,
-                    border: '1px solid var(--groupfit-secondary)',
-                    background:
-                      row.isDefault || defaultLocation?.id === row.id
-                        ? 'var(--groupfit-border-light)'
-                        : '#fff',
-                    color: 'var(--groupfit-secondary)',
-                    cursor: row.isDefault || defaultLocation?.id === row.id ? 'default' : 'pointer',
-                  }}
-                >
-                  {row.isDefault || defaultLocation?.id === row.id
-                    ? 'Default address'
-                    : 'Set as default'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openEdit(row)}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: 13,
-                    borderRadius: 6,
-                    border: '1px solid var(--groupfit-secondary)',
-                    background: '#fff',
-                    color: 'var(--groupfit-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(row.id)}
-                  disabled={actionId === row.id}
-                  style={{
-                    padding: '6px 12px',
-                    fontSize: 13,
-                    borderRadius: 6,
-                    border: '1px solid #c00',
-                    background: '#fff',
-                    color: '#c00',
-                    cursor: actionId === row.id ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {actionId === row.id ? '…' : 'Remove'}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+                {displayAddress(row) && (
+                  <div className="gf-locations-card__address">{displayAddress(row)}</div>
+                )}
+                <div className="gf-locations-card__actions">
+                  <button
+                    type="button"
+                    onClick={() => handleSetDefault(row)}
+                    disabled={
+                      actionId === row.id || (row.isDefault ?? defaultLocation?.id === row.id)
+                    }
+                    className={`gf-locations-card-btn gf-locations-card-btn--default${row.isDefault || defaultLocation?.id === row.id ? ' is-active' : ''}`}
+                  >
+                    {row.isDefault || defaultLocation?.id === row.id
+                      ? 'Default address'
+                      : 'Set as default'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(row)}
+                    className="gf-locations-card-btn gf-locations-card-btn--outline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(row.id)}
+                    disabled={actionId === row.id}
+                    className="gf-locations-card-btn gf-locations-card-btn--danger"
+                  >
+                    {actionId === row.id ? '…' : 'Remove'}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </CustomerLayout>
   );
 }

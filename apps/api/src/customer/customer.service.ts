@@ -98,7 +98,7 @@ export class CustomerService {
     };
   }
 
-  /** Get profile for the current user (JWT sub). Returns legacy-shaped object. */
+  /** Get profile for the current user (JWT sub). Returns legacy-shaped object + customer profile fields. */
   async viewProfile(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -112,6 +112,12 @@ export class CustomerService {
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
       countryCode: user.countryCode ?? undefined,
+      avatarUrl: user.avatarUrl ?? undefined,
+      gender: user.gender ?? undefined,
+      dateOfBirth: user.dateOfBirth?.toISOString().slice(0, 10) ?? undefined,
+      heightCm: user.heightCm ?? undefined,
+      weightKg: user.weightKg ?? undefined,
+      preExistingConditions: user.preExistingConditions ?? undefined,
     };
   }
 
@@ -119,14 +125,25 @@ export class CustomerService {
   async editProfile(userId: string, dto: EditProfileDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+    const data: Parameters<typeof this.prisma.user.update>[0]['data'] = {
+      ...(dto.name !== undefined && { name: dto.name }),
+      ...(dto.locale !== undefined && { locale: dto.locale }),
+      ...(dto.phone !== undefined && { phone: dto.phone }),
+      ...(dto.countryCode !== undefined && { countryCode: dto.countryCode || null }),
+      ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl || null }),
+      ...(dto.gender !== undefined && { gender: dto.gender || null }),
+      ...(dto.dateOfBirth !== undefined && {
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
+      }),
+      ...(dto.heightCm !== undefined && { heightCm: dto.heightCm ?? null }),
+      ...(dto.weightKg !== undefined && { weightKg: dto.weightKg ?? null }),
+      ...(dto.preExistingConditions !== undefined && {
+        preExistingConditions: dto.preExistingConditions || null,
+      }),
+    };
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.locale !== undefined && { locale: dto.locale }),
-        ...(dto.phone !== undefined && { phone: dto.phone }),
-        ...(dto.countryCode !== undefined && { countryCode: dto.countryCode || null }),
-      },
+      data,
     });
     return {
       mtype: 'success',
@@ -137,6 +154,12 @@ export class CustomerService {
       locale: updated.locale ?? 'en',
       phone: updated.phone ?? '',
       countryCode: updated.countryCode ?? undefined,
+      avatarUrl: updated.avatarUrl ?? undefined,
+      gender: updated.gender ?? undefined,
+      dateOfBirth: updated.dateOfBirth?.toISOString().slice(0, 10) ?? undefined,
+      heightCm: updated.heightCm ?? undefined,
+      weightKg: updated.weightKg ?? undefined,
+      preExistingConditions: updated.preExistingConditions ?? undefined,
     };
   }
 
