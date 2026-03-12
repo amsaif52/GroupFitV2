@@ -19,7 +19,7 @@ export default {
     signUpTitle: 'Set Up Your Account',
     createAccount: 'Create account',
     alreadyHaveAccount: 'Already a member?',
-    enterEmailPassword: 'Enter your email and password',
+    enterPhoneNumberOrEmail: 'Enter your phone number or email',
     enterDetailsToCreateAccount: 'Enter your details to create your account',
     name: 'Name',
     confirmPassword: 'Confirm password',

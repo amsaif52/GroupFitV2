@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { SignupFormInput } from '../../utils/auth-schemas';
 import { signupFormSchema, SIGNUP_ROLES } from '../../utils/auth-schemas';
@@ -208,6 +208,7 @@ export function SignupScreenWeb({
 
   const {
     register,
+    control,
     handleSubmit: rhfHandleSubmit,
     formState: { errors },
     watch,
@@ -296,12 +297,6 @@ export function SignupScreenWeb({
           <h1 className="gf-auth__title">{resolvedTitle}</h1>
           {showSubtitle && <p className="gf-auth__subtitle">{resolvedSubtitle}</p>}
         </div>
-      )}
-
-      {signupStep !== 'otp' && (
-        <p className="gf-auth__or" aria-hidden>
-          {orLabel}
-        </p>
       )}
 
       {signupStep === 'otp' ? (
@@ -484,24 +479,38 @@ export function SignupScreenWeb({
             </label>
 
             <label className="gf-auth__label">
-              {stateOptions ? (
-                <Select
-                  options={stateOptions.map(({ code, name }) => ({ value: code, label: name }))}
-                  placeholder={stateLabel}
-                  variant="default"
-                  className="gf-auth__input"
-                  aria-invalid={Boolean(errors.state)}
-                  {...register('state')}
-                />
-              ) : (
-                <input
-                  type="text"
-                  {...register('state')}
-                  placeholder={stateLabel}
-                  className="gf-auth__input"
-                  aria-invalid={Boolean(errors.state)}
-                />
-              )}
+              <Controller
+                name="state"
+                control={control}
+                render={({ field }) =>
+                  stateOptions ? (
+                    <Select
+                      options={stateOptions.map(({ code, name }) => ({ value: code, label: name }))}
+                      placeholder={stateLabel}
+                      variant="default"
+                      className="gf-auth__input"
+                      aria-invalid={Boolean(errors.state)}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      name={field.name}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                      name={field.name}
+                      placeholder={stateLabel}
+                      className="gf-auth__input"
+                      aria-invalid={Boolean(errors.state)}
+                    />
+                  )
+                }
+              />
               {errors.state && (
                 <span className="gf-auth__field-error" role="alert">
                   {errors.state.message}
@@ -511,15 +520,25 @@ export function SignupScreenWeb({
 
             <label className="gf-auth__label">
               <span className="gf-auth__label-text">{roleLabel}</span>
-              <Select
-                options={SIGNUP_ROLES.map((r) => ({
-                  value: r,
-                  label: r.charAt(0).toUpperCase() + r.slice(1),
-                }))}
-                variant="default"
-                className="gf-auth__input"
-                aria-invalid={Boolean(errors.role)}
-                {...register('role')}
+              <Controller
+                name="role"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    options={SIGNUP_ROLES.map((r) => ({
+                      value: r,
+                      label: r.charAt(0).toUpperCase() + r.slice(1),
+                    }))}
+                    variant="default"
+                    className="gf-auth__input"
+                    aria-invalid={Boolean(errors.role)}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    name={field.name}
+                  />
+                )}
               />
               {errors.role && (
                 <span className="gf-auth__field-error" role="alert">

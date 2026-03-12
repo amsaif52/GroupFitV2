@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { CustomerLayout } from '../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { useDefaultLocation } from '@/contexts/DefaultLocationContext';
@@ -118,39 +119,10 @@ export default function ActivitiesPage() {
 
   return (
     <CustomerLayout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <span className="gf-home__logo">Activities</span>
-        <div
-          className="gf-home__header-actions"
-          style={{ display: 'flex', alignItems: 'center', gap: 12 }}
-        >
-          {defaultLocation ? (
-            <Link
-              href={ROUTES.locations}
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: 'var(--groupfit-secondary)',
-                padding: '4px 10px',
-                background: 'var(--groupfit-border-light)',
-                borderRadius: 8,
-              }}
-            >
-              📍 {defaultLocation.label}
-            </Link>
-          ) : null}
-          <Link
-            href={ROUTES.notifications}
-            className="gf-home__header-link"
-            aria-label="Notifications"
-          >
-            🔔
-          </Link>
-        </div>
-      </header>
+      <CustomerHeader title="Activities" />
       {defaultLocation && hasLocationCoords ? (
         <p style={{ fontSize: 13, color: 'var(--groupfit-grey)', marginBottom: 12 }}>
-          Showing activities at your default address
+          Showing activities at your selected location
         </p>
       ) : null}
       {!defaultLocation ? (

@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, Ref } from 'react';
 
 export interface SelectOption {
   value: string;
@@ -22,4 +22,6 @@ export interface SelectProps {
   'aria-invalid'?: boolean;
   id?: string;
   disabled?: boolean;
+  /** Ref for the underlying select (e.g. react-hook-form Controller) */
+  ref?: Ref<HTMLSelectElement>;
 }

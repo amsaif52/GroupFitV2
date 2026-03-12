@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ROUTES, getProfileLink } from '../routes';
 import { CustomerLayout } from '../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { TrainerLayout } from '../TrainerLayout';
 import { api, customerApi, trainerApi } from '@/lib/api';
 import { formatZero } from '@/lib/currency';
@@ -689,14 +690,8 @@ export default function DashboardPage() {
             >
               🔔
             </Link>
-            <Link href={ROUTES.account} className="gf-home__avatar" aria-label="Account" />
           </div>
         </header>
-        {user && (
-          <p style={{ marginBottom: 16, color: 'var(--groupfit-grey)', fontSize: 14 }}>
-            {user.name ?? user.email ?? user.sub} {user.role && `(${user.role})`}
-          </p>
-        )}
         <TrainerDashboardContent user={user} />
       </TrainerLayout>
     );
@@ -704,19 +699,7 @@ export default function DashboardPage() {
 
   return (
     <CustomerLayout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <span className="gf-home__logo">GroupFit</span>
-        <div className="gf-home__header-actions">
-          <Link
-            href={ROUTES.notifications}
-            className="gf-home__header-link"
-            aria-label="Notifications"
-          >
-            🔔
-          </Link>
-          <Link href={ROUTES.account} className="gf-home__avatar" aria-label="Account" />
-        </div>
-      </header>
+      <CustomerHeader title="GroupFit" />
       <CustomerDashboardContent user={user} />
     </CustomerLayout>
   );

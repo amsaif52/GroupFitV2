@@ -1,23 +1,28 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { CustomerLayout } from '../../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { customerApi } from '@/lib/api';
 import { formatPriceCents } from '@/lib/currency';
+import { useDefaultLocation } from '@/contexts/DefaultLocationContext';
 import { ROUTES } from '../../routes';
 
 type ActivityDetail = Record<string, unknown>;
 
 export default function ActivityDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string | undefined;
+  const { defaultLocation } = useDefaultLocation();
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<ActivityDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isFavourite, setIsFavourite] = useState(false);
   const [favouriteLoading, setFavouriteLoading] = useState(false);
+  const [showNoLocationModal, setShowNoLocationModal] = useState(false);
 
   const activityCode =
     detail && typeof detail.code === 'string'
@@ -132,16 +137,43 @@ export default function ActivityDetailPage() {
     ? `${ROUTES.trainers}?activity=${encodeURIComponent(activityCode)}`
     : ROUTES.trainers;
 
+  const handleCreateBookingClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (defaultLocation) {
+      router.push(bookingHref);
+    } else {
+      setShowNoLocationModal(true);
+    }
+  };
+
+  const handleAddLocationThenProceed = () => {
+    setShowNoLocationModal(false);
+    router.push(ROUTES.locations);
+  };
+
+  const handleContinueWithoutLocation = () => {
+    setShowNoLocationModal(false);
+    router.push(bookingHref);
+  };
+
   return (
     <CustomerLayout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <Link
-          href={ROUTES.activities}
-          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-        >
-          ← Activities
-        </Link>
-      </header>
+      <CustomerHeader
+        title="Activity"
+        backLink={
+          <Link
+            href={ROUTES.activities}
+            style={{
+              fontSize: 14,
+              color: 'rgba(255,255,255,0.95)',
+              fontWeight: 600,
+              marginRight: 12,
+            }}
+          >
+            ← Activities
+          </Link>
+        }
+      />
 
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
@@ -189,13 +221,63 @@ export default function ActivityDetailPage() {
           {description ? <p className="gf-activity-detail__description">{description}</p> : null}
 
           <div className="gf-activity-detail__actions">
-            <Link
-              href={bookingHref}
+            <button
+              type="button"
+              onClick={handleCreateBookingClick}
               className="gf-button gf-button--primary gf-button--md gf-button--full"
             >
               Create booking
-            </Link>
+            </button>
           </div>
+
+          {showNoLocationModal && (
+            <div
+              className="gf-groups-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="gf-activity-no-location-title"
+            >
+              <div
+                className="gf-groups-modal__backdrop"
+                onClick={() => setShowNoLocationModal(false)}
+                aria-hidden
+              />
+              <div
+                className="gf-groups-modal__box"
+                role="document"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="gf-groups-form">
+                  <h2 id="gf-activity-no-location-title" className="gf-groups-form__title">
+                    Add a location
+                  </h2>
+                  <p
+                    className="gf-groups-form__section-title"
+                    style={{ marginBottom: 16, fontWeight: 400 }}
+                  >
+                    Add a default location to find trainers near you. You can add one now or
+                    continue to choose a trainer.
+                  </p>
+                  <div className="gf-groups-form__actions" style={{ marginTop: 8 }}>
+                    <button
+                      type="button"
+                      onClick={handleAddLocationThenProceed}
+                      className="gf-locations-btn gf-locations-btn--primary"
+                    >
+                      Add location
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleContinueWithoutLocation}
+                      className="gf-locations-btn gf-locations-btn--secondary"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Link href={ROUTES.activities} className="gf-activity-detail__back">
             ← Back to activities

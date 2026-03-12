@@ -255,6 +255,7 @@ describe('CustomerService', () => {
         },
       ];
       mockPrisma.group.findMany.mockResolvedValue(groups);
+      mockPrisma.groupMember.findMany.mockResolvedValue([]);
       const result = await service.fetchallgroupslist('cust-1');
       expect(result.mtype).toBe('success');
       expect(result.fetchallgroupslist).toHaveLength(1);
@@ -370,13 +371,43 @@ describe('CustomerService', () => {
       expect(result.message).toBe('Member not found');
     });
 
-    it('deletes member and returns success', async () => {
+    it('deletes member when owner removes member', async () => {
       mockPrisma.group.findFirst.mockResolvedValue({ id: 'g1', ownerId: 'cust-1' });
-      mockPrisma.groupMember.findFirst.mockResolvedValue({ id: 'gm-1', groupId: 'g1' });
+      mockPrisma.groupMember.findFirst.mockResolvedValue({
+        id: 'gm-1',
+        groupId: 'g1',
+        userId: 'user-2',
+      });
       mockPrisma.groupMember.delete.mockResolvedValue(undefined);
       const result = await service.updategroupmember('cust-1', 'g1', 'gm-1');
       expect(result.mtype).toBe('success');
       expect(mockPrisma.groupMember.delete).toHaveBeenCalledWith({ where: { id: 'gm-1' } });
+    });
+
+    it('deletes member when member removes self', async () => {
+      mockPrisma.group.findFirst.mockResolvedValue({ id: 'g1', ownerId: 'owner-1' });
+      mockPrisma.groupMember.findFirst.mockResolvedValue({
+        id: 'gm-1',
+        groupId: 'g1',
+        userId: 'cust-1',
+      });
+      mockPrisma.groupMember.delete.mockResolvedValue(undefined);
+      const result = await service.updategroupmember('cust-1', 'g1', 'gm-1');
+      expect(result.mtype).toBe('success');
+      expect(mockPrisma.groupMember.delete).toHaveBeenCalledWith({ where: { id: 'gm-1' } });
+    });
+
+    it('returns error when non-owner tries to remove another member', async () => {
+      mockPrisma.group.findFirst.mockResolvedValue({ id: 'g1', ownerId: 'owner-1' });
+      mockPrisma.groupMember.findFirst.mockResolvedValue({
+        id: 'gm-1',
+        groupId: 'g1',
+        userId: 'user-2',
+      });
+      const result = await service.updategroupmember('cust-1', 'g1', 'gm-1');
+      expect(result.mtype).toBe('error');
+      expect(result.message).toBe('Only the group owner can remove other members');
+      expect(mockPrisma.groupMember.delete).not.toHaveBeenCalled();
     });
   });
 

@@ -1,17 +1,23 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import type { SelectProps } from './Select';
 
-export default function SelectWeb({
-  options,
-  value,
-  onValueChange,
-  placeholder,
-  variant = 'default',
-  className: classNameProp,
-  'aria-label': ariaLabel,
-  'aria-invalid': ariaInvalid,
-  ...rest
-}: SelectProps & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'onValueChange'>) {
+const SelectWeb = forwardRef<
+  HTMLSelectElement,
+  SelectProps & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'onValueChange'>
+>(function SelectWeb(
+  {
+    options,
+    value,
+    onValueChange,
+    placeholder,
+    variant = 'default',
+    className: classNameProp,
+    'aria-label': ariaLabel,
+    'aria-invalid': ariaInvalid,
+    ...rest
+  },
+  ref
+) {
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onValueChange?.(e.target.value);
     rest.onChange?.(e);
@@ -28,6 +34,7 @@ export default function SelectWeb({
   return (
     <select
       {...rest}
+      ref={ref}
       className={className}
       value={value}
       onChange={handleChange}
@@ -42,4 +49,6 @@ export default function SelectWeb({
       ))}
     </select>
   );
-}
+});
+
+export default SelectWeb;

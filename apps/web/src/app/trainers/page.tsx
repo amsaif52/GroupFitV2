@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CustomerLayout } from '../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { useDefaultLocation } from '@/contexts/DefaultLocationContext';
@@ -57,36 +58,10 @@ export default function TrainersPage() {
 
   return (
     <CustomerLayout>
-      <header
-        className="gf-home__header"
-        style={{
-          marginBottom: 16,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
-        <span className="gf-home__logo">My Trainers</span>
-        {defaultLocation ? (
-          <Link
-            href={ROUTES.locations}
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--groupfit-secondary)',
-              padding: '4px 10px',
-              background: 'var(--groupfit-border-light)',
-              borderRadius: 8,
-            }}
-          >
-            📍 {defaultLocation.label}
-          </Link>
-        ) : null}
-      </header>
+      <CustomerHeader title="My Trainers" />
       {defaultLocation && hasLocationCoords ? (
         <p style={{ fontSize: 13, color: 'var(--groupfit-grey)', marginBottom: 12 }}>
-          Showing trainers at your default address
+          Showing trainers at your selected location
         </p>
       ) : null}
       {!defaultLocation ? (
@@ -95,7 +70,7 @@ export default function TrainersPage() {
             href={ROUTES.locations}
             style={{ fontSize: 13, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
           >
-            Set a default address
+            Add a location
           </Link>{' '}
           to see trainers near you.
         </p>

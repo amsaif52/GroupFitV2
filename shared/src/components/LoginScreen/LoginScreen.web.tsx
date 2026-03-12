@@ -280,12 +280,6 @@ export function LoginScreenWeb({
         </div>
       )}
 
-      {!otpStep && (
-        <p className="gf-auth__or" aria-hidden>
-          {orLabel}
-        </p>
-      )}
-
       {showSocial && !otpStep && (
         <div className="gf-auth__social">
           {googleButton != null ? (

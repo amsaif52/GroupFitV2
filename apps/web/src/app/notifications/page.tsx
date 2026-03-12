@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CustomerLayout } from '../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
@@ -82,35 +83,43 @@ export default function NotificationsPage() {
 
   return (
     <CustomerLayout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <Link
-          href={ROUTES.dashboard}
-          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-        >
-          ← Dashboard
-        </Link>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginTop: 8 }}>Notifications</h1>
-        {unreadCount > 0 && (
-          <button
-            type="button"
-            onClick={handleMarkAllRead}
-            disabled={actionId === 'all'}
+      <CustomerHeader
+        title="Notifications"
+        backLink={
+          <Link
+            href={ROUTES.dashboard}
             style={{
-              marginTop: 8,
-              padding: '8px 12px',
               fontSize: 14,
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--groupfit-secondary)',
-              color: '#fff',
+              color: 'rgba(255,255,255,0.95)',
               fontWeight: 600,
-              cursor: actionId === 'all' ? 'not-allowed' : 'pointer',
+              marginRight: 12,
             }}
           >
-            {actionId === 'all' ? 'Updating…' : `Mark all as read (${unreadCount})`}
-          </button>
-        )}
-      </header>
+            ← Dashboard
+          </Link>
+        }
+        rightContent={
+          unreadCount > 0 ? (
+            <button
+              type="button"
+              onClick={handleMarkAllRead}
+              disabled={actionId === 'all'}
+              style={{
+                padding: '8px 12px',
+                fontSize: 14,
+                borderRadius: 8,
+                border: 'none',
+                background: 'var(--groupfit-secondary)',
+                color: '#fff',
+                fontWeight: 600,
+                cursor: actionId === 'all' ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {actionId === 'all' ? 'Updating…' : `Mark all as read (${unreadCount})`}
+            </button>
+          ) : null
+        }
+      />
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
       ) : error ? (

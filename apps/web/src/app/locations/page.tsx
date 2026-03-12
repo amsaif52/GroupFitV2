@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { CustomerLayout } from '../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
@@ -87,7 +88,8 @@ function formatAddressFromParts(parts: {
 }
 
 export default function LocationsPage() {
-  const { defaultLocation, setDefaultLocation, clearDefaultLocation } = useDefaultLocation();
+  const { selectedLocation, setSelectedLocation, refetchLocations, clearDefaultLocation } =
+    useDefaultLocation();
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState<LocationItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -122,16 +124,7 @@ export default function LocationsPage() {
             (data?.customerServiceList as LocationItem[]) ?? (data?.list as LocationItem[]) ?? [];
           setList(locations);
           setError(null);
-          const defaultLoc = locations.find((l) => l.isDefault);
-          if (defaultLoc) {
-            setDefaultLocation({
-              id: defaultLoc.id,
-              label: defaultLoc.label,
-              address: defaultLoc.address,
-              latitude: defaultLoc.latitude,
-              longitude: defaultLoc.longitude,
-            });
-          }
+          refetchLocations();
         }
       })
       .catch((err) => {
@@ -314,6 +307,7 @@ export default function LocationsPage() {
           if (data?.mtype === 'success') {
             closeForm();
             fetchList();
+            refetchLocations();
           } else {
             setError(String(data?.message ?? 'Update failed'));
           }
@@ -328,6 +322,7 @@ export default function LocationsPage() {
           if (data?.mtype === 'success') {
             closeForm();
             fetchList();
+            refetchLocations();
           } else {
             setError(String(data?.message ?? 'Add failed'));
           }
@@ -335,31 +330,6 @@ export default function LocationsPage() {
         .catch((err) => setError(getApiErrorMessage(err, 'Add failed')))
         .finally(() => setSubmitLoading(false));
     }
-  };
-
-  const handleSetDefault = (row: LocationItem) => {
-    setActionId(row.id);
-    customerApi
-      .setDefaultCustomerLocation(row.id)
-      .then((res) => {
-        const data = res?.data as Record<string, unknown>;
-        if (data?.mtype === 'success') {
-          setDefaultLocation({
-            id: row.id,
-            label: row.label,
-            address: row.address,
-            latitude: row.latitude,
-            longitude: row.longitude,
-          });
-          fetchList();
-        } else {
-          setError(String(data?.message ?? 'Failed to set default'));
-        }
-      })
-      .catch((err) => {
-        setError(getApiErrorMessage(err, 'Failed to set default'));
-      })
-      .finally(() => setActionId(null));
   };
 
   const handleDelete = (id: string) => {
@@ -370,8 +340,9 @@ export default function LocationsPage() {
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
         if (data?.mtype === 'success') {
-          if (defaultLocation?.id === id) clearDefaultLocation();
+          if (selectedLocation?.id === id) clearDefaultLocation();
           fetchList();
+          refetchLocations();
         } else setError(String(data?.message ?? 'Delete failed'));
       })
       .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
@@ -391,16 +362,10 @@ export default function LocationsPage() {
 
   return (
     <CustomerLayout>
-      <header className="gf-home__header gf-locations__header">
-        <span className="gf-home__logo">My Locations</span>
-        <div className="gf-home__header-actions">
-          <Link
-            href={ROUTES.notifications}
-            className="gf-home__header-link"
-            aria-label="Notifications"
-          >
-            🔔
-          </Link>
+      <CustomerHeader
+        title="My Locations"
+        className="gf-locations__header"
+        rightContent={
           <button
             type="button"
             onClick={openAdd}
@@ -408,12 +373,13 @@ export default function LocationsPage() {
           >
             + Add location
           </button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="gf-locations">
         <p className="gf-locations__intro">
-          Saved addresses for sessions. Add with Google search or enter manually. Choose a default.
+          Saved addresses for sessions. Add with Google search or enter manually. Select your
+          location from the header dropdown to use it across the app.
         </p>
 
         <Link href={ROUTES.profile} className="gf-locations__back">
@@ -615,26 +581,11 @@ export default function LocationsPage() {
               <li key={row.id} className="gf-locations-card">
                 <div className="gf-locations-card__head">
                   <span className="gf-locations-card__title">{row.label}</span>
-                  {(row.isDefault || defaultLocation?.id === row.id) && (
-                    <span className="gf-locations-card__badge">Default</span>
-                  )}
                 </div>
                 {displayAddress(row) && (
                   <div className="gf-locations-card__address">{displayAddress(row)}</div>
                 )}
                 <div className="gf-locations-card__actions">
-                  <button
-                    type="button"
-                    onClick={() => handleSetDefault(row)}
-                    disabled={
-                      actionId === row.id || (row.isDefault ?? defaultLocation?.id === row.id)
-                    }
-                    className={`gf-locations-card-btn gf-locations-card-btn--default${row.isDefault || defaultLocation?.id === row.id ? ' is-active' : ''}`}
-                  >
-                    {row.isDefault || defaultLocation?.id === row.id
-                      ? 'Default address'
-                      : 'Set as default'}
-                  </button>
                   <button
                     type="button"
                     onClick={() => openEdit(row)}

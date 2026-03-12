@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { CustomerLayout } from '../../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../../routes';
 import { useDefaultLocation } from '@/contexts/DefaultLocationContext';
@@ -103,15 +104,22 @@ export default function TrainerDetailPage() {
 
   return (
     <CustomerLayout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <Link
-          href={ROUTES.trainers}
-          style={{ fontSize: 14, color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-        >
-          ← My Trainers
-        </Link>
-        <h1 style={{ fontSize: 22, fontWeight: 700, marginTop: 8 }}>Trainer profile</h1>
-      </header>
+      <CustomerHeader
+        title="Trainer profile"
+        backLink={
+          <Link
+            href={ROUTES.trainers}
+            style={{
+              fontSize: 14,
+              color: 'rgba(255,255,255,0.95)',
+              fontWeight: 600,
+              marginRight: 12,
+            }}
+          >
+            ← My Trainers
+          </Link>
+        }
+      />
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
       ) : error && !bookSuccess ? (

@@ -166,6 +166,16 @@ export class CustomerController {
     return this.customerService.listGroupInvitesByPhone(userId, body?.groupId ?? '');
   }
 
+  @Post('listMyPendingGroupInvites')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'List pending group invites for current user (invitee)' })
+  listMyPendingGroupInvites(
+    @CurrentUser('sub') userId: string,
+    @Body() _body: Record<string, unknown>
+  ) {
+    return this.customerService.listMyPendingGroupInvites(userId);
+  }
+
   @Post('acceptGroupInviteByPhone')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Accept a group invite (invitee); body: inviteId' })

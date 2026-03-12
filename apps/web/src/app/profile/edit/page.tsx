@@ -13,6 +13,7 @@ import { COUNTRY_CODES, CountryCode, getSubdivisionsForCountry, ROLES } from '@g
 import { getApiErrorMessage } from '@groupfit/shared';
 import { CloudinaryUploadButton } from '@/components/CloudinaryUploadButton';
 import { CustomerLayout } from '../../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { TrainerLayout } from '../../TrainerLayout';
 import { ROUTES } from '../../routes';
 
@@ -250,14 +251,22 @@ export default function ProfileEditPage() {
 
   return (
     <Layout>
-      <header className="gf-home__header" style={{ marginBottom: 20 }}>
-        <span className="gf-home__logo">Edit Profile</span>
-        <div className="gf-home__header-actions">
-          <Link href={ROUTES.profile} className="gf-home__header-link">
+      <CustomerHeader
+        title="Edit Profile"
+        backLink={
+          <Link
+            href={ROUTES.profile}
+            style={{
+              fontSize: 14,
+              color: 'rgba(255,255,255,0.95)',
+              fontWeight: 600,
+              marginRight: 12,
+            }}
+          >
             ← Back to Profile
           </Link>
-        </div>
-      </header>
+        }
+      />
       <main
         className="gf-profile-main"
         style={{ margin: '0 auto', padding: '0 2rem 2rem', maxWidth: 480 }}

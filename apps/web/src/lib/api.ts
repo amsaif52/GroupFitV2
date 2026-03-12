@@ -259,6 +259,8 @@ export const customerApi = {
     }>('/customer/fetchallgroupslist', {}),
   addgroupname: (name: string) =>
     api.post<{ mtype: string; id?: string; message?: string }>('/customer/addgroupname', { name }),
+  editgroup: (groupId: string, name: string) =>
+    api.post<{ mtype: string; message?: string }>('/customer/editgroup', { groupId, name }),
   addgroupmember: (groupId: string, userId: string) =>
     api.post<{ mtype: string; id?: string; message?: string }>('/customer/addgroupmember', {
       groupId,
@@ -275,6 +277,32 @@ export const customerApi = {
         createdAt: string;
       }[];
     }>('/customer/fetchgroupMembers', { groupId }),
+  inviteGroupMemberByPhone: (groupId: string, phone: string) =>
+    api.post<{
+      mtype: string;
+      message?: string;
+      added?: boolean;
+    }>('/customer/inviteGroupMemberByPhone', { groupId, phone }),
+  listGroupInvitesByPhone: (groupId: string) =>
+    api.post<{
+      mtype: string;
+      list?: { id: string; phone: string; status: string; createdAt: string; updatedAt: string }[];
+    }>('/customer/listGroupInvitesByPhone', { groupId }),
+  listMyPendingGroupInvites: () =>
+    api.post<{
+      mtype: string;
+      list?: { id: string; groupId: string; groupName: string; createdAt: string }[];
+    }>('/customer/listMyPendingGroupInvites', {}),
+  acceptGroupInviteByPhone: (inviteId: string) =>
+    api.post<{ mtype: string; message?: string; approved?: boolean }>(
+      '/customer/acceptGroupInviteByPhone',
+      { inviteId }
+    ),
+  rejectGroupInviteByPhone: (inviteId: string) =>
+    api.post<{ mtype: string; message?: string; rejected?: boolean }>(
+      '/customer/rejectGroupInviteByPhone',
+      { inviteId }
+    ),
   updategroupmember: (groupId: string, memberId: string) =>
     api.post<{ mtype: string; message?: string }>('/customer/updategroupmember', {
       groupId,

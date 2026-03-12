@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useStoredUser } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { CustomerLayout } from '../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { TrainerLayout } from '../TrainerLayout';
 import { customerApi, trainerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
@@ -31,18 +32,7 @@ function SessionsContent({
 
   return (
     <Layout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <span className="gf-home__logo">My Sessions</span>
-        <div className="gf-home__header-actions">
-          <Link
-            href={ROUTES.notifications}
-            className="gf-home__header-link"
-            aria-label="Notifications"
-          >
-            🔔
-          </Link>
-        </div>
-      </header>
+      <CustomerHeader title="My Sessions" />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button

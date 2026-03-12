@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getStoredUser } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { CustomerLayout } from '../CustomerLayout';
+import { CustomerHeader } from '@/components/CustomerHeader';
 import { TrainerLayout } from '../TrainerLayout';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
@@ -56,20 +57,7 @@ export default function ReferPage() {
 
   return (
     <Layout>
-      <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <span className="gf-home__logo">Refer</span>
-        {!isTrainer && (
-          <div className="gf-home__header-actions">
-            <Link
-              href={ROUTES.notifications}
-              className="gf-home__header-link"
-              aria-label="Notifications"
-            >
-              🔔
-            </Link>
-          </div>
-        )}
-      </header>
+      <CustomerHeader title="Refer" />
       <div style={{ padding: '0 24px 24px' }}>
         <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 12 }}>Refer a friend</h2>
         <p style={{ color: 'var(--groupfit-grey)', marginBottom: 24 }}>

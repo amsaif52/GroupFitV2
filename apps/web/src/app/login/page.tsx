@@ -137,7 +137,7 @@ export default function LoginPage() {
       <LoginScreen
         variant="admin"
         title={t.auth.signIn}
-        subtitle={t.auth.enterEmailPassword}
+        subtitle={t.auth.enterPhoneNumberOrEmail}
         emailLabel={t.auth.email}
         passwordLabel={t.auth.password}
         phoneLabel={t.auth.phone}

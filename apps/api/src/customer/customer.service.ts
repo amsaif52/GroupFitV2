@@ -215,27 +215,68 @@ export class CustomerService {
     return { mtype: 'success', message: 'OK', list: CITIES, citylist: CITIES };
   }
 
-  // Groups (customer-owned groups with members)
+  // Groups: owned by user or where user is a member. Includes myMemberId when user is a member (for "Leave group").
   async fetchallgroupslist(userId: string) {
-    const groups = await this.prisma.group.findMany({
+    const owned = await this.prisma.group.findMany({
       where: { ownerId: userId },
       include: { _count: { select: { members: true } } },
       orderBy: { createdAt: 'desc' },
     });
-    const list = groups.map(
-      (g: {
-        id: string;
-        name: string;
-        ownerId: string;
-        createdAt: Date;
-        _count: { members: number };
-      }) => ({
-        id: g.id,
-        name: g.name,
-        ownerId: g.ownerId,
-        memberCount: g._count.members,
-        createdAt: g.createdAt.toISOString(),
-      })
+    const memberOf = await this.prisma.groupMember.findMany({
+      where: { userId },
+      include: {
+        group: { include: { _count: { select: { members: true } } } },
+      },
+    });
+    const memberGroupIds = new Set(memberOf.map((m: { groupId: string }) => m.groupId));
+    const ownedIds = new Set(owned.map((g: { id: string }) => g.id));
+    const extraGroups = memberOf
+      .filter((m: { groupId: string }) => !ownedIds.has(m.groupId))
+      .map(
+        (m: {
+          id: string;
+          groupId: string;
+          group: {
+            id: string;
+            name: string;
+            ownerId: string;
+            createdAt: Date;
+            _count: { members: number };
+          };
+        }) => ({
+          id: m.group.id,
+          name: m.group.name,
+          ownerId: m.group.ownerId,
+          memberCount: m.group._count.members,
+          createdAt: m.group.createdAt.toISOString(),
+          myMemberId: m.id,
+        })
+      );
+    const list = [
+      ...owned.map(
+        (g: {
+          id: string;
+          name: string;
+          ownerId: string;
+          createdAt: Date;
+          _count: { members: number };
+        }) => {
+          const myMembership = memberOf.find((m: { groupId: string }) => m.groupId === g.id);
+          return {
+            id: g.id,
+            name: g.name,
+            ownerId: g.ownerId,
+            memberCount: g._count.members,
+            createdAt: g.createdAt.toISOString(),
+            ...(myMembership && { myMemberId: (myMembership as { id: string }).id }),
+          };
+        }
+      ),
+      ...extraGroups,
+    ].sort(
+      (a, b) =>
+        new Date((b as { createdAt: string }).createdAt).getTime() -
+        new Date((a as { createdAt: string }).createdAt).getTime()
     );
     return { mtype: 'success', message: 'OK', fetchallgroupslist: list };
   }
@@ -306,12 +347,16 @@ export class CustomerService {
   }
 
   async updategroupmember(userId: string, groupId: string, memberId: string) {
-    const group = await this.prisma.group.findFirst({ where: { id: groupId, ownerId: userId } });
+    const group = await this.prisma.group.findFirst({ where: { id: groupId } });
     if (!group) return { mtype: 'error', message: 'Group not found' };
     const member = await this.prisma.groupMember.findFirst({
       where: { id: memberId, groupId },
     });
     if (!member) return { mtype: 'error', message: 'Member not found' };
+    const isOwner = group.ownerId === userId;
+    const isSelf = member.userId === userId;
+    if (!isOwner && !isSelf)
+      return { mtype: 'error', message: 'Only the group owner can remove other members' };
     await this.prisma.groupMember.delete({ where: { id: memberId } });
     return { mtype: 'success', message: 'OK' };
   }
@@ -457,6 +502,38 @@ export class CustomerService {
       })
     );
     return { mtype: 'success', message: 'OK', list, listGroupInvitesByPhone: list };
+  }
+
+  /**
+   * List pending group invites for the current user (invitee). Returns invites where current user's phone matches and status is PENDING.
+   */
+  async listMyPendingGroupInvites(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { phone: true },
+    });
+    if (!user?.phone) return { mtype: 'success', list: [], listMyPendingGroupInvites: [] };
+    const normalized = CustomerService.normalizePhone(user.phone);
+    if (!normalized) return { mtype: 'success', list: [], listMyPendingGroupInvites: [] };
+    const invites = await this.prisma.groupInviteByPhone.findMany({
+      where: { phone: normalized, status: 'PENDING' },
+      include: { group: { select: { id: true, name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    const list = invites.map(
+      (inv: {
+        id: string;
+        groupId: string;
+        createdAt: Date;
+        group: { id: string; name: string };
+      }) => ({
+        id: inv.id,
+        groupId: inv.groupId,
+        groupName: inv.group.name,
+        createdAt: inv.createdAt.toISOString(),
+      })
+    );
+    return { mtype: 'success', list, listMyPendingGroupInvites: list };
   }
 
   /**

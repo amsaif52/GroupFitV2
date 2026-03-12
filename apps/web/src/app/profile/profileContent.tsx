@@ -58,7 +58,6 @@ export function CustomerProfileContent({
     <div className="gf-profile">
       <div className="gf-profile__header-row">
         <h1 className="gf-profile__name">{displayName}</h1>
-        <div className="gf-profile__avatar" aria-hidden />
       </div>
 
       <div className="gf-profile__cards">
