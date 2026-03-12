@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getStoredUser } from '@/lib/auth';
+import { useStoredUser } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { CustomerLayout } from '../CustomerLayout';
 import { TrainerLayout } from '../TrainerLayout';
@@ -114,14 +114,15 @@ function SessionsContent({
 }
 
 export default function SessionsPage() {
-  const user = getStoredUser();
-  const isTrainer = user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN;
+  const { user, mounted } = useStoredUser();
+  const isTrainer = mounted && (user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN);
   const [loading, setLoading] = useState(true);
   const [upcoming, setUpcoming] = useState<SessionItem[]>([]);
   const [completed, setCompleted] = useState<SessionItem[]>([]);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'completed'>('upcoming');
 
   useEffect(() => {
+    if (!mounted) return;
     let cancelled = false;
     (async () => {
       try {
@@ -156,7 +157,18 @@ export default function SessionsPage() {
     return () => {
       cancelled = true;
     };
-  }, [isTrainer]);
+  }, [isTrainer, mounted]);
+
+  if (!mounted) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center' }}>
+        <p>Loading…</p>
+      </div>
+    );
+  }
+  if (!user) {
+    return null;
+  }
 
   return (
     <SessionsContent

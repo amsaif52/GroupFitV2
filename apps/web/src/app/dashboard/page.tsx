@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAppLocale } from '@/hooks/useAppLocale';
-import { getStoredUser, getStoredViewAs, clearStoredToken } from '@/lib/auth';
+import { useStoredUser, useStoredViewAs, clearStoredToken } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,15 +10,300 @@ import { ROUTES, getProfileLink } from '../routes';
 import { CustomerLayout } from '../CustomerLayout';
 import { TrainerLayout } from '../TrainerLayout';
 import { api, customerApi, trainerApi } from '@/lib/api';
+import { formatZero } from '@/lib/currency';
 
-function CustomerDashboardContent() {
+type ActivityItem = {
+  id?: string;
+  code?: string;
+  name?: string;
+  activityName?: string;
+  logoUrl?: string | null;
+};
+
+type SessionItem = {
+  id?: string;
+  sessionId?: string;
+  sessionName?: string;
+  trainerName?: string;
+  scheduledAt?: string;
+};
+
+type TrainerItem = {
+  id?: string;
+  trainerId?: string;
+  name?: string;
+  trainerName?: string;
+};
+
+function formatSessionDate(iso?: string): string {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const isToday =
+      d.getUTCDate() === now.getUTCDate() &&
+      d.getUTCMonth() === now.getUTCMonth() &&
+      d.getUTCFullYear() === now.getUTCFullYear();
+    const dateStr = isToday
+      ? 'Today'
+      : d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const timeStr = d.toLocaleTimeString('en-GB', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    return `${dateStr}, ${timeStr}`;
+  } catch {
+    return iso;
+  }
+}
+
+function ActivityCarouselSection({
+  title,
+  seeAllHref,
+  items,
+  loading,
+  emptyMessage,
+}: {
+  title: string;
+  seeAllHref: string;
+  items: ActivityItem[];
+  loading: boolean;
+  emptyMessage: string;
+}) {
+  if (loading) {
+    return (
+      <section className="gf-home__section">
+        <div className="gf-home__section-head">
+          <h2 className="gf-home__section-title">{title}</h2>
+          <Link href={seeAllHref} className="gf-home__see-all">
+            See all
+          </Link>
+        </div>
+        <div className="gf-home__carousel gf-home__carousel--loading">
+          <div className="gf-home__carousel-inner">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="gf-home__activity-card gf-home__activity-card--skeleton" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+  if (items.length === 0) {
+    return (
+      <section className="gf-home__section">
+        <div className="gf-home__section-head">
+          <h2 className="gf-home__section-title">{title}</h2>
+          <Link href={seeAllHref} className="gf-home__see-all">
+            See all
+          </Link>
+        </div>
+        <div className="gf-home__empty gf-home__empty--with-cta">
+          <p className="gf-home__empty-text">{emptyMessage}</p>
+          <Link href={seeAllHref} className="gf-home__empty-cta">
+            Explore activities
+          </Link>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="gf-home__section">
+      <div className="gf-home__section-head">
+        <h2 className="gf-home__section-title">{title}</h2>
+        <Link href={seeAllHref} className="gf-home__see-all">
+          See all
+        </Link>
+      </div>
+      <div className="gf-home__carousel">
+        <div className="gf-home__carousel-inner">
+          {items.map((item, index) => {
+            const id = item.id ?? item.code ?? String(index);
+            const label = item.activityName ?? item.name ?? item.code ?? 'Activity';
+            const href = ROUTES.activityDetail(id);
+            const bgImage = item.logoUrl ? `url(${item.logoUrl})` : undefined;
+            const placeholderGradient = `linear-gradient(135deg, var(--groupfit-blue-soft, #3b82f6) 0%, var(--groupfit-blue, #1d4ed8) 100%)`;
+            return (
+              <Link
+                key={id}
+                href={href}
+                className="gf-home__activity-card"
+                style={{
+                  backgroundImage: bgImage ?? placeholderGradient,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}
+              >
+                <span className="gf-home__activity-card-label">{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function UpcomingSessionsSection({
+  sessions,
+  loading,
+  seeAllHref,
+}: {
+  sessions: SessionItem[];
+  loading: boolean;
+  seeAllHref: string;
+}) {
+  const displayList = sessions.slice(0, 3);
+  if (loading) {
+    return (
+      <section className="gf-home__section">
+        <div className="gf-home__section-head">
+          <h2 className="gf-home__section-title">Upcoming</h2>
+          <Link href={seeAllHref} className="gf-home__see-all">
+            See all
+          </Link>
+        </div>
+        <div className="gf-home__session-list">
+          {[1, 2].map((i) => (
+            <div key={i} className="gf-home__session-card gf-home__session-card--skeleton" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+  if (sessions.length === 0) {
+    return (
+      <section className="gf-home__section">
+        <div className="gf-home__section-head">
+          <h2 className="gf-home__section-title">Upcoming</h2>
+          <Link href={seeAllHref} className="gf-home__see-all">
+            See all
+          </Link>
+        </div>
+        <div className="gf-home__empty gf-home__empty--with-cta">
+          <p className="gf-home__empty-text">No sessions booked yet</p>
+          <p className="gf-home__empty-sub">
+            Book a session with your favourite trainer or activity.
+          </p>
+          <Link href={seeAllHref} className="gf-home__empty-cta">
+            View sessions
+          </Link>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="gf-home__section">
+      <div className="gf-home__section-head">
+        <h2 className="gf-home__section-title">Upcoming</h2>
+        <Link href={seeAllHref} className="gf-home__see-all">
+          See all
+        </Link>
+      </div>
+      <ul className="gf-home__session-list" aria-label="Upcoming sessions">
+        {displayList.map((s) => {
+          const id = s.id ?? s.sessionId;
+          const href = id ? ROUTES.sessionDetail(id) : seeAllHref;
+          return (
+            <li key={id ?? Math.random()}>
+              <Link href={href} className="gf-home__session-card">
+                <span className="gf-home__session-card-title">{s.sessionName ?? 'Session'}</span>
+                <span className="gf-home__session-card-meta">
+                  {s.trainerName ? `${s.trainerName} · ` : ''}
+                  {formatSessionDate(s.scheduledAt)}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function MyTrainersSection({
+  trainers,
+  loading,
+  seeAllHref,
+}: {
+  trainers: TrainerItem[];
+  loading: boolean;
+  seeAllHref: string;
+}) {
+  if (loading) {
+    return (
+      <section className="gf-home__section">
+        <div className="gf-home__section-head">
+          <h2 className="gf-home__section-title">My Trainers</h2>
+          <Link href={seeAllHref} className="gf-home__see-all">
+            See all
+          </Link>
+        </div>
+        <div className="gf-home__empty gf-home__empty--tall">
+          <p className="gf-home__empty-text">Loading…</p>
+        </div>
+      </section>
+    );
+  }
+  if (trainers.length === 0) {
+    return (
+      <section className="gf-home__section">
+        <div className="gf-home__section-head">
+          <h2 className="gf-home__section-title">My Trainers</h2>
+          <Link href={seeAllHref} className="gf-home__see-all">
+            See all
+          </Link>
+        </div>
+        <div className="gf-home__empty gf-home__empty--with-cta">
+          <p className="gf-home__empty-text">No trainers yet</p>
+          <p className="gf-home__empty-sub">Find and favourite trainers to book sessions with.</p>
+          <Link href={seeAllHref} className="gf-home__empty-cta">
+            Find trainers
+          </Link>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="gf-home__section">
+      <div className="gf-home__section-head">
+        <h2 className="gf-home__section-title">My Trainers</h2>
+        <Link href={seeAllHref} className="gf-home__see-all">
+          See all
+        </Link>
+      </div>
+      <ul className="gf-home__trainer-list" aria-label="Favourite trainers">
+        {trainers.slice(0, 5).map((t) => {
+          const id = t.id ?? t.trainerId;
+          const name = t.trainerName ?? t.name ?? 'Trainer';
+          const href = id ? ROUTES.trainerDetail(id) : seeAllHref;
+          return (
+            <li key={id ?? Math.random()}>
+              <Link href={href} className="gf-home__trainer-card">
+                <span className="gf-home__trainer-card-avatar" aria-hidden />
+                <span className="gf-home__trainer-card-name">{name}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function CustomerDashboardContent({
+  user,
+}: {
+  user: { name?: string | null; email?: string | null; sub?: string } | null;
+}) {
   const [loading, setLoading] = useState(true);
-  const [todaySessions, setTodaySessions] = useState<unknown[]>([]);
-  const [upcomingSessions, setUpcomingSessions] = useState<unknown[]>([]);
-  const [activities, setActivities] = useState<unknown[]>([]);
-  const [favouriteActivities, setFavouriteActivities] = useState<unknown[]>([]);
-  const [trending, setTrending] = useState<unknown[]>([]);
-  const [favouriteTrainers, setFavouriteTrainers] = useState<unknown[]>([]);
+  const [todaySessions, setTodaySessions] = useState<SessionItem[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<SessionItem[]>([]);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [favouriteActivities, setFavouriteActivities] = useState<ActivityItem[]>([]);
+  const [trending, setTrending] = useState<ActivityItem[]>([]);
+  const [favouriteTrainers, setFavouriteTrainers] = useState<TrainerItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,19 +313,19 @@ function CustomerDashboardContent() {
           await Promise.all([
             customerApi.todaysessionlist(),
             customerApi.customerSessionList({ status: 'Upcoming' }),
-            customerApi.fetchAllActivity(),
+            customerApi.fetchAllCategoryActivities(),
             customerApi.fetchFavouriteActivities(),
             customerApi.GetTrendingActivities(),
             customerApi.fetchFavouriteTrainers(),
           ]);
         if (cancelled) return;
         const getData = (r: { data?: unknown }) => (r?.data as Record<string, unknown>) ?? {};
-        setTodaySessions((getData(todayRes).todaysessionlist as unknown[]) ?? []);
-        setUpcomingSessions((getData(upcomingRes).customerSessionList as unknown[]) ?? []);
-        setActivities((getData(allActRes).activityList as unknown[]) ?? []);
-        setFavouriteActivities((getData(favActRes).favouriteActivities as unknown[]) ?? []);
-        setTrending((getData(trendRes).trendingActivities as unknown[]) ?? []);
-        setFavouriteTrainers((getData(favTrainRes).favouriteTrainersList as unknown[]) ?? []);
+        setTodaySessions((getData(todayRes).todaysessionlist as SessionItem[]) ?? []);
+        setUpcomingSessions((getData(upcomingRes).customerSessionList as SessionItem[]) ?? []);
+        setActivities((getData(allActRes).activityList as ActivityItem[]) ?? []);
+        setFavouriteActivities((getData(favActRes).favouriteActivities as ActivityItem[]) ?? []);
+        setTrending((getData(trendRes).trendingActivities as ActivityItem[]) ?? []);
+        setFavouriteTrainers((getData(favTrainRes).favouriteTrainersList as TrainerItem[]) ?? []);
       } catch {
         if (!cancelled) {
           setTodaySessions([]);
@@ -59,58 +344,56 @@ function CustomerDashboardContent() {
     };
   }, []);
 
-  const section = (
-    title: string,
-    seeAll: string,
-    items: unknown[],
-    emptyMsg: string,
-    tall?: boolean
-  ) => (
-    <section className="gf-home__section">
-      <div className="gf-home__section-head">
-        <h2 className="gf-home__section-title">{title}</h2>
-        <Link href={seeAll} className="gf-home__see-all">
-          See all
-        </Link>
-      </div>
-      <div className={`gf-home__empty ${tall ? 'gf-home__empty--tall' : ''}`}>
-        {loading ? 'Loading…' : items.length === 0 ? emptyMsg : `${items.length} item(s)`}
-      </div>
-    </section>
-  );
+  const upcoming = todaySessions.length > 0 ? todaySessions : upcomingSessions;
+  const firstName = user?.name?.split(/\s+/)[0] ?? user?.email ?? null;
 
   return (
     <div className="gf-home__body">
-      {section(
-        'Upcoming Sessions',
-        ROUTES.sessions,
-        todaySessions.length > 0 ? todaySessions : upcomingSessions,
-        'There are no sessions scheduled for today',
-        true
-      )}
-      {section('Activities', ROUTES.activities, activities, 'There are no activities available')}
-      {section(
-        'Favourites',
-        ROUTES.activities,
-        favouriteActivities,
-        'There are no favourited activities',
-        true
-      )}
-      {section('Trending', ROUTES.activities, trending, 'There are no trending activities', true)}
-      {section(
-        'My Trainers',
-        ROUTES.trainers,
-        favouriteTrainers,
-        'There are no favorited trainers'
-      )}
+      <div className="gf-home__welcome">
+        <h1 className="gf-home__welcome-title">
+          {firstName ? `Hi, ${firstName}` : 'Welcome back'}
+        </h1>
+        <p className="gf-home__welcome-sub">Here’s what’s coming up.</p>
+      </div>
+      <UpcomingSessionsSection sessions={upcoming} loading={loading} seeAllHref={ROUTES.sessions} />
+      <ActivityCarouselSection
+        title="Activities"
+        seeAllHref={ROUTES.activities}
+        items={activities}
+        loading={loading}
+        emptyMessage="No activities yet. Explore and add favourites."
+      />
+      <ActivityCarouselSection
+        title="Favourites"
+        seeAllHref={ROUTES.activities}
+        items={favouriteActivities}
+        loading={loading}
+        emptyMessage="No favourited activities. Add some from Activities."
+      />
+      <ActivityCarouselSection
+        title="Trending"
+        seeAllHref={ROUTES.activities}
+        items={trending}
+        loading={loading}
+        emptyMessage="No trending activities right now."
+      />
+      <MyTrainersSection
+        trainers={favouriteTrainers}
+        loading={loading}
+        seeAllHref={ROUTES.trainers}
+      />
     </div>
   );
 }
 
-function TrainerDashboardContent() {
+function TrainerDashboardContent({
+  user,
+}: {
+  user: { name?: string | null; email?: string | null; sub?: string } | null;
+}) {
   const [loading, setLoading] = useState(true);
-  const [todaySessions, setTodaySessions] = useState<unknown[]>([]);
-  const [newSessions, setNewSessions] = useState<unknown[]>([]);
+  const [todaySessions, setTodaySessions] = useState<SessionItem[]>([]);
+  const [newSessions, setNewSessions] = useState<SessionItem[]>([]);
   const [earning, setEarning] = useState<unknown>(null);
 
   useEffect(() => {
@@ -124,8 +407,8 @@ function TrainerDashboardContent() {
         ]);
         if (cancelled) return;
         const getData = (r: { data?: unknown }) => (r?.data as Record<string, unknown>) ?? {};
-        setTodaySessions((getData(todayRes).todaySession as unknown[]) ?? []);
-        setNewSessions((getData(newRes).trainerSessionNewList as unknown[]) ?? []);
+        setTodaySessions((getData(todayRes).todaySession as SessionItem[]) ?? []);
+        setNewSessions((getData(newRes).trainerSessionNewList as SessionItem[]) ?? []);
         setEarning(getData(earnRes).currentEarning ?? null);
       } catch {
         if (!cancelled) setTodaySessions([]);
@@ -145,10 +428,20 @@ function TrainerDashboardContent() {
       ? String((earning as Record<string, unknown>).amount)
       : earning != null
         ? String(earning)
-        : '£0.00';
+        : formatZero((user as { countryCode?: string } | null)?.countryCode);
+
+  const firstName = user?.name?.split(/\s+/)[0] ?? user?.email ?? null;
+  const todayDisplay = todaySessions.slice(0, 3);
+  const newDisplay = newSessions.slice(0, 3);
 
   return (
     <div className="gf-home__body">
+      <div className="gf-home__welcome">
+        <h1 className="gf-home__welcome-title">
+          {firstName ? `Hi, ${firstName}` : 'Welcome back'}
+        </h1>
+        <p className="gf-home__welcome-sub">Here’s your day at a glance.</p>
+      </div>
       <section className="gf-home__section">
         <div className="gf-home__section-head">
           <h2 className="gf-home__section-title">Today&apos;s Sessions</h2>
@@ -156,13 +449,41 @@ function TrainerDashboardContent() {
             See all
           </Link>
         </div>
-        <div className="gf-home__empty gf-home__empty--tall">
-          {loading
-            ? 'Loading…'
-            : todaySessions.length === 0
-              ? 'There are no sessions scheduled for today'
-              : `${todaySessions.length} item(s)`}
-        </div>
+        {loading ? (
+          <div className="gf-home__session-list">
+            {[1, 2].map((i) => (
+              <div key={i} className="gf-home__session-card gf-home__session-card--skeleton" />
+            ))}
+          </div>
+        ) : todaySessions.length === 0 ? (
+          <div className="gf-home__empty gf-home__empty--with-cta">
+            <p className="gf-home__empty-text">No sessions today</p>
+            <p className="gf-home__empty-sub">New bookings will appear here.</p>
+            <Link href={ROUTES.sessions} className="gf-home__empty-cta">
+              View sessions
+            </Link>
+          </div>
+        ) : (
+          <ul className="gf-home__session-list" aria-label="Today's sessions">
+            {todayDisplay.map((s) => {
+              const id = s.id ?? s.sessionId;
+              const href = id ? ROUTES.sessionDetail(id) : ROUTES.sessions;
+              return (
+                <li key={id ?? Math.random()}>
+                  <Link href={href} className="gf-home__session-card">
+                    <span className="gf-home__session-card-title">
+                      {s.sessionName ?? 'Session'}
+                    </span>
+                    <span className="gf-home__session-card-meta">
+                      {s.trainerName ? `${s.trainerName} · ` : ''}
+                      {formatSessionDate(s.scheduledAt)}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
       <section className="gf-home__section">
         <div className="gf-home__section-head">
@@ -171,13 +492,41 @@ function TrainerDashboardContent() {
             See all
           </Link>
         </div>
-        <div className="gf-home__empty gf-home__empty--tall">
-          {loading
-            ? 'Loading…'
-            : newSessions.length === 0
-              ? 'No new sessions'
-              : `${newSessions.length} item(s)`}
-        </div>
+        {loading ? (
+          <div className="gf-home__session-list">
+            {[1, 2].map((i) => (
+              <div key={i} className="gf-home__session-card gf-home__session-card--skeleton" />
+            ))}
+          </div>
+        ) : newSessions.length === 0 ? (
+          <div className="gf-home__empty gf-home__empty--with-cta">
+            <p className="gf-home__empty-text">No new sessions</p>
+            <p className="gf-home__empty-sub">New requests will show up here.</p>
+            <Link href={ROUTES.sessions} className="gf-home__empty-cta">
+              View sessions
+            </Link>
+          </div>
+        ) : (
+          <ul className="gf-home__session-list" aria-label="New sessions">
+            {newDisplay.map((s) => {
+              const id = s.id ?? s.sessionId;
+              const href = id ? ROUTES.sessionDetail(id) : ROUTES.sessions;
+              return (
+                <li key={id ?? Math.random()}>
+                  <Link href={href} className="gf-home__session-card">
+                    <span className="gf-home__session-card-title">
+                      {s.sessionName ?? 'Session'}
+                    </span>
+                    <span className="gf-home__session-card-meta">
+                      {s.trainerName ? `${s.trainerName} · ` : ''}
+                      {formatSessionDate(s.scheduledAt)}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
       <section className="gf-home__section">
         <div className="gf-home__section-head">
@@ -197,22 +546,22 @@ function TrainerDashboardContent() {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const user = getStoredUser();
-  const { t } = useAppLocale(user?.locale);
-  const viewAs = getStoredViewAs();
+  const { user, mounted } = useStoredUser();
+  const viewAs = useStoredViewAs();
+  const { t } = useAppLocale(user?.locale ?? undefined);
   const isAdmin = user?.role === ROLES.ADMIN;
 
   // Admin without a chosen experience must choose first
   useEffect(() => {
-    if (typeof window === 'undefined' || !user) return;
+    if (!mounted || !user) return;
     if (user.role === ROLES.ADMIN && !viewAs) {
       router.replace(ROUTES.chooseExperience);
     }
-  }, [user, viewAs, router]);
+  }, [mounted, user, viewAs, router]);
 
   // When logged-in user hits dashboard, ensure API is reachable; else show server-unavailable
   useEffect(() => {
-    if (!user) return;
+    if (!mounted || !user) return;
     let cancelled = false;
     api.get('/health').catch(() => {
       if (!cancelled) router.replace(ROUTES.serverUnavailable);
@@ -220,7 +569,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, router]);
+  }, [mounted, user, router]);
 
   function handleLogout() {
     clearStoredToken();
@@ -228,9 +577,23 @@ export default function DashboardPage() {
     router.refresh();
   }
 
-  // Admin must have chosen an experience; redirect is in useEffect
-  if (user?.role === ROLES.ADMIN && !viewAs) {
+  if (!mounted) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center' }}>
+        <p>Loading…</p>
+      </div>
+    );
+  }
+  if (!user) {
     return null;
+  }
+  // Admin must have chosen an experience; redirect is in useEffect
+  if (user.role === ROLES.ADMIN && !viewAs) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center' }}>
+        <p>Loading…</p>
+      </div>
+    );
   }
 
   // Effective view: admin uses viewAs (customer/trainer); others use role
@@ -268,7 +631,7 @@ export default function DashboardPage() {
             {user.name ?? user.email ?? user.sub} {user.role && `(${user.role})`}
           </p>
         )}
-        <TrainerDashboardContent />
+        <TrainerDashboardContent user={user} />
       </TrainerLayout>
     );
   }
@@ -288,12 +651,7 @@ export default function DashboardPage() {
           <Link href={ROUTES.account} className="gf-home__avatar" aria-label="Account" />
         </div>
       </header>
-      {user && (
-        <p style={{ marginBottom: 16, color: 'var(--groupfit-grey)', fontSize: 14 }}>
-          {user.name ?? user.email ?? user.sub} {user.role && `(${user.role})`}
-        </p>
-      )}
-      <CustomerDashboardContent />
+      <CustomerDashboardContent user={user} />
     </CustomerLayout>
   );
 }

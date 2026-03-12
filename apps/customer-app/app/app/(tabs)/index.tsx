@@ -76,7 +76,7 @@ export default function HomeTab() {
         const favTrainData = (favTrainRes?.data as Record<string, unknown>) ?? {};
         setTodaySessions((todayData.todaysessionlist as unknown[]) ?? []);
         setUpcomingSessions((upcomingData.customerSessionList as unknown[]) ?? []);
-        setActivities((allActData.activityList as unknown[]) ?? []);
+        setActivities((allActData.customerActivityList as unknown[]) ?? []);
         setFavouriteActivities((favActData.favouriteActivities as unknown[]) ?? []);
         setTrending((trendData.trendingActivities as unknown[]) ?? []);
         setFavouriteTrainers((favTrainData.favouriteTrainersList as unknown[]) ?? []);

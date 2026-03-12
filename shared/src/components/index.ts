@@ -5,6 +5,7 @@
  */
 export * from './atoms';
 export { default as Button } from './atoms/Button.web';
+export { default as Select } from './atoms/Select.web';
 export * from './molecules';
 export * from './organisms';
 export * from './templates';

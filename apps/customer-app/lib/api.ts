@@ -87,8 +87,13 @@ export const customerApi = {
     api.post<{ mtype: string; todaysessionlist?: unknown[] }>('/customer/todaysessionlist', {}),
 
   // Activities
-  fetchAllActivity: (body?: Record<string, unknown>) =>
+  fetchAllCategoryActivities: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; activityList?: unknown[] }>('/customer/fetchAllActivity', body ?? {}),
+  fetchAllActivity: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; customerActivityList?: unknown[] }>(
+      '/customer/fetchactivitytype',
+      body ?? {}
+    ),
   /** Activities offered by trainers at location (latitude, longitude, radiusKm optional). */
   activitiesAtLocation: (body: { latitude?: number; longitude?: number; radiusKm?: number }) =>
     api.post<{ mtype: string; activityList?: unknown[] }>('/customer/activitiesAtLocation', body),

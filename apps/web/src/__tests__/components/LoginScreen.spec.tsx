@@ -93,4 +93,44 @@ describe('LoginScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue with Apple' }));
     expect(onApplePress).toHaveBeenCalledTimes(1);
   });
+
+  it('when phone login is enabled, phone tab shows country code dropdown and phone input', () => {
+    render(
+      <LoginScreen
+        onSubmit={() => {}}
+        onSendOtp={async () => ({ message: 'ok', userCode: 'uc' })}
+        onVerifyOtp={async () => ({
+          accessToken: 't',
+          user: { id: '1', email: 'e', role: 'customer', locale: 'en' },
+        })}
+      />
+    );
+    expect(screen.getByRole('tab', { name: /phone/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /email/i })).toBeInTheDocument();
+    const countrySelect = screen.getByRole('combobox', { name: 'Country code' });
+    expect(countrySelect).toBeInTheDocument();
+    expect(countrySelect.tagName).toBe('SELECT');
+    expect(screen.getByPlaceholderText('Phone number')).toBeInTheDocument();
+  });
+
+  it('uses countryOptions for phone prefix when provided', () => {
+    const countryOptions = [
+      { code: 'x', dial: '+99', name: 'Testland' },
+      { code: 'y', dial: '+11', name: 'Other' },
+    ];
+    render(
+      <LoginScreen
+        onSubmit={() => {}}
+        countryOptions={countryOptions}
+        onSendOtp={async () => ({ message: 'ok', userCode: 'uc' })}
+        onVerifyOtp={async () => ({
+          accessToken: 't',
+          user: { id: '1', email: 'e', role: 'customer', locale: 'en' },
+        })}
+      />
+    );
+    const countrySelect = screen.getByRole('combobox', { name: 'Country code' });
+    expect(countrySelect).toBeInTheDocument();
+    expect(countrySelect).toHaveDisplayValue(/\+99|Testland/);
+  });
 });

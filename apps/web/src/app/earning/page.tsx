@@ -6,6 +6,7 @@ import { getStoredUser } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { TrainerLayout } from '../TrainerLayout';
 import { trainerApi } from '@/lib/api';
+import { formatZero } from '@/lib/currency';
 
 export default function EarningPage() {
   const router = useRouter();
@@ -56,7 +57,7 @@ export default function EarningPage() {
       ? String((currentEarning as Record<string, unknown>).amount)
       : currentEarning != null
         ? String(currentEarning)
-        : '£0.00';
+        : formatZero(user?.countryCode);
 
   return (
     <TrainerLayout>

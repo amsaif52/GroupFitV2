@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { decodeJwtPayload } from '@groupfit/shared';
 
 const TOKEN_KEY = 'groupfit_token';
@@ -44,4 +47,30 @@ export function getStoredUser() {
   const token = getStoredToken();
   if (!token) return null;
   return decodeJwtPayload(token);
+}
+
+/**
+ * Hook that returns stored user only after mount. Use this in client components to avoid
+ * hydration mismatch: server and first client render both see user=null, then after
+ * hydration we read localStorage and re-render with the real user.
+ */
+export function useStoredUser() {
+  const [user, setUser] = useState<ReturnType<typeof getStoredUser>>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setUser(getStoredUser());
+    setMounted(true);
+  }, []);
+  return { user, mounted };
+}
+
+/**
+ * Hook that returns stored viewAs only after mount. Use with useStoredUser to avoid hydration mismatch.
+ */
+export function useStoredViewAs() {
+  const [viewAs, setViewAs] = useState<ViewAs | null>(null);
+  useEffect(() => {
+    setViewAs(getStoredViewAs());
+  }, []);
+  return viewAs;
 }

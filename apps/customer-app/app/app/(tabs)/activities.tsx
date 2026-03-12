@@ -43,7 +43,7 @@ export default function ActivitiesTab() {
         if (cancelled) return;
         const allData = (allRes?.data as Record<string, unknown>) ?? {};
         const favData = (favRes?.data as Record<string, unknown>) ?? {};
-        setAllActivities((allData.activityList as ActivityItem[]) ?? []);
+        setAllActivities((allData.customerActivityList as ActivityItem[]) ?? []);
         setFavourites((favData.favouriteActivities as ActivityItem[]) ?? []);
       } catch {
         if (!cancelled) setAllActivities([]);

@@ -98,4 +98,11 @@ export class AuthController {
   async resendOtp(@Body() dto: ResendOtpDto) {
     return this.auth.resendOtp(dto.phoneNumber, dto.userCode);
   }
+
+  @Post('country-list')
+  @ApiOperation({ summary: 'List countries for phone prefix dropdown (public)' })
+  @ApiResponse({ status: 200, description: 'Returns list of { id, name, isdCode }' })
+  async countryList() {
+    return this.auth.countryListForPhone();
+  }
 }

@@ -46,6 +46,7 @@ model User {
   bankDetails          TrainerBankDetail?
   serviceAreas         TrainerServiceArea[]
   customerLocations    CustomerLocation[]
+  toasts              Toast[]
   activitiesCreated    Activity[]         @relation("ActivityCreatedBy")
   activitiesUpdated    Activity[]         @relation("ActivityUpdatedBy")
   countriesUpdated     Country[]          @relation("CountryUpdatedBy")
@@ -397,6 +398,18 @@ model CustomerLocation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@map("customer_location")
+}
+
+// Per-user flags for modals/toasts (e.g. activities disclaimer seen).
+model Toast {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String   // e.g. 'activities_disclaimer_seen'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, key])
+  @@map("toast")
 }
 
 model Conversation {

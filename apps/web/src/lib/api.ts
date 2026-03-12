@@ -51,8 +51,13 @@ export const customerApi = {
   todaysessionlist: () =>
     api.post<{ mtype: string; todaysessionlist?: unknown[] }>('/customer/todaysessionlist', {}),
 
-  fetchAllActivity: (body?: Record<string, unknown>) =>
+  fetchAllCategoryActivities: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; activityList?: unknown[] }>('/customer/fetchAllActivity', body ?? {}),
+  fetchAllActivity: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; customerActivityList?: unknown[] }>(
+      '/customer/fetchactivitytype',
+      body ?? {}
+    ),
   activitiesAtLocation: (body: { latitude?: number; longitude?: number; radiusKm?: number }) =>
     api.post<{ mtype: string; activityList?: unknown[] }>('/customer/activitiesAtLocation', body),
   fetchFavouriteActivities: () =>
@@ -60,6 +65,10 @@ export const customerApi = {
       '/customer/fetchFavouriteActivities',
       {}
     ),
+  getToastActivitiesDisclaimer: () =>
+    api.get<{ mtype: string; seen?: boolean }>('/customer/toast/activities-disclaimer'),
+  setToastActivitiesDisclaimer: () =>
+    api.post<{ mtype: string }>('/customer/toast/activities-disclaimer', {}),
   addFavouriteActivity: (activityCode: string) =>
     api.post<{ mtype: string; message?: string }>('/customer/addFavouriteActivity', {
       activityCode,

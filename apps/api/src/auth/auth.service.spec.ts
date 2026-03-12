@@ -48,6 +48,9 @@ describe('AuthService', () => {
       create: jest.fn(),
       update: jest.fn(),
     },
+    country: {
+      findMany: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -62,7 +65,15 @@ describe('AuthService', () => {
         },
         {
           provide: ConfigService,
-          useValue: { get: jest.fn() },
+          useValue: {
+            get: jest.fn((key: string) =>
+              key === 'TWILIO_ACCOUNT_SID'
+                ? 'test-sid'
+                : key === 'TWILIO_AUTH_TOKEN'
+                  ? 'test-token'
+                  : undefined
+            ),
+          },
         },
       ],
     }).compile();
@@ -232,6 +243,24 @@ describe('AuthService', () => {
         where: { id: mockUser.id },
         data: { otp: null, otpSentAt: null },
       });
+    });
+  });
+
+  describe('countryListForPhone', () => {
+    it('returns countries ordered by name', async () => {
+      const list = [
+        { id: 'gb', name: 'United Kingdom', isdCode: '+44' },
+        { id: 'us', name: 'United States', isdCode: '+1' },
+      ];
+      mockPrisma.country.findMany.mockResolvedValue(list);
+
+      const result = await service.countryListForPhone();
+
+      expect(mockPrisma.country.findMany).toHaveBeenCalledWith({
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, isdCode: true },
+      });
+      expect(result).toEqual({ mtype: 'success', list });
     });
   });
 });

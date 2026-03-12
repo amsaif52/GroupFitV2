@@ -1,22 +1,26 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, request as playwrightRequest } from '@playwright/test';
 
-/** Sign up as a new customer and wait for dashboard. Use a unique namePrefix per test. */
+/** Sign up as a new customer via API (email/password), then log in via UI and wait for dashboard. Use a unique namePrefix per test. */
 async function signUpCustomer(page: Page, namePrefix: string): Promise<void> {
-  await page.goto('/signup');
-  await page
-    .getByPlaceholder(/name|Full name/i)
-    .first()
-    .fill(`E2E ${namePrefix}`);
-  await page
-    .getByPlaceholder(/email|Enter your email here/i)
-    .fill(`e2e-${namePrefix.replace(/\s+/g, '-')}-${Date.now()}@groupfit.test`);
-  await page
-    .getByPlaceholder(/Enter your password here|Password/i)
-    .first()
-    .fill('password123');
-  await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
-  await page.getByRole('button', { name: 'Create account' }).click();
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+  const email = `e2e-${namePrefix.replace(/\s+/g, '-')}-${Date.now()}@groupfit.test`;
+  const api = await playwrightRequest.newContext({ baseURL: 'http://localhost:3001' });
+  const signupRes = await api.post('/api/auth/signup', {
+    data: {
+      name: `E2E ${namePrefix}`,
+      email,
+      password: 'password123',
+      role: 'customer',
+    },
+  });
+  await api.dispose();
+  if (!signupRes.ok()) {
+    throw new Error(`Signup failed: ${await signupRes.text()}`);
+  }
+  await page.goto('/login');
+  await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
+  await page.getByPlaceholder(/password|Enter your password here/i).fill('password123');
+  await page.getByRole('button', { name: /Login|Sign In/i }).click();
+  await expect(page).toHaveURL(/\/dashboard|\/choose-experience/, { timeout: 15000 });
 }
 
 test.describe('Web app', () => {
@@ -58,25 +62,23 @@ test.describe('Login page', () => {
     });
   });
 
-  test('after signup, user can log in with same credentials', async ({ page }) => {
+  test('after signup via API, user can log in with same credentials', async ({ page }) => {
     const email = `e2e-login-flow-${Date.now()}@groupfit.test`;
-    await page.goto('/signup');
-    await page
-      .getByPlaceholder(/name|Full name/i)
-      .first()
-      .fill('E2E Login Flow');
-    await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
-    await page
-      .getByPlaceholder(/Enter your password here|Password/i)
-      .first()
-      .fill('password123');
-    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('password123');
-    await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 });
+    const api = await playwrightRequest.newContext({ baseURL: 'http://localhost:3001' });
+    const signupRes = await api.post('/api/auth/signup', {
+      data: {
+        name: 'E2E Login Flow',
+        email,
+        password: 'password123',
+        role: 'customer',
+      },
+    });
+    await api.dispose();
+    expect(signupRes.ok()).toBeTruthy();
     await page.goto('/login');
     await page.getByPlaceholder(/email|Enter your email here/i).fill(email);
     await page.getByPlaceholder(/password|Enter your password here/i).fill('password123');
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: /Login|Sign In/i }).click();
     await expect(page).toHaveURL(/\/(dashboard|choose-experience)/, { timeout: 15000 });
     await expect(page.getByText('GroupFit').first()).toBeVisible({ timeout: 5000 });
   });
@@ -128,25 +130,23 @@ test.describe('Signup page', () => {
     await expect(page.getByText('Set Up Your Account').or(page.getByText('Sign Up'))).toBeVisible();
     await expect(page.getByPlaceholder(/name|Full name/i)).toBeVisible();
     await expect(page.getByPlaceholder(/email|Enter your email here/i)).toBeVisible();
-    await expect(page.getByPlaceholder(/Enter your password here|Password/i)).toBeVisible();
-    await expect(page.getByPlaceholder(/Confirm your password|Confirm password/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/phone|Phone number/i)).toBeVisible();
+    await expect(page.getByRole('combobox', { name: /Country code/i })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
   });
 
-  test('signup form shows validation when passwords do not match', async ({ page }) => {
+  test('signup form shows validation when required field is missing', async ({ page }) => {
     await page.goto('/signup');
     await page
       .getByPlaceholder(/name|Full name/i)
       .first()
       .fill('Test User');
     await page.getByPlaceholder(/email|Enter your email here/i).fill('test@example.com');
-    await page
-      .getByPlaceholder(/Enter your password here|Password/i)
-      .first()
-      .fill('secret123');
-    await page.getByPlaceholder(/Confirm your password|Confirm password/i).fill('different');
+    await page.getByPlaceholder(/phone|Phone number/i).fill('7700900000');
     await page.getByRole('button', { name: 'Create account' }).click();
-    await expect(page.getByText(/passwords do not match/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/country is required|Country is required/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test('signup has login link', async ({ page }) => {

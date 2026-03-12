@@ -20,6 +20,7 @@ describe('AuthController', () => {
     sendOtp: jest.fn(),
     resendOtp: jest.fn(),
     verifyOtp: jest.fn(),
+    countryListForPhone: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -84,7 +85,7 @@ describe('AuthController', () => {
         type: 'phone',
       });
 
-      expect(authService.sendOtp).toHaveBeenCalledWith('+447700900000', 'customer');
+      expect(authService.sendOtp).toHaveBeenCalledWith('+447700900000', 'phone');
       expect(result).toEqual({ message: 'OTP sent successfully', userCode: 'user-123' });
     });
   });
@@ -137,6 +138,21 @@ describe('AuthController', () => {
       await expect(controller.resendOtp({ phoneNumber: '+449999999999' })).rejects.toThrow(
         BadRequestException
       );
+    });
+  });
+
+  describe('countryList', () => {
+    it('returns list from service', async () => {
+      const list = [
+        { id: 'gb', name: 'United Kingdom', isdCode: '+44' },
+        { id: 'us', name: 'United States', isdCode: '+1' },
+      ];
+      mockAuthService.countryListForPhone.mockResolvedValue({ mtype: 'success', list });
+
+      const result = await controller.countryList();
+
+      expect(authService.countryListForPhone).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ mtype: 'success', list });
     });
   });
 });

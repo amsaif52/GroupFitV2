@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '../routes';
 import { customerApi, trainerApi } from '@/lib/api';
-import { getStoredUser } from '@/lib/auth';
+import { useStoredUser } from '@/lib/auth';
 import { ROLES, getApiErrorMessage } from '@groupfit/shared';
 import type { FaqDisplay, ContactItem } from '@groupfit/shared';
 import {
@@ -16,8 +16,8 @@ import {
 import { HelpChat } from '@groupfit/shared/components';
 
 export default function HelpPage() {
-  const user = getStoredUser();
-  const isTrainer = user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN;
+  const { user, mounted } = useStoredUser();
+  const isTrainer = mounted && (user?.role === ROLES.TRAINER || user?.role === ROLES.ADMIN);
   const [tab, setTab] = useState<'FAQs' | 'Contactus' | 'Support' | 'Assistant'>('FAQs');
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
   const [faqs, setFaqs] = useState<FaqDisplay[]>(DEFAULT_FAQS_CUSTOMER);
@@ -42,20 +42,18 @@ export default function HelpPage() {
         if (cancelled) return;
         const faqData = faqRes?.data as Record<string, unknown> | undefined;
         const contactData = contactRes?.data as Record<string, unknown> | undefined;
+        console.log(contactData);
         const faqList = (faqData?.faqlist ?? faqData?.list) as
           | { id: string; question: string; answer: string }[]
           | undefined;
         if (faqList && faqList.length > 0) {
           setFaqs(faqList.map((f) => ({ id: f.id, question: f.question, description: f.answer })));
         }
-        const email = contactData?.contactEmail as string | undefined;
-        if (email) {
-          setContactLinks([
-            { heading: 'Email support', link: `mailto:${email}` },
-            ...FALLBACK_CONTACT_CUSTOMER,
-          ]);
-        } else {
-          setContactLinks(FALLBACK_CONTACT_CUSTOMER);
+        const contactList = contactData?.data as ContactItem[] | undefined;
+        if (contactList && contactList.length > 0) {
+          setContactLinks(
+            contactList.map((c) => ({ name: c.name, link: c.link, iconUrl: c.iconUrl }))
+          );
         }
       })
       .catch(() => {})
@@ -91,19 +89,6 @@ export default function HelpPage() {
         >
           Contact us
         </button>
-        {user && (
-          <button
-            type="button"
-            className={`gf-help__tab ${tab === 'Support' ? 'gf-help__tab--active' : ''}`}
-            onClick={() => {
-              setTab('Support');
-              setSupportSuccess(false);
-              setSupportError(null);
-            }}
-          >
-            Contact support
-          </button>
-        )}
         {user && (
           <button
             type="button"
@@ -153,115 +138,32 @@ export default function HelpPage() {
           {contactLinks.length === 0 ? (
             <p className="gf-help__empty">Currently unavailable!</p>
           ) : (
-            contactLinks.map((item) => (
-              <a
-                key={item.heading}
-                href={item.link}
-                target={item.link.startsWith('mailto:') ? undefined : '_blank'}
-                rel={item.link.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-                className="gf-help__contact-item"
-              >
-                <span>{item.heading}</span>
-                <span aria-hidden>›</span>
-              </a>
-            ))
-          )}
-        </div>
-      )}
-
-      {tab === 'Support' && user && (
-        <div className="gf-help__contact-list">
-          {supportSuccess ? (
-            <p
-              className="gf-help__empty"
-              style={{ color: 'var(--groupfit-secondary)', fontWeight: 600 }}
-            >
-              Your message has been sent. We&apos;ll get back to you soon.
-            </p>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const message = supportMessage.trim();
-                if (!message) return;
-                setSupportSubmitting(true);
-                setSupportError(null);
-                const submit = isTrainer ? trainerApi.raiseSupport : customerApi.raiseSupport;
-                submit({ subject: supportSubject.trim() || undefined, message })
-                  .then((res) => {
-                    const data = res?.data as Record<string, unknown>;
-                    if (data?.mtype === 'success') {
-                      setSupportSuccess(true);
-                      setSupportSubject('');
-                      setSupportMessage('');
-                    } else {
-                      setSupportError(String(data?.message ?? 'Something went wrong'));
-                    }
-                  })
-                  .catch(() => setSupportError('Failed to send. Please try again.'))
-                  .finally(() => setSupportSubmitting(false));
-              }}
-            >
-              <label
-                htmlFor="support-subject"
-                style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}
-              >
-                Subject (optional)
-              </label>
-              <input
-                id="support-subject"
-                type="text"
-                value={supportSubject}
-                onChange={(e) => setSupportSubject(e.target.value)}
-                placeholder="e.g. Billing question"
-                style={{
-                  padding: 8,
-                  width: '100%',
-                  marginBottom: 12,
-                  borderRadius: 6,
-                  border: '1px solid var(--groupfit-border-light)',
-                }}
-              />
-              <label
-                htmlFor="support-message"
-                style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}
-              >
-                Message *
-              </label>
-              <textarea
-                id="support-message"
-                value={supportMessage}
-                onChange={(e) => setSupportMessage(e.target.value)}
-                placeholder="Describe your issue or question…"
-                required
-                rows={4}
-                style={{
-                  padding: 8,
-                  width: '100%',
-                  marginBottom: 12,
-                  borderRadius: 6,
-                  border: '1px solid var(--groupfit-border-light)',
-                }}
-              />
-              {supportError && (
-                <p style={{ color: '#c00', marginBottom: 12, fontSize: 14 }}>{supportError}</p>
-              )}
-              <button
-                type="submit"
-                disabled={supportSubmitting}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'var(--groupfit-secondary)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  cursor: supportSubmitting ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {supportSubmitting ? 'Sending…' : 'Send'}
-              </button>
-            </form>
+            contactLinks.map((item) => {
+              const isMailto = item.link.startsWith('mailto:');
+              return (
+                <a
+                  key={item.name}
+                  href={item.link}
+                  target={isMailto ? undefined : '_blank'}
+                  rel={isMailto ? undefined : 'noopener noreferrer'}
+                  className="gf-help__contact-item"
+                >
+                  <span className="gf-help__contact-item-icon">
+                    {item.iconUrl ? (
+                      <img src={item.iconUrl} alt="" className="gf-help__contact-icon" />
+                    ) : (
+                      <span className="gf-help__contact-item-emoji" aria-hidden>
+                        {isMailto ? '✉' : '↗'}
+                      </span>
+                    )}
+                  </span>
+                  <span className="gf-help__contact-item-label">{item.name}</span>
+                  <span className="gf-help__contact-item-arrow" aria-hidden>
+                    {isMailto ? '›' : '↗'}
+                  </span>
+                </a>
+              );
+            })
           )}
         </div>
       )}

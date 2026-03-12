@@ -395,4 +395,13 @@ export class AuthService {
       },
     };
   }
+
+  /** Public: list countries for phone prefix dropdown (name, isdCode from DB). */
+  async countryListForPhone() {
+    const list = await this.prisma.country.findMany({
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, isdCode: true },
+    });
+    return { mtype: 'success', list };
+  }
 }

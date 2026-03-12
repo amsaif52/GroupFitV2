@@ -148,6 +148,33 @@ export class CustomerService {
     };
   }
 
+  /** Toast key for activities disclaimer modal. */
+  private static readonly TOAST_ACTIVITIES_DISCLAIMER = 'activities_disclaimer_seen';
+
+  async getToastActivitiesDisclaimer(userId: string) {
+    const row = await this.prisma.toast.findUnique({
+      where: {
+        userId_key: { userId, key: CustomerService.TOAST_ACTIVITIES_DISCLAIMER },
+      },
+    });
+    return {
+      mtype: 'success',
+      message: 'OK',
+      seen: !!row,
+    };
+  }
+
+  async setToastActivitiesDisclaimer(userId: string) {
+    await this.prisma.toast.upsert({
+      where: {
+        userId_key: { userId, key: CustomerService.TOAST_ACTIVITIES_DISCLAIMER },
+      },
+      create: { userId, key: CustomerService.TOAST_ACTIVITIES_DISCLAIMER },
+      update: { updatedAt: new Date() },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
   // Reference data (legacy customerApi)
   countryList() {
     return { mtype: 'success', message: 'OK', list: COUNTRIES, countryList: COUNTRIES };
@@ -674,11 +701,11 @@ export class CustomerService {
   // Activities (from Activity table; fallback to ACTIVITY_TYPES if table empty)
   async fetchactivitytype() {
     const list = await this.getActivityListFromDb();
-    return { mtype: 'success', message: 'OK', list, activityTypeList: list };
+    return { mtype: 'success', message: 'OK', customerActivityList: list };
   }
 
   async fetchAllActivity() {
-    const activityList = await this.getActivityListFromDb();
+    const activityList = await this.getActivityCategoryList();
     return { mtype: 'success', message: 'OK', activityList };
   }
 
@@ -740,6 +767,8 @@ export class CustomerService {
           name: one.name,
           activityName: one.name,
           description: one.description ?? '',
+          logoUrl: one.logoUrl ?? undefined,
+          defaultPriceCents: one.defaultPriceCents ?? undefined,
         };
       }
     }
@@ -757,26 +786,51 @@ export class CustomerService {
   }
 
   private async getActivityListFromDb(): Promise<
-    { id: string; code: string; name: string; activityName: string; description?: string }[]
+    {
+      id: string;
+      code: string;
+      name: string;
+      activityName: string;
+      description?: string;
+      logoUrl?: string | null;
+      defaultPriceCents?: number | null;
+    }[]
   > {
     const rows = await this.prisma.activity.findMany({ orderBy: { code: 'asc' } });
-    if (rows.length > 0) {
-      return rows.map(
-        (a: { id: string; code: string; name: string; description: string | null }) => ({
-          id: a.id,
-          code: a.code,
-          name: a.name,
-          activityName: a.name,
-          description: a.description ?? '',
-        })
-      );
-    }
-    return ACTIVITY_TYPES.map((a, i) => ({
-      id: String(i),
-      code: a.code,
-      name: a.name ?? a.code,
-      activityName: a.name ?? a.code,
-      description: '',
+    return rows.map(
+      (a: {
+        id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        logoUrl: string | null;
+        defaultPriceCents: number | null;
+      }) => ({
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        activityName: a.name,
+        description: a.description ?? '',
+        logoUrl: a.logoUrl ?? undefined,
+        defaultPriceCents: a.defaultPriceCents ?? undefined,
+      })
+    );
+  }
+
+  private async getActivityCategoryList(): Promise<
+    {
+      id: string;
+      name: string;
+      activityName: string;
+      logoUrl?: string | null;
+    }[]
+  > {
+    const rows = await this.prisma.activityCategory.findMany({ orderBy: { name: 'asc' } });
+    return rows.map((a: { id: string; name: string; iconUrl: string | null }) => ({
+      id: a.id,
+      name: a.name,
+      activityName: a.name,
+      logoUrl: a.iconUrl ?? undefined,
     }));
   }
 
@@ -788,12 +842,15 @@ export class CustomerService {
     const codes = rows.map((r: { activityCode: string }) => r.activityCode);
     if (codes.length === 0) return { mtype: 'success', message: 'OK', favouriteActivities: [] };
     const activities = await this.prisma.activity.findMany({ where: { code: { in: codes } } });
-    const favouriteActivities = activities.map((a: { id: string; code: string; name: string }) => ({
-      id: a.id,
-      code: a.code,
-      name: a.name,
-      activityName: a.name,
-    }));
+    const favouriteActivities = activities.map(
+      (a: { id: string; code: string; name: string; logoUrl: string | null }) => ({
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        activityName: a.name,
+        logoUrl: a.logoUrl ?? undefined,
+      })
+    );
     return { mtype: 'success', message: 'OK', favouriteActivities };
   }
 
@@ -822,7 +879,7 @@ export class CustomerService {
   /** Activity list for customer (same as fetchAllActivity activityList shape). */
   async customerActivityList() {
     const list = await this.getActivityListFromDb();
-    return { mtype: 'success', message: 'OK', customerActivityList: list, list };
+    return { mtype: 'success', message: 'OK', customerActivityList: list };
   }
 
   async GetTrendingActivities() {
@@ -830,12 +887,15 @@ export class CustomerService {
       orderBy: { code: 'asc' },
       take: 10,
     });
-    const trendingActivities = rows.map((a: { id: string; code: string; name: string }) => ({
-      id: a.id,
-      code: a.code,
-      name: a.name,
-      activityName: a.name,
-    }));
+    const trendingActivities = rows.map(
+      (a: { id: string; code: string; name: string; logoUrl: string | null }) => ({
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        activityName: a.name,
+        logoUrl: a.logoUrl ?? undefined,
+      })
+    );
     return { mtype: 'success', message: 'OK', trendingActivities };
   }
 
@@ -1277,6 +1337,7 @@ export class CustomerService {
   // FAQ / Help (from Faq master data)
   async faqlist() {
     const rows = await this.prisma.faq.findMany({
+      where: { role: 'customer' },
       orderBy: { sortOrder: 'asc' },
       select: { id: true, question: true, answer: true },
     });
@@ -1289,15 +1350,11 @@ export class CustomerService {
   }
 
   async fetchContactLink() {
-    const row = await this.prisma.contactSetting.findUnique({
-      where: { key: 'contact_email' },
-    });
-    const contactEmail = row?.value ?? process.env.CONTACT_EMAIL ?? 'support@groupfit.example.com';
+    const row = await this.prisma.contactLink.findMany({});
     return {
       mtype: 'success',
       message: 'OK',
-      contactLink: '',
-      contactEmail,
+      data: row,
     };
   }
 

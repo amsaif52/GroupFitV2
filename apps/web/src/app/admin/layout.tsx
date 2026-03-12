@@ -2,25 +2,31 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getStoredUser } from '@/lib/auth';
+import { useStoredUser } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { AdminLayout } from '../AdminLayout';
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const user = getStoredUser();
+  const { user, mounted } = useStoredUser();
 
   useEffect(() => {
-    if (user === null) {
+    if (!mounted) return;
+    if (!user) {
       router.replace('/login');
       return;
     }
-    if (user && user.role !== ROLES.ADMIN) {
+    if (user.role !== ROLES.ADMIN) {
       router.replace('/dashboard');
     }
-  }, [user, router]);
+  }, [mounted, user, router]);
 
-  // Always render the same layout so server and client HTML match (avoids hydration error).
-  // Redirect happens in useEffect when user is missing or not admin.
+  if (!mounted) {
+    return <div style={{ padding: 24, textAlign: 'center' }}>Loading…</div>;
+  }
+  if (!user || user.role !== ROLES.ADMIN) {
+    return <div style={{ padding: 24, textAlign: 'center' }}>Loading…</div>;
+  }
+
   return <AdminLayout>{children}</AdminLayout>;
 }

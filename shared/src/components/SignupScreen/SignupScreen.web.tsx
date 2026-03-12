@@ -6,6 +6,7 @@ import type { SignupFormInput } from '../../utils/auth-schemas';
 import { signupFormSchema, SIGNUP_ROLES } from '../../utils/auth-schemas';
 import { COUNTRY_CODES, getSubdivisionsForCountry } from '../../utils';
 import Button from '../atoms/Button.web';
+import Select from '../atoms/Select.web';
 
 const OTP_LENGTH = 4;
 
@@ -66,6 +67,8 @@ export interface SignupScreenWebProps {
   resendCodeLabel?: string;
   /** OTP step: change number button text */
   changeNumberLabel?: string;
+  /** When provided, used for the phone prefix dropdown instead of static COUNTRY_CODES (e.g. from API). */
+  countryOptions?: { code: string; dial: string; name: string }[];
 }
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -139,10 +142,19 @@ export function SignupScreenWeb({
   verifyLabel = 'Verify and create account',
   resendCodeLabel = 'Resend code',
   changeNumberLabel = 'Change number',
+  countryOptions,
 }: SignupScreenWebProps) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
-  const [phoneDialCode, setPhoneDialCode] = useState(COUNTRY_CODES[0]?.dial ?? '+1');
+  const countryListForPhone =
+    countryOptions && countryOptions.length > 0 ? countryOptions : COUNTRY_CODES;
+  const [phoneDialCode, setPhoneDialCode] = useState(countryListForPhone[0]?.dial ?? '+1');
+  useEffect(() => {
+    if (countryOptions?.length) {
+      const list = countryOptions;
+      setPhoneDialCode((prev) => (list.some((c) => c.dial === prev) ? prev : list[0].dial));
+    }
+  }, [countryOptions]);
   const [signupStep, setSignupStep] = useState<'form' | 'otp'>('form');
   const [pendingSignupData, setPendingSignupData] = useState<SignupFormInput | null>(null);
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
@@ -429,18 +441,16 @@ export function SignupScreenWeb({
 
             <label className="gf-auth__label">
               <div className="gf-auth__phone-row">
-                <select
+                <Select
+                  options={countryListForPhone.map(({ code, dial, name }) => ({
+                    value: dial,
+                    label: `${dial} ${name}`,
+                  }))}
                   value={phoneDialCode}
-                  onChange={(e) => setPhoneDialCode(e.target.value)}
-                  className="gf-auth__country-select"
+                  onValueChange={setPhoneDialCode}
+                  variant="compact"
                   aria-label="Country code"
-                >
-                  {COUNTRY_CODES.map(({ code, dial, name }) => (
-                    <option key={code} value={dial}>
-                      {dial} {name}
-                    </option>
-                  ))}
-                </select>
+                />
                 <input
                   type="tel"
                   {...register('phone')}
@@ -457,19 +467,15 @@ export function SignupScreenWeb({
             </label>
 
             <label className="gf-auth__label">
-              <select
-                {...countryRegister}
-                onChange={handleCountryChange}
+              <Select
+                options={COUNTRY_CODES.map(({ code, name }) => ({ value: code, label: name }))}
+                placeholder={countryLabel}
+                variant="default"
                 className="gf-auth__input"
                 aria-invalid={Boolean(errors.country)}
-              >
-                <option value="">{countryLabel}</option>
-                {COUNTRY_CODES.map(({ code, name }) => (
-                  <option key={code} value={code}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+                {...countryRegister}
+                onValueChange={() => setValue('state', '')}
+              />
               {errors.country && (
                 <span className="gf-auth__field-error" role="alert">
                   {errors.country.message}
@@ -479,18 +485,14 @@ export function SignupScreenWeb({
 
             <label className="gf-auth__label">
               {stateOptions ? (
-                <select
-                  {...register('state')}
+                <Select
+                  options={stateOptions.map(({ code, name }) => ({ value: code, label: name }))}
+                  placeholder={stateLabel}
+                  variant="default"
                   className="gf-auth__input"
                   aria-invalid={Boolean(errors.state)}
-                >
-                  <option value="">{stateLabel}</option>
-                  {stateOptions.map(({ code, name }) => (
-                    <option key={code} value={code}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  {...register('state')}
+                />
               ) : (
                 <input
                   type="text"
@@ -509,17 +511,16 @@ export function SignupScreenWeb({
 
             <label className="gf-auth__label">
               <span className="gf-auth__label-text">{roleLabel}</span>
-              <select
-                {...register('role')}
+              <Select
+                options={SIGNUP_ROLES.map((r) => ({
+                  value: r,
+                  label: r.charAt(0).toUpperCase() + r.slice(1),
+                }))}
+                variant="default"
                 className="gf-auth__input"
                 aria-invalid={Boolean(errors.role)}
-              >
-                {SIGNUP_ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {r.charAt(0).toUpperCase() + r.slice(1)}
-                  </option>
-                ))}
-              </select>
+                {...register('role')}
+              />
               {errors.role && (
                 <span className="gf-auth__field-error" role="alert">
                   {errors.role.message}

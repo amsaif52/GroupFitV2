@@ -89,12 +89,27 @@ test.describe('API', () => {
     });
   });
 
+  test.describe('Country list', () => {
+    test('POST /api/auth/country-list returns 200 and list of countries', async ({ request }) => {
+      const res = await request.post('/api/auth/country-list', { data: {} });
+      expect(res.ok()).toBeTruthy();
+      const body = await res.json();
+      expect(body.mtype).toBe('success');
+      expect(Array.isArray(body.list)).toBe(true);
+      if (body.list.length > 0) {
+        expect(body.list[0]).toHaveProperty('id');
+        expect(body.list[0]).toHaveProperty('name');
+        expect(body.list[0]).toHaveProperty('isdCode');
+      }
+    });
+  });
+
   test.describe('OTP', () => {
     test('POST /api/auth/send-otp with valid phone returns 200 and userCode', async ({
       request,
     }) => {
       const res = await request.post('/api/auth/send-otp', {
-        data: { phoneNumber: '+447700900001' },
+        data: { data: '+447700900001', type: 'phone' },
       });
       expect(res.ok()).toBeTruthy();
       const body = await res.json();
@@ -105,7 +120,7 @@ test.describe('API', () => {
 
     test('POST /api/auth/send-otp with invalid phone returns 400', async ({ request }) => {
       const res = await request.post('/api/auth/send-otp', {
-        data: { phoneNumber: '123' },
+        data: { data: '123', type: 'phone' },
       });
       expect(res.status()).toBe(400);
     });
@@ -119,7 +134,7 @@ test.describe('API', () => {
 
     test('POST /api/auth/verify-otp with wrong OTP returns 401', async ({ request }) => {
       const sendRes = await request.post('/api/auth/send-otp', {
-        data: { phoneNumber: '+447700900002' },
+        data: { data: '+447700900002', type: 'phone' },
       });
       expect(sendRes.ok()).toBeTruthy();
       const { userCode } = await sendRes.json();
@@ -140,7 +155,7 @@ test.describe('API', () => {
 
     test('POST /api/auth/resend-otp after send-otp returns 200', async ({ request }) => {
       await request.post('/api/auth/send-otp', {
-        data: { phoneNumber: '+447700900003' },
+        data: { data: '+447700900003', type: 'phone' },
       });
       const res = await request.post('/api/auth/resend-otp', {
         data: { phoneNumber: '+447700900003' },

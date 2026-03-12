@@ -1,29 +1,59 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getStoredUser } from '@/lib/auth';
+import { useStoredUser, setStoredViewAs, type ViewAs } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
 import { ROUTES } from '../routes';
-import { setStoredViewAs, type ViewAs } from '@/lib/auth';
 
 export default function ChooseExperiencePage() {
   const router = useRouter();
-  const user = getStoredUser();
+  const { user, mounted } = useStoredUser();
 
-  if (typeof window !== 'undefined') {
+  useEffect(() => {
+    if (!mounted) return;
     if (!user) {
       router.replace(ROUTES.login);
-      return null;
+      return;
     }
-    // Only admin needs to choose; customer/trainer go straight to dashboard
     if (user.role !== ROLES.ADMIN) {
       router.replace(ROUTES.dashboard);
-      return null;
     }
+  }, [mounted, user, router]);
+
+  if (!mounted) {
+    return (
+      <main
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <p>Loading…</p>
+      </main>
+    );
+  }
+  if (!user || user.role !== ROLES.ADMIN) {
+    return (
+      <main
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <p>Loading…</p>
+      </main>
+    );
   }
 
-  const isAdmin = user?.role === ROLES.ADMIN;
+  const isAdmin = true;
 
   function handleChoose(viewAs: ViewAs) {
     setStoredViewAs(viewAs);

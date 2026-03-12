@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   getTranslations,
   ROLES,
@@ -19,6 +19,8 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? undefined;
 
+type CountryOption = { code: string; dial: string; name: string };
+
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -26,7 +28,23 @@ export default function SignupPage() {
   const [locale] = useState<Locale>('en');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
   const t = getTranslations(locale);
+
+  useEffect(() => {
+    api
+      .post<{ mtype?: string; list?: { id: string; name: string; isdCode: string }[] }>(
+        '/auth/country-list',
+        {}
+      )
+      .then((res) => {
+        const list = res?.data?.list;
+        if (list?.length) {
+          setCountryOptions(list.map((c) => ({ code: c.id, dial: c.isdCode, name: c.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function handleSendSignupOtp(data: SignupFormInput) {
     setError(null);
@@ -153,6 +171,7 @@ export default function SignupPage() {
         verifyLabel={t.auth.verify ?? 'Verify and create account'}
         resendCodeLabel={t.auth.resendCode ?? 'Resend code'}
         changeNumberLabel={t.auth.changeNumber ?? 'Change number'}
+        countryOptions={countryOptions.length > 0 ? countryOptions : undefined}
         onLoginClick={() => router.push('/login')}
         onGooglePress={googleButton ? undefined : handleGoogleSignupFallback}
         onApplePress={handleAppleSignup}

@@ -6,6 +6,7 @@ import type { LoginInput, LoginPhoneInput, VerifyOtpInput } from '../../utils/au
 import { loginSchema, loginPhoneSchema, verifyOtpSchema } from '../../utils/auth-schemas';
 import { COUNTRY_CODES } from '../../utils';
 import Button from '../atoms/Button.web';
+import Select from '../atoms/Select.web';
 
 const OTP_LENGTH = 4;
 
@@ -69,6 +70,8 @@ export interface LoginScreenWebProps {
   onSendOtp?: (phone: string, type: 'phone' | 'email') => Promise<{ userCode: string }>;
   /** When provided with onSendOtp, verify step is available. Called with OTP and userCode from onSendOtp. */
   onVerifyOtp?: (otp: string, userCode: string) => Promise<void>;
+  /** When provided, used for the phone prefix dropdown instead of static COUNTRY_CODES (e.g. from API). */
+  countryOptions?: { code: string; dial: string; name: string }[];
 }
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -133,13 +136,21 @@ export function LoginScreenWeb({
   appleButton,
   onSendOtp,
   onVerifyOtp,
+  countryOptions,
 }: LoginScreenWebProps) {
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('phone');
   const [otpStep, setOtpStep] = useState<{ userCode: string; phone: string } | null>(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [sendOtpLoading, setSendOtpLoading] = useState(false);
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
-  const [countryDial, setCountryDial] = useState('+1');
+  const countryList = countryOptions && countryOptions.length > 0 ? countryOptions : COUNTRY_CODES;
+  const [countryDial, setCountryDial] = useState(countryList[0]?.dial ?? '+1');
+  useEffect(() => {
+    if (countryOptions?.length) {
+      const list = countryOptions;
+      setCountryDial((prev) => (list.some((c) => c.dial === prev) ? prev : list[0].dial));
+    }
+  }, [countryOptions]);
 
   useEffect(() => {
     if (resendCooldownSeconds <= 0) return;
@@ -341,18 +352,16 @@ export function LoginScreenWeb({
               {error && <p className="gf-auth__error">{error}</p>}
               <label className="gf-auth__label">
                 <div className="gf-auth__phone-row">
-                  <select
+                  <Select
+                    options={countryList.map(({ code, dial, name }) => ({
+                      value: dial,
+                      label: `${dial} ${name}`,
+                    }))}
                     value={countryDial}
-                    onChange={(e) => setCountryDial(e.target.value)}
-                    className="gf-auth__country-select"
+                    onValueChange={setCountryDial}
+                    variant="compact"
                     aria-label="Country code"
-                  >
-                    {COUNTRY_CODES.map(({ code, dial, name }) => (
-                      <option key={code} value={dial}>
-                        {dial} {name}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   <input
                     type="tel"
                     {...phoneForm.register('phone')}

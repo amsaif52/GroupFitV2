@@ -45,6 +45,20 @@ export class CustomerController {
     return this.customerService.deleteProfile();
   }
 
+  @Get('toast/activities-disclaimer')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get whether user has seen the activities disclaimer modal' })
+  getToastActivitiesDisclaimer(@CurrentUser('sub') userId: string) {
+    return this.customerService.getToastActivitiesDisclaimer(userId);
+  }
+
+  @Post('toast/activities-disclaimer')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Mark activities disclaimer modal as seen' })
+  setToastActivitiesDisclaimer(@CurrentUser('sub') userId: string) {
+    return this.customerService.setToastActivitiesDisclaimer(userId);
+  }
+
   // Reference data
   @Post('countryList')
   @ApiOperation({ summary: 'Country list (stub)' })
