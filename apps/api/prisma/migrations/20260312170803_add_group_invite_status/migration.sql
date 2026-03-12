@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "group_invite_by_phone" ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'PENDING',
+ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

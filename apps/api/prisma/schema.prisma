@@ -53,6 +53,7 @@ model User {
   bankDetails          TrainerBankDetail?
   serviceAreas         TrainerServiceArea[]
   customerLocations    CustomerLocation[]
+  groupInvitesByPhoneSent GroupInviteByPhone[] @relation("GroupInviteByPhoneInvitedBy")
   toasts              Toast[]
   activitiesCreated    Activity[]         @relation("ActivityCreatedBy")
   activitiesUpdated    Activity[]         @relation("ActivityUpdatedBy")
@@ -191,6 +192,7 @@ model Group {
   updatedAt DateTime     @updatedAt
   owner     User         @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   members   GroupMember[]
+  invitesByPhone GroupInviteByPhone[]
   @@map("customer_group")
 }
 
@@ -203,6 +205,21 @@ model GroupMember {
   user      User     @relation("GroupMemberUser", fields: [userId], references: [id], onDelete: Cascade)
   @@unique([groupId, userId])
   @@map("group_member")
+}
+
+// Group invite by phone: status PENDING until invitee signs up and accepts (APPROVED) or declines (REJECTED).
+model GroupInviteByPhone {
+  id          String   @id @default(cuid())
+  groupId     String   @map("group_id")
+  phone       String
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  invitedById String   @map("invited_by_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedBy   User     @relation("GroupInviteByPhoneInvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+  @@unique([groupId, phone])
+  @@map("group_invite_by_phone")
 }
 
 model Session {

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuthService } from '../auth/auth.service';
 import type { EditProfileDto } from '../common/dto/edit-profile.dto';
 import {
   COUNTRIES,
@@ -82,7 +83,10 @@ export function stubList<T>(items: T[] = [], message = 'OK') {
 
 @Injectable()
 export class CustomerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authService: AuthService
+  ) {}
 
   getHealth() {
     return { division: 'customer', status: 'ok', timestamp: new Date().toISOString() };
@@ -233,7 +237,7 @@ export class CustomerService {
         createdAt: g.createdAt.toISOString(),
       })
     );
-    return { mtype: 'success', message: 'OK', list, fetchallgroupslist: list };
+    return { mtype: 'success', message: 'OK', fetchallgroupslist: list };
   }
 
   async addgroupname(userId: string, name: string) {
@@ -243,6 +247,18 @@ export class CustomerService {
       data: { ownerId: userId, name: nameNorm },
     });
     return { mtype: 'success', message: 'OK', id: group.id };
+  }
+
+  async editgroup(userId: string, groupId: string, name: string) {
+    const nameNorm = String(name ?? '').trim();
+    if (!nameNorm) return { mtype: 'error', message: 'Group name is required' };
+    const group = await this.prisma.group.findFirst({ where: { id: groupId, ownerId: userId } });
+    if (!group) return { mtype: 'error', message: 'Group not found' };
+    await this.prisma.group.update({
+      where: { id: groupId },
+      data: { name: nameNorm },
+    });
+    return { mtype: 'success', message: 'OK' };
   }
 
   async addgroupmember(userId: string, groupId: string, memberUserId: string) {
@@ -328,6 +344,187 @@ export class CustomerService {
       email: u.email,
     }));
     return { mtype: 'success', message: 'OK', list, fetchSoloMembers: list };
+  }
+
+  /** Normalize phone for lookup (E.164-style: digits only, optional leading +). */
+  private static normalizePhone(phone: string): string {
+    const trimmed = String(phone ?? '').trim();
+    const hasPlus = trimmed.startsWith('+');
+    const digits = trimmed.replace(/\D/g, '');
+    return digits ? (hasPlus ? `+${digits}` : digits) : '';
+  }
+
+  /**
+   * Invite a member to the group by phone number.
+   * - If user exists (customer): add to group, create in-app notification, send SMS that they were added.
+   * - If user does not exist: store pending invite, send SMS to sign up for GroupFit to join the group.
+   */
+  async inviteGroupMemberByPhone(userId: string, groupId: string, phone: string) {
+    const normalized = CustomerService.normalizePhone(phone);
+    if (!normalized) return { mtype: 'error', message: 'Please enter a valid phone number' };
+
+    const group = await this.prisma.group.findFirst({
+      where: { id: groupId, ownerId: userId },
+      include: { owner: { select: { name: true, email: true } } },
+    });
+    if (!group) return { mtype: 'error', message: 'Group not found' };
+
+    const inviterName = group.owner.name ?? group.owner.email ?? 'A member';
+    const groupName = group.name;
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { phone: normalized },
+      select: { id: true, role: true },
+    });
+
+    if (existingUser) {
+      if (existingUser.role !== 'customer')
+        return {
+          mtype: 'error',
+          message:
+            'That phone number belongs to a trainer or admin. Only customers can be added to groups.',
+        };
+
+      const alreadyMember = await this.prisma.groupMember.findUnique({
+        where: { groupId_userId: { groupId, userId: existingUser.id } },
+      });
+      if (alreadyMember) return { mtype: 'error', message: 'That person is already in the group' };
+
+      await this.prisma.groupMember.create({
+        data: { groupId, userId: existingUser.id },
+      });
+
+      await this.prisma.notification.create({
+        data: {
+          userId: existingUser.id,
+          title: 'Added to group',
+          body: `${inviterName} added you to the group "${groupName}".`,
+          read: false,
+        },
+      });
+
+      await this.authService.sendSms(
+        normalized,
+        `${inviterName} added you to the group "${groupName}" on GroupFit.`
+      );
+
+      return {
+        mtype: 'success',
+        message: "They've been added to the group and notified by SMS.",
+        added: true,
+      };
+    }
+
+    await this.prisma.groupInviteByPhone.upsert({
+      where: { groupId_phone: { groupId, phone: normalized } },
+      create: { groupId, phone: normalized, invitedById: userId, status: 'PENDING' },
+      update: { invitedById: userId, status: 'PENDING' },
+    });
+
+    await this.authService.sendSms(
+      normalized,
+      `${inviterName} invited you to the group "${groupName}". Create an account on GroupFit to join: sign up with this phone number and you can join the group.`
+    );
+
+    return {
+      mtype: 'success',
+      message:
+        'Invitation sent by SMS. They can join the group once they create a GroupFit account with this phone number.',
+      added: false,
+    };
+  }
+
+  /**
+   * List phone invites for a group (owner only). Returns invites with status PENDING | APPROVED | REJECTED.
+   */
+  async listGroupInvitesByPhone(userId: string, groupId: string) {
+    const group = await this.prisma.group.findFirst({
+      where: { id: groupId, ownerId: userId },
+      include: {
+        invitesByPhone: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+    if (!group) return { mtype: 'error', message: 'Group not found' };
+    const list = group.invitesByPhone.map(
+      (inv: { id: string; phone: string; status: string; createdAt: Date; updatedAt: Date }) => ({
+        id: inv.id,
+        phone: inv.phone,
+        status: inv.status,
+        createdAt: inv.createdAt.toISOString(),
+        updatedAt: inv.updatedAt.toISOString(),
+      })
+    );
+    return { mtype: 'success', message: 'OK', list, listGroupInvitesByPhone: list };
+  }
+
+  /**
+   * Accept a group invite (invitee). Current user's phone must match the invite; adds user to group and sets status APPROVED.
+   */
+  async acceptGroupInviteByPhone(userId: string, inviteId: string) {
+    const invite = await this.prisma.groupInviteByPhone.findUnique({
+      where: { id: inviteId },
+      include: { group: { select: { id: true, name: true, ownerId: true } } },
+    });
+    if (!invite || invite.status !== 'PENDING')
+      return { mtype: 'error', message: 'Invite not found or no longer pending' };
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { phone: true, role: true },
+    });
+    if (!user?.phone || user.role !== 'customer')
+      return { mtype: 'error', message: 'Only customers with a phone can accept group invites' };
+    const normalized = CustomerService.normalizePhone(user.phone);
+    if (!normalized || normalized !== invite.phone)
+      return { mtype: 'error', message: 'This invite was sent to a different phone number' };
+    const existing = await this.prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId: invite.groupId, userId } },
+    });
+    if (existing) {
+      await this.prisma.groupInviteByPhone.update({
+        where: { id: inviteId },
+        data: { status: 'APPROVED' },
+      });
+      return { mtype: 'success', message: 'You are already in this group', approved: true };
+    }
+    await this.prisma.$transaction([
+      this.prisma.groupMember.create({ data: { groupId: invite.groupId, userId } }),
+      this.prisma.groupInviteByPhone.update({
+        where: { id: inviteId },
+        data: { status: 'APPROVED' },
+      }),
+    ]);
+    return {
+      mtype: 'success',
+      message: `You've joined the group "${invite.group.name}"`,
+      approved: true,
+    };
+  }
+
+  /**
+   * Reject a group invite (invitee). Current user's phone must match the invite; sets status REJECTED.
+   */
+  async rejectGroupInviteByPhone(userId: string, inviteId: string) {
+    const invite = await this.prisma.groupInviteByPhone.findUnique({
+      where: { id: inviteId },
+    });
+    if (!invite || invite.status !== 'PENDING')
+      return { mtype: 'error', message: 'Invite not found or no longer pending' };
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { phone: true },
+    });
+    if (!user?.phone)
+      return { mtype: 'error', message: 'Only users with a phone can reject group invites' };
+    const normalized = CustomerService.normalizePhone(user.phone);
+    if (!normalized || normalized !== invite.phone)
+      return { mtype: 'error', message: 'This invite was sent to a different phone number' };
+    await this.prisma.groupInviteByPhone.update({
+      where: { id: inviteId },
+      data: { status: 'REJECTED' },
+    });
+    return { mtype: 'success', message: 'Invite declined', rejected: true };
   }
 
   // Referral (people the current user has referred)

@@ -93,6 +93,13 @@ export class CustomerController {
     return this.customerService.addgroupname(userId, body?.name ?? '');
   }
 
+  @Post('editgroup')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Rename group; body: groupId, name' })
+  editgroup(@CurrentUser('sub') userId: string, @Body() body: { groupId?: string; name?: string }) {
+    return this.customerService.editgroup(userId, body?.groupId ?? '', body?.name ?? '');
+  }
+
   @Post('addgroupmember')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Add member to group' })
@@ -136,6 +143,47 @@ export class CustomerController {
   @ApiOperation({ summary: 'Customers not in group (for add member); body: groupId' })
   fetchSoloMembers(@CurrentUser('sub') userId: string, @Body() body: { groupId?: string }) {
     return this.customerService.fetchSoloMembers(userId, body?.groupId);
+  }
+
+  @Post('inviteGroupMemberByPhone')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Invite someone to the group by phone; body: groupId, phone' })
+  inviteGroupMemberByPhone(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { groupId?: string; phone?: string }
+  ) {
+    return this.customerService.inviteGroupMemberByPhone(
+      userId,
+      body?.groupId ?? '',
+      body?.phone ?? ''
+    );
+  }
+
+  @Post('listGroupInvitesByPhone')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'List phone invites for a group (owner); body: groupId' })
+  listGroupInvitesByPhone(@CurrentUser('sub') userId: string, @Body() body: { groupId?: string }) {
+    return this.customerService.listGroupInvitesByPhone(userId, body?.groupId ?? '');
+  }
+
+  @Post('acceptGroupInviteByPhone')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Accept a group invite (invitee); body: inviteId' })
+  acceptGroupInviteByPhone(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { inviteId?: string }
+  ) {
+    return this.customerService.acceptGroupInviteByPhone(userId, body?.inviteId ?? '');
+  }
+
+  @Post('rejectGroupInviteByPhone')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Reject a group invite (invitee); body: inviteId' })
+  rejectGroupInviteByPhone(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { inviteId?: string }
+  ) {
+    return this.customerService.rejectGroupInviteByPhone(userId, body?.inviteId ?? '');
   }
 
   // Referral

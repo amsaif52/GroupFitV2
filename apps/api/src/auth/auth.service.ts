@@ -369,6 +369,23 @@ export class AuthService {
     }
   }
 
+  /**
+   * Send an SMS (e.g. group invite). No-op if Twilio not configured. Logs errors but does not throw.
+   */
+  async sendSms(phone: string, body: string): Promise<void> {
+    const fromNumber = this.config.get<string>('TWILIO_FROM_NUMBER');
+    if (!fromNumber || !this.twilioClient) return;
+    try {
+      await this.twilioClient.messages.create({
+        body,
+        from: fromNumber,
+        to: phone,
+      });
+    } catch (error) {
+      console.error('Error sending SMS', error);
+    }
+  }
+
   private issueToken(user: {
     id: string;
     email: string;
