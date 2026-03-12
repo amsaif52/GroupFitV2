@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { CustomerLayout } from '../CustomerLayout';
 import { customerApi } from '@/lib/api';
@@ -8,14 +8,83 @@ import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
 import { useDefaultLocation } from '@/contexts/DefaultLocationContext';
 
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+
 type LocationItem = {
   id: string;
   label: string;
   address?: string;
+  streetLine1?: string;
+  streetLine2?: string;
+  city?: string;
+  stateProvince?: string;
+  postalCode?: string;
+  country?: string;
   latitude?: number;
   longitude?: number;
+  isDefault?: boolean;
   createdAt: string;
 };
+
+type InputMode = 'autocomplete' | 'manual';
+
+type ParsedAddress = {
+  streetLine1: string;
+  streetLine2: string;
+  city: string;
+  stateProvince: string;
+  postalCode: string;
+  country: string;
+};
+
+function getComponent(
+  components: { long_name: string; short_name: string; types: string[] }[],
+  type: string
+): string {
+  const c = components.find((x) => x.types.includes(type));
+  return c?.long_name ?? '';
+}
+
+function parseAddressComponents(place: {
+  address_components?: { long_name: string; short_name: string; types: string[] }[];
+}): ParsedAddress {
+  const comp = place.address_components ?? [];
+  const streetNumber = getComponent(comp, 'street_number');
+  const route = getComponent(comp, 'route');
+  const streetLine1 = [streetNumber, route].filter(Boolean).join(' ').trim();
+  const subpremise = getComponent(comp, 'subpremise');
+  const streetLine2 = subpremise || getComponent(comp, 'premise') || '';
+  return {
+    streetLine1,
+    streetLine2,
+    city:
+      getComponent(comp, 'locality') ||
+      getComponent(comp, 'sublocality') ||
+      getComponent(comp, 'sublocality_level_1'),
+    stateProvince: getComponent(comp, 'administrative_area_level_1'),
+    postalCode: getComponent(comp, 'postal_code'),
+    country: getComponent(comp, 'country'),
+  };
+}
+
+function formatAddressFromParts(parts: {
+  streetLine1?: string;
+  streetLine2?: string;
+  city?: string;
+  stateProvince?: string;
+  postalCode?: string;
+  country?: string;
+}): string {
+  const arr = [
+    parts.streetLine1,
+    parts.streetLine2,
+    parts.city,
+    parts.stateProvince,
+    parts.postalCode,
+    parts.country,
+  ].filter(Boolean);
+  return arr.join(', ');
+}
 
 export default function LocationsPage() {
   const { defaultLocation, setDefaultLocation, clearDefaultLocation } = useDefaultLocation();
@@ -23,13 +92,22 @@ export default function LocationsPage() {
   const [list, setList] = useState<LocationItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [inputMode, setInputMode] = useState<InputMode>('autocomplete');
   const [editing, setEditing] = useState<LocationItem | null>(null);
   const [formLabel, setFormLabel] = useState('');
   const [formAddress, setFormAddress] = useState('');
+  const [formStreetLine1, setFormStreetLine1] = useState('');
+  const [formStreetLine2, setFormStreetLine2] = useState('');
+  const [formCity, setFormCity] = useState('');
+  const [formStateProvince, setFormStateProvince] = useState('');
+  const [formPostalCode, setFormPostalCode] = useState('');
+  const [formCountry, setFormCountry] = useState('');
   const [formLatitude, setFormLatitude] = useState<string>('');
   const [formLongitude, setFormLongitude] = useState<string>('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<unknown>(null);
 
   const fetchList = () => {
     customerApi
@@ -40,10 +118,20 @@ export default function LocationsPage() {
           setError(String(data.message ?? 'Failed to load'));
           setList([]);
         } else {
-          setList(
-            (data?.customerServiceList as LocationItem[]) ?? (data?.list as LocationItem[]) ?? []
-          );
+          const locations =
+            (data?.customerServiceList as LocationItem[]) ?? (data?.list as LocationItem[]) ?? [];
+          setList(locations);
           setError(null);
+          const defaultLoc = locations.find((l) => l.isDefault);
+          if (defaultLoc) {
+            setDefaultLocation({
+              id: defaultLoc.id,
+              label: defaultLoc.label,
+              address: defaultLoc.address,
+              latitude: defaultLoc.latitude,
+              longitude: defaultLoc.longitude,
+            });
+          }
         }
       })
       .catch((err) => {
@@ -57,12 +145,101 @@ export default function LocationsPage() {
     fetchList();
   }, []);
 
+  useEffect(() => {
+    if (
+      !showForm ||
+      inputMode !== 'autocomplete' ||
+      !GOOGLE_MAPS_API_KEY ||
+      !addressInputRef.current
+    )
+      return;
+    const input = addressInputRef.current;
+
+    function initAutocomplete() {
+      const win =
+        typeof window !== 'undefined'
+          ? (window as unknown as {
+              google?: {
+                maps: {
+                  places: {
+                    Autocomplete: new (
+                      el: HTMLInputElement,
+                      opts?: { types?: string[] }
+                    ) => {
+                      addListener: (ev: string, fn: () => void) => void;
+                      getPlace: (cb: (place: unknown) => void) => void;
+                    };
+                  };
+                };
+              };
+            })
+          : null;
+      const g = win?.google;
+      if (!g?.maps?.places?.Autocomplete) return;
+      const Autocomplete = g.maps.places.Autocomplete;
+      const autocomplete = new Autocomplete(input, { types: ['address'] });
+      autocompleteRef.current = autocomplete;
+      autocomplete.addListener('place_changed', () => {
+        const place = (autocomplete as unknown as { getPlace?: () => unknown }).getPlace?.();
+        if (!place || typeof place !== 'object') return;
+        const p = place as {
+          formatted_address?: string;
+          address_components?: { long_name: string; short_name: string; types: string[] }[];
+          geometry?: { location: { lat: () => number; lng: () => number } };
+        };
+        if (p.formatted_address) setFormAddress(p.formatted_address);
+        const parsed = parseAddressComponents(p);
+        setFormStreetLine1(parsed.streetLine1);
+        setFormStreetLine2(parsed.streetLine2);
+        setFormCity(parsed.city);
+        setFormStateProvince(parsed.stateProvince);
+        setFormPostalCode(parsed.postalCode);
+        setFormCountry(parsed.country);
+        if (p.geometry?.location) {
+          setFormLatitude(String(p.geometry.location.lat()));
+          setFormLongitude(String(p.geometry.location.lng()));
+        }
+      });
+    }
+
+    if ((window as unknown as { google?: unknown }).google) {
+      initAutocomplete();
+      return () => {
+        autocompleteRef.current = null;
+      };
+    }
+    const scriptId = 'google-maps-places-locations';
+    if (document.getElementById(scriptId)) {
+      if ((window as unknown as { google?: unknown }).google) initAutocomplete();
+      return () => {
+        autocompleteRef.current = null;
+      };
+    }
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => initAutocomplete();
+    document.head.appendChild(script);
+    return () => {
+      autocompleteRef.current = null;
+    };
+  }, [showForm, inputMode]);
+
   const openAdd = () => {
     setEditing(null);
     setFormLabel('');
     setFormAddress('');
+    setFormStreetLine1('');
+    setFormStreetLine2('');
+    setFormCity('');
+    setFormStateProvince('');
+    setFormPostalCode('');
+    setFormCountry('');
     setFormLatitude('');
     setFormLongitude('');
+    setInputMode('autocomplete');
     setShowForm(true);
   };
 
@@ -70,8 +247,15 @@ export default function LocationsPage() {
     setEditing(row);
     setFormLabel(row.label);
     setFormAddress(row.address ?? '');
+    setFormStreetLine1(row.streetLine1 ?? '');
+    setFormStreetLine2(row.streetLine2 ?? '');
+    setFormCity(row.city ?? '');
+    setFormStateProvince(row.stateProvince ?? '');
+    setFormPostalCode(row.postalCode ?? '');
+    setFormCountry(row.country ?? '');
     setFormLatitude(row.latitude != null ? String(row.latitude) : '');
     setFormLongitude(row.longitude != null ? String(row.longitude) : '');
+    setInputMode(GOOGLE_MAPS_API_KEY ? 'autocomplete' : 'manual');
     setShowForm(true);
   };
 
@@ -80,25 +264,51 @@ export default function LocationsPage() {
     setEditing(null);
     setFormLabel('');
     setFormAddress('');
+    setFormStreetLine1('');
+    setFormStreetLine2('');
+    setFormCity('');
+    setFormStateProvince('');
+    setFormPostalCode('');
+    setFormCountry('');
     setFormLatitude('');
     setFormLongitude('');
+  };
+
+  const getSubmitPayload = () => {
+    const lat = formLatitude.trim() ? Number(formLatitude) : null;
+    const lng = formLongitude.trim() ? Number(formLongitude) : null;
+    const address =
+      formAddress.trim() ||
+      formatAddressFromParts({
+        streetLine1: formStreetLine1.trim() || undefined,
+        streetLine2: formStreetLine2.trim() || undefined,
+        city: formCity.trim() || undefined,
+        stateProvince: formStateProvince.trim() || undefined,
+        postalCode: formPostalCode.trim() || undefined,
+        country: formCountry.trim() || undefined,
+      });
+    return {
+      label: formLabel.trim(),
+      address: address || null,
+      streetLine1: formStreetLine1.trim() || null,
+      streetLine2: formStreetLine2.trim() || null,
+      city: formCity.trim() || null,
+      stateProvince: formStateProvince.trim() || null,
+      postalCode: formPostalCode.trim() || null,
+      country: formCountry.trim() || null,
+      latitude: lat,
+      longitude: lng,
+    };
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitLoading(true);
     setError(null);
-    const lat = formLatitude.trim() ? Number(formLatitude) : null;
-    const lng = formLongitude.trim() ? Number(formLongitude) : null;
+    const payload = getSubmitPayload();
     if (editing) {
       customerApi
-        .editCustomerService({
-          locationId: editing.id,
-          label: formLabel.trim(),
-          address: formAddress.trim() || null,
-          latitude: lat,
-          longitude: lng,
-        })
+        .editCustomerService({ locationId: editing.id, ...payload })
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
           if (data?.mtype === 'success') {
@@ -112,12 +322,7 @@ export default function LocationsPage() {
         .finally(() => setSubmitLoading(false));
     } else {
       customerApi
-        .addCustomerService({
-          label: formLabel.trim(),
-          address: formAddress.trim() || null,
-          latitude: lat,
-          longitude: lng,
-        })
+        .addCustomerService(payload)
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
           if (data?.mtype === 'success') {
@@ -130,6 +335,31 @@ export default function LocationsPage() {
         .catch((err) => setError(getApiErrorMessage(err, 'Add failed')))
         .finally(() => setSubmitLoading(false));
     }
+  };
+
+  const handleSetDefault = (row: LocationItem) => {
+    setActionId(row.id);
+    customerApi
+      .setDefaultCustomerLocation(row.id)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown>;
+        if (data?.mtype === 'success') {
+          setDefaultLocation({
+            id: row.id,
+            label: row.label,
+            address: row.address,
+            latitude: row.latitude,
+            longitude: row.longitude,
+          });
+          fetchList();
+        } else {
+          setError(String(data?.message ?? 'Failed to set default'));
+        }
+      })
+      .catch((err) => {
+        setError(getApiErrorMessage(err, 'Failed to set default'));
+      })
+      .finally(() => setActionId(null));
   };
 
   const handleDelete = (id: string) => {
@@ -148,6 +378,37 @@ export default function LocationsPage() {
       .finally(() => setActionId(null));
   };
 
+  const inputStyle = {
+    padding: 8,
+    width: '100%' as const,
+    maxWidth: 400,
+    marginBottom: 12,
+    borderRadius: 6,
+    border: '1px solid var(--groupfit-border-light)',
+  };
+  const labelStyle = { display: 'block' as const, marginBottom: 4, fontSize: 14, fontWeight: 600 };
+  const tabStyle = (active: boolean) => ({
+    padding: '10px 16px',
+    fontSize: 14,
+    fontWeight: 600,
+    border: '2px solid var(--groupfit-border-light)',
+    background: active ? 'var(--groupfit-secondary)' : '#fff',
+    color: active ? '#fff' : 'var(--groupfit-grey-dark)',
+    cursor: 'pointer' as const,
+    borderRadius: 6,
+  });
+
+  const displayAddress = (row: LocationItem) =>
+    row.address ||
+    formatAddressFromParts({
+      streetLine1: row.streetLine1,
+      streetLine2: row.streetLine2,
+      city: row.city,
+      stateProvince: row.stateProvince,
+      postalCode: row.postalCode,
+      country: row.country,
+    });
+
   return (
     <CustomerLayout>
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
@@ -164,7 +425,7 @@ export default function LocationsPage() {
       </header>
 
       <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 16 }}>
-        Saved addresses for sessions. Add, edit, or remove locations.
+        Saved addresses for sessions. Add with Google search or enter manually. Choose a default.
       </p>
 
       <Link
@@ -212,71 +473,112 @@ export default function LocationsPage() {
             {editing ? 'Edit location' : 'New location'}
           </h2>
           <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Label
-            </label>
+            <label style={labelStyle}>Label *</label>
             <input
               type="text"
               value={formLabel}
               onChange={(e) => setFormLabel(e.target.value)}
               placeholder="e.g. Home, Gym"
               required
-              style={{
-                padding: 8,
-                width: '100%',
-                maxWidth: 280,
-                marginBottom: 12,
-                borderRadius: 6,
-                border: '1px solid var(--groupfit-border-light)',
-              }}
+              style={{ ...inputStyle, maxWidth: 280 }}
             />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Address (optional)
-            </label>
-            <input
-              type="text"
-              value={formAddress}
-              onChange={(e) => setFormAddress(e.target.value)}
-              placeholder="Street, city"
-              style={{
-                padding: 8,
-                width: '100%',
-                maxWidth: 400,
-                marginBottom: 12,
-                borderRadius: 6,
-                border: '1px solid var(--groupfit-border-light)',
-              }}
-            />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Latitude / Longitude (optional)
-            </label>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              <input
-                type="text"
-                value={formLatitude}
-                onChange={(e) => setFormLatitude(e.target.value)}
-                placeholder="Lat"
-                style={{
-                  padding: 8,
-                  width: 120,
-                  borderRadius: 6,
-                  border: '1px solid var(--groupfit-border-light)',
-                }}
-              />
-              <input
-                type="text"
-                value={formLongitude}
-                onChange={(e) => setFormLongitude(e.target.value)}
-                placeholder="Lng"
-                style={{
-                  padding: 8,
-                  width: 120,
-                  borderRadius: 6,
-                  border: '1px solid var(--groupfit-border-light)',
-                }}
-              />
+
+            <p style={{ ...labelStyle, marginTop: 8 }}>Address</p>
+            {!GOOGLE_MAPS_API_KEY && (
+              <p style={{ fontSize: 13, color: 'var(--groupfit-grey)', marginBottom: 8 }}>
+                Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to use address search.
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <button
+                type="button"
+                style={tabStyle(inputMode === 'autocomplete')}
+                onClick={() => setInputMode('autocomplete')}
+              >
+                Search with Google
+              </button>
+              <button
+                type="button"
+                style={tabStyle(inputMode === 'manual')}
+                onClick={() => setInputMode('manual')}
+              >
+                Enter manually
+              </button>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+
+            {inputMode === 'autocomplete' ? (
+              <>
+                <label style={labelStyle} htmlFor="locations-address-search">
+                  {GOOGLE_MAPS_API_KEY ? 'Search address' : 'Address'}
+                </label>
+                <input
+                  id="locations-address-search"
+                  ref={addressInputRef}
+                  type="text"
+                  value={formAddress}
+                  onChange={(e) => setFormAddress(e.target.value)}
+                  placeholder={GOOGLE_MAPS_API_KEY ? 'Start typing address…' : 'Street, city'}
+                  autoComplete="off"
+                  style={inputStyle}
+                />
+                <p style={{ fontSize: 12, color: 'var(--groupfit-grey)', marginTop: -4 }}>
+                  Selecting an address fills street, city, state, country and coordinates.
+                </p>
+              </>
+            ) : (
+              <>
+                <label style={labelStyle}>Street line 1 *</label>
+                <input
+                  type="text"
+                  value={formStreetLine1}
+                  onChange={(e) => setFormStreetLine1(e.target.value)}
+                  placeholder="Street number and name"
+                  style={inputStyle}
+                />
+                <label style={labelStyle}>Street line 2</label>
+                <input
+                  type="text"
+                  value={formStreetLine2}
+                  onChange={(e) => setFormStreetLine2(e.target.value)}
+                  placeholder="Apt, suite, unit, building (optional)"
+                  style={inputStyle}
+                />
+                <label style={labelStyle}>City *</label>
+                <input
+                  type="text"
+                  value={formCity}
+                  onChange={(e) => setFormCity(e.target.value)}
+                  placeholder="City"
+                  style={inputStyle}
+                />
+                <label style={labelStyle}>State / Province</label>
+                <input
+                  type="text"
+                  value={formStateProvince}
+                  onChange={(e) => setFormStateProvince(e.target.value)}
+                  placeholder="State or province"
+                  style={inputStyle}
+                />
+                <label style={labelStyle}>Postal code</label>
+                <input
+                  type="text"
+                  value={formPostalCode}
+                  onChange={(e) => setFormPostalCode(e.target.value)}
+                  placeholder="ZIP / postal code"
+                  style={inputStyle}
+                />
+                <label style={labelStyle}>Country</label>
+                <input
+                  type="text"
+                  value={formCountry}
+                  onChange={(e) => setFormCountry(e.target.value)}
+                  placeholder="Country"
+                  style={inputStyle}
+                />
+              </>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button
                 type="submit"
                 disabled={submitLoading}
@@ -328,7 +630,7 @@ export default function LocationsPage() {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontWeight: 600 }}>{row.label}</span>
-                {defaultLocation?.id === row.id && (
+                {(row.isDefault || defaultLocation?.id === row.id) && (
                   <span
                     style={{ fontSize: 12, fontWeight: 600, color: 'var(--groupfit-secondary)' }}
                   >
@@ -336,27 +638,17 @@ export default function LocationsPage() {
                   </span>
                 )}
               </div>
-              {row.address && (
-                <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>
-                  {row.address}
-                </div>
-              )}
-              {(row.latitude != null || row.longitude != null) && (
-                <div style={{ fontSize: 12, color: 'var(--groupfit-grey)' }}>
-                  {row.latitude}, {row.longitude}
+              {displayAddress(row) && (
+                <div style={{ fontSize: 14, color: 'var(--groupfit-grey)' }}>
+                  {displayAddress(row)}
                 </div>
               )}
               <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={() =>
-                    setDefaultLocation({
-                      id: row.id,
-                      label: row.label,
-                      address: row.address,
-                      latitude: row.latitude,
-                      longitude: row.longitude,
-                    })
+                  onClick={() => handleSetDefault(row)}
+                  disabled={
+                    actionId === row.id || (row.isDefault ?? defaultLocation?.id === row.id)
                   }
                   style={{
                     padding: '6px 12px',
@@ -364,12 +656,16 @@ export default function LocationsPage() {
                     borderRadius: 6,
                     border: '1px solid var(--groupfit-secondary)',
                     background:
-                      defaultLocation?.id === row.id ? 'var(--groupfit-border-light)' : '#fff',
+                      row.isDefault || defaultLocation?.id === row.id
+                        ? 'var(--groupfit-border-light)'
+                        : '#fff',
                     color: 'var(--groupfit-secondary)',
-                    cursor: 'pointer',
+                    cursor: row.isDefault || defaultLocation?.id === row.id ? 'default' : 'pointer',
                   }}
                 >
-                  {defaultLocation?.id === row.id ? 'Default address' : 'Set as default'}
+                  {row.isDefault || defaultLocation?.id === row.id
+                    ? 'Default address'
+                    : 'Set as default'}
                 </button>
                 <button
                   type="button"

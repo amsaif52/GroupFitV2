@@ -58,6 +58,17 @@ export const customerApi = {
       '/customer/fetchactivitytype',
       body ?? {}
     ),
+  fetchActivityCategories: (body?: Record<string, unknown>) =>
+    api.post<{ mtype: string; activityCategories?: unknown[] }>(
+      '/customer/fetchActivityCategories',
+      body ?? {}
+    ),
+  fetchActivitiesByCategory: (body: { categoryId?: string }) =>
+    api.post<{
+      mtype: string;
+      categoryName?: string;
+      activityList?: unknown[];
+    }>('/customer/fetchActivitiesByCategory', body),
   activitiesAtLocation: (body: { latitude?: number; longitude?: number; radiusKm?: number }) =>
     api.post<{ mtype: string; activityList?: unknown[] }>('/customer/activitiesAtLocation', body),
   fetchFavouriteActivities: () =>
@@ -154,14 +165,27 @@ export const customerApi = {
         id: string;
         label: string;
         address?: string;
+        streetLine1?: string;
+        streetLine2?: string;
+        city?: string;
+        stateProvince?: string;
+        postalCode?: string;
+        country?: string;
         latitude?: number;
         longitude?: number;
+        isDefault?: boolean;
         createdAt: string;
       }[];
     }>('/customer/customerServiceList', {}),
   addCustomerService: (body: {
     label: string;
     address?: string | null;
+    streetLine1?: string | null;
+    streetLine2?: string | null;
+    city?: string | null;
+    stateProvince?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
     latitude?: number | null;
     longitude?: number | null;
   }) =>
@@ -175,18 +199,34 @@ export const customerApi = {
       id?: string;
       label?: string;
       address?: string;
+      streetLine1?: string;
+      streetLine2?: string;
+      city?: string;
+      stateProvince?: string;
+      postalCode?: string;
+      country?: string;
       latitude?: number;
-      longitude?: string;
+      longitude?: number;
     }>('/customer/viewServiceArea', { locationId }),
   editCustomerService: (body: {
     locationId: string;
     label?: string;
     address?: string | null;
+    streetLine1?: string | null;
+    streetLine2?: string | null;
+    city?: string | null;
+    stateProvince?: string | null;
+    postalCode?: string | null;
+    country?: string | null;
     latitude?: number | null;
     longitude?: number | null;
   }) => api.post<{ mtype: string; message?: string }>('/customer/editCustomerService', body),
   deleteCustomerService: (locationId: string) =>
     api.post<{ mtype: string; message?: string }>('/customer/deleteCustomerService', {
+      locationId,
+    }),
+  setDefaultCustomerLocation: (locationId: string) =>
+    api.post<{ mtype: string; message?: string }>('/customer/setDefaultCustomerLocation', {
       locationId,
     }),
 

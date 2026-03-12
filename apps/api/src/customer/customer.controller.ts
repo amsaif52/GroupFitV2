@@ -293,6 +293,18 @@ export class CustomerController {
     return this.customerService.activitiesAtLocation(body);
   }
 
+  @Post('fetchActivityCategories')
+  @ApiOperation({ summary: 'Fetch activity categories (e.g. Cardio, Strength)' })
+  fetchActivityCategories(@Body() _body: Record<string, unknown>) {
+    return this.customerService.fetchActivityCategories();
+  }
+
+  @Post('fetchActivitiesByCategory')
+  @ApiOperation({ summary: 'Fetch activities in a category. Body: categoryId' })
+  fetchActivitiesByCategory(@Body() body: { categoryId?: string }) {
+    return this.customerService.fetchActivitiesByCategory(body?.categoryId);
+  }
+
   @Post('viewActivity')
   @ApiOperation({ summary: 'View activity' })
   viewActivity(@Body() body: { activityId?: string }) {
@@ -413,13 +425,22 @@ export class CustomerController {
 
   @Post('addCustomerService')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Add saved location; body: label, address?, latitude?, longitude?' })
+  @ApiOperation({
+    summary:
+      'Add saved location; body: label, address?, streetLine1?, streetLine2?, city?, stateProvince?, postalCode?, country?, latitude?, longitude?',
+  })
   addCustomerService(
     @CurrentUser('sub') userId: string,
     @Body()
     body: {
       label?: string;
       address?: string | null;
+      streetLine1?: string | null;
+      streetLine2?: string | null;
+      city?: string | null;
+      stateProvince?: string | null;
+      postalCode?: string | null;
+      country?: string | null;
       latitude?: number | null;
       longitude?: number | null;
     }
@@ -428,6 +449,12 @@ export class CustomerController {
       userId,
       body?.label ?? '',
       body?.address,
+      body?.streetLine1,
+      body?.streetLine2,
+      body?.city,
+      body?.stateProvince,
+      body?.postalCode,
+      body?.country,
       body?.latitude,
       body?.longitude
     );
@@ -443,7 +470,8 @@ export class CustomerController {
   @Post('editCustomerService')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({
-    summary: 'Edit location; body: locationId, label?, address?, latitude?, longitude?',
+    summary:
+      'Edit location; body: locationId, label?, address?, streetLine1?, streetLine2?, city?, stateProvince?, postalCode?, country?, latitude?, longitude?',
   })
   editCustomerService(
     @CurrentUser('sub') userId: string,
@@ -452,6 +480,12 @@ export class CustomerController {
       locationId?: string;
       label?: string;
       address?: string | null;
+      streetLine1?: string | null;
+      streetLine2?: string | null;
+      city?: string | null;
+      stateProvince?: string | null;
+      postalCode?: string | null;
+      country?: string | null;
       latitude?: number | null;
       longitude?: number | null;
     }
@@ -461,6 +495,12 @@ export class CustomerController {
       body?.locationId ?? '',
       body?.label,
       body?.address,
+      body?.streetLine1,
+      body?.streetLine2,
+      body?.city,
+      body?.stateProvince,
+      body?.postalCode,
+      body?.country,
       body?.latitude,
       body?.longitude
     );
@@ -471,6 +511,16 @@ export class CustomerController {
   @ApiOperation({ summary: 'Delete location; body: locationId' })
   deleteCustomerService(@CurrentUser('sub') userId: string, @Body() body: { locationId?: string }) {
     return this.customerService.deleteCustomerService(userId, body?.locationId ?? '');
+  }
+
+  @Post('setDefaultCustomerLocation')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Set default location; body: locationId' })
+  setDefaultCustomerLocation(
+    @CurrentUser('sub') userId: string,
+    @Body() body: { locationId?: string }
+  ) {
+    return this.customerService.setDefaultCustomerLocation(userId, body?.locationId ?? '');
   }
 
   // Payments

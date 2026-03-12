@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAppLocale } from '@/hooks/useAppLocale';
 import { useStoredUser, useStoredViewAs, clearStoredToken } from '@/lib/auth';
 import { ROLES } from '@groupfit/shared';
@@ -58,19 +58,65 @@ function formatSessionDate(iso?: string): string {
   }
 }
 
+const CARDS_PER_SLIDE = 2;
+const CARD_WIDTH = 160;
+const CARD_GAP = 14;
+const SLIDE_WIDTH = CARD_WIDTH * CARDS_PER_SLIDE + CARD_GAP * (CARDS_PER_SLIDE - 1);
+
 function ActivityCarouselSection({
   title,
   seeAllHref,
   items,
   loading,
   emptyMessage,
+  detailHref,
+  isCarousel,
 }: {
   title: string;
   seeAllHref: string;
   items: ActivityItem[];
   loading: boolean;
   emptyMessage: string;
+  /** When set, used for each item link instead of activity detail (e.g. category page). */
+  detailHref?: (id: string) => string;
+  /** When true, show dot navigation and full-width cards (one per slide). */
+  isCarousel?: boolean;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const totalSlides = isCarousel
+    ? items.length
+    : items.length > 0
+      ? Math.ceil(items.length / CARDS_PER_SLIDE)
+      : 0;
+
+  const scrollToSlide = useCallback(
+    (index: number) => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const target = Math.max(0, Math.min(index, totalSlides - 1));
+      const w = isCarousel ? el.clientWidth : SLIDE_WIDTH;
+      el.scrollTo({ left: target * w, behavior: 'smooth' });
+      setCurrentIndex(target);
+    },
+    [totalSlides, isCarousel]
+  );
+
+  useEffect(() => {
+    if (!isCarousel || totalSlides <= 1) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const w = el.clientWidth;
+      const index = w > 0 ? Math.round(el.scrollLeft / w) : 0;
+      const clamped = Math.max(0, Math.min(index, totalSlides - 1));
+      setCurrentIndex(clamped);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [isCarousel, totalSlides]);
+
   if (loading) {
     return (
       <section className="gf-home__section">
@@ -116,12 +162,15 @@ function ActivityCarouselSection({
           See all
         </Link>
       </div>
-      <div className="gf-home__carousel">
+      <div
+        ref={isCarousel ? scrollRef : undefined}
+        className={`gf-home__carousel${isCarousel ? ' gf-home__carousel--with-dots gf-home__carousel--full-width' : ''}`}
+      >
         <div className="gf-home__carousel-inner">
           {items.map((item, index) => {
             const id = item.id ?? item.code ?? String(index);
             const label = item.activityName ?? item.name ?? item.code ?? 'Activity';
-            const href = ROUTES.activityDetail(id);
+            const href = detailHref ? detailHref(id) : ROUTES.activityDetail(id);
             const bgImage = item.logoUrl ? `url(${item.logoUrl})` : undefined;
             const placeholderGradient = `linear-gradient(135deg, var(--groupfit-blue-soft, #3b82f6) 0%, var(--groupfit-blue, #1d4ed8) 100%)`;
             return (
@@ -141,6 +190,21 @@ function ActivityCarouselSection({
           })}
         </div>
       </div>
+      {isCarousel && totalSlides > 1 && (
+        <div className="gf-home__carousel-dots" role="tablist" aria-label={`${title} slides`}>
+          {Array.from({ length: totalSlides }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={currentIndex === i}
+              aria-label={`Go to slide ${i + 1} of ${totalSlides}`}
+              className={`gf-home__carousel-dot${currentIndex === i ? ' gf-home__carousel-dot--active' : ''}`}
+              onClick={() => scrollToSlide(i)}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -358,10 +422,11 @@ function CustomerDashboardContent({
       <UpcomingSessionsSection sessions={upcoming} loading={loading} seeAllHref={ROUTES.sessions} />
       <ActivityCarouselSection
         title="Activities"
-        seeAllHref={ROUTES.activities}
+        seeAllHref={ROUTES.activityCategories}
         items={activities}
         loading={loading}
         emptyMessage="No activities yet. Explore and add favourites."
+        detailHref={ROUTES.activityCategoryDetail}
       />
       <ActivityCarouselSection
         title="Favourites"
@@ -376,6 +441,7 @@ function CustomerDashboardContent({
         items={trending}
         loading={loading}
         emptyMessage="No trending activities right now."
+        isCarousel
       />
       <MyTrainersSection
         trainers={favouriteTrainers}

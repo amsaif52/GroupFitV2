@@ -388,15 +388,22 @@ model ContactSetting {
 
 // Customer saved locations (e.g. for session booking).
 model CustomerLocation {
-  id        String   @id @default(cuid())
-  customerId String   @map("customer_id")
-  customer  User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  label     String
-  address   String?  @db.Text
-  latitude  Float?
-  longitude Float?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  customerId    String   @map("customer_id")
+  customer      User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label         String
+  address       String?  @db.Text   // full formatted address for display
+  streetLine1   String?  @map("street_line1")
+  streetLine2   String?  @map("street_line2")
+  city          String?
+  stateProvince String?  @map("state_province")
+  postalCode    String?  @map("postal_code")
+  country       String?
+  latitude      Float?
+  longitude     Float?
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   @@map("customer_location")
 }
 

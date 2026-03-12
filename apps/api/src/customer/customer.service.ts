@@ -834,6 +834,51 @@ export class CustomerService {
     }));
   }
 
+  /** List activity categories (e.g. Cardio, Strength) for customer. */
+  async fetchActivityCategories() {
+    const list = await this.getActivityCategoryList();
+    return { mtype: 'success', message: 'OK', activityCategories: list };
+  }
+
+  /** Activities in a given category (Activity.activityGroup matches category name). */
+  async fetchActivitiesByCategory(categoryId?: string) {
+    if (!categoryId?.trim()) {
+      return { mtype: 'success', message: 'OK', activityList: [] };
+    }
+    const category = await this.prisma.activityCategory.findUnique({
+      where: { id: categoryId.trim() },
+    });
+    if (!category) {
+      return { mtype: 'success', message: 'OK', activityList: [] };
+    }
+    const activities = await this.prisma.activity.findMany({
+      where: { activityGroup: category.name },
+      orderBy: { code: 'asc' },
+    });
+    const activityList = activities.map(
+      (a: {
+        id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        logoUrl: string | null;
+      }) => ({
+        id: a.id,
+        code: a.code,
+        name: a.name,
+        activityName: a.name,
+        description: a.description ?? '',
+        logoUrl: a.logoUrl ?? undefined,
+      })
+    );
+    return {
+      mtype: 'success',
+      message: 'OK',
+      categoryName: category.name,
+      activityList,
+    };
+  }
+
   async fetchFavouriteActivities(userId: string) {
     const rows = await this.prisma.customerFavouriteActivity.findMany({
       where: { customerId: userId },
@@ -1053,25 +1098,23 @@ export class CustomerService {
   async customerServiceList(userId: string) {
     const rows = await this.prisma.customerLocation.findMany({
       where: { customerId: userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
     });
-    const customerServiceList = rows.map(
-      (r: {
-        id: string;
-        label: string;
-        address: string | null;
-        latitude: number | null;
-        longitude: number | null;
-        createdAt: Date;
-      }) => ({
-        id: r.id,
-        label: r.label,
-        address: r.address ?? '',
-        latitude: r.latitude,
-        longitude: r.longitude,
-        createdAt: r.createdAt.toISOString(),
-      })
-    );
+    const customerServiceList = rows.map((r) => ({
+      id: r.id,
+      label: r.label,
+      address: r.address ?? '',
+      streetLine1: r.streetLine1 ?? undefined,
+      streetLine2: r.streetLine2 ?? undefined,
+      city: r.city ?? undefined,
+      stateProvince: r.stateProvince ?? undefined,
+      postalCode: r.postalCode ?? undefined,
+      country: r.country ?? undefined,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      isDefault: r.isDefault,
+      createdAt: r.createdAt.toISOString(),
+    }));
     return { mtype: 'success', message: 'OK', customerServiceList, list: customerServiceList };
   }
 
@@ -1079,6 +1122,12 @@ export class CustomerService {
     userId: string,
     label: string,
     address?: string | null,
+    streetLine1?: string | null,
+    streetLine2?: string | null,
+    city?: string | null,
+    stateProvince?: string | null,
+    postalCode?: string | null,
+    country?: string | null,
     latitude?: number | null,
     longitude?: number | null
   ) {
@@ -1089,6 +1138,12 @@ export class CustomerService {
         customerId: userId,
         label: labelNorm,
         address: address?.trim() || null,
+        streetLine1: streetLine1?.trim() || null,
+        streetLine2: streetLine2?.trim() || null,
+        city: city?.trim() || null,
+        stateProvince: stateProvince?.trim() || null,
+        postalCode: postalCode?.trim() || null,
+        country: country?.trim() || null,
         latitude: latitude != null ? Number(latitude) : null,
         longitude: longitude != null ? Number(longitude) : null,
       },
@@ -1108,6 +1163,12 @@ export class CustomerService {
       id: loc.id,
       label: loc.label,
       address: loc.address ?? '',
+      streetLine1: loc.streetLine1 ?? undefined,
+      streetLine2: loc.streetLine2 ?? undefined,
+      city: loc.city ?? undefined,
+      stateProvince: loc.stateProvince ?? undefined,
+      postalCode: loc.postalCode ?? undefined,
+      country: loc.country ?? undefined,
       latitude: loc.latitude,
       longitude: loc.longitude,
       createdAt: loc.createdAt.toISOString(),
@@ -1119,6 +1180,12 @@ export class CustomerService {
     locationId: string,
     label?: string,
     address?: string | null,
+    streetLine1?: string | null,
+    streetLine2?: string | null,
+    city?: string | null,
+    stateProvince?: string | null,
+    postalCode?: string | null,
+    country?: string | null,
     latitude?: number | null,
     longitude?: number | null
   ) {
@@ -1135,6 +1202,12 @@ export class CustomerService {
       data: {
         ...(labelNorm !== undefined && { label: labelNorm }),
         ...(address !== undefined && { address: address?.trim() || null }),
+        ...(streetLine1 !== undefined && { streetLine1: streetLine1?.trim() || null }),
+        ...(streetLine2 !== undefined && { streetLine2: streetLine2?.trim() || null }),
+        ...(city !== undefined && { city: city?.trim() || null }),
+        ...(stateProvince !== undefined && { stateProvince: stateProvince?.trim() || null }),
+        ...(postalCode !== undefined && { postalCode: postalCode?.trim() || null }),
+        ...(country !== undefined && { country: country?.trim() || null }),
         ...(latitude !== undefined && { latitude: latitude != null ? Number(latitude) : null }),
         ...(longitude !== undefined && { longitude: longitude != null ? Number(longitude) : null }),
       },
@@ -1149,6 +1222,25 @@ export class CustomerService {
     });
     if (!loc) return { mtype: 'error', message: 'Location not found' };
     await this.prisma.customerLocation.delete({ where: { id: locationId.trim() } });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  async setDefaultCustomerLocation(userId: string, locationId: string) {
+    if (!locationId?.trim()) return { mtype: 'error', message: 'Location id is required' };
+    const loc = await this.prisma.customerLocation.findFirst({
+      where: { id: locationId.trim(), customerId: userId },
+    });
+    if (!loc) return { mtype: 'error', message: 'Location not found' };
+    await this.prisma.$transaction([
+      this.prisma.customerLocation.updateMany({
+        where: { customerId: userId },
+        data: { isDefault: false },
+      }),
+      this.prisma.customerLocation.update({
+        where: { id: locationId.trim() },
+        data: { isDefault: true },
+      }),
+    ]);
     return { mtype: 'success', message: 'OK' };
   }
 

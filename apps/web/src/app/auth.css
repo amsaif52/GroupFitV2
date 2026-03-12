@@ -920,6 +920,7 @@
   font-size: 14px;
   font-weight: 500;
   text-align: center;
+  flex-direction: column;
 }
 .gf-home__empty--tall {
   min-height: 150px;
@@ -1147,6 +1148,50 @@
 @keyframes gf-home__skeleton-pulse {
   0%, 100% { opacity: 0.85; }
   50% { opacity: 0.6; }
+}
+
+/* Carousel with dots: optional scrollbar hide and dot navigation */
+.gf-home__carousel--with-dots {
+  scrollbar-width: none;
+}
+.gf-home__carousel--with-dots::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
+/* Full-width cards: one card per slide when carousel has dots */
+.gf-home__carousel--full-width.gf-home__carousel--with-dots .gf-home__carousel-inner {
+  gap: 0;
+}
+.gf-home__carousel--full-width.gf-home__carousel--with-dots .gf-home__activity-card {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+  height: 220px;
+}
+.gf-home__carousel-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 0 4px;
+}
+.gf-home__carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(15, 23, 42, 0.25);
+  cursor: pointer;
+  transition: background var(--gf-transition), transform var(--gf-transition);
+}
+.gf-home__carousel-dot:hover {
+  background: rgba(15, 23, 42, 0.4);
+}
+.gf-home__carousel-dot--active {
+  background: var(--groupfit-secondary);
+  transform: scale(1.2);
 }
 
 .gf-home__cards-row {
