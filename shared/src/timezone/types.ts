@@ -1,7 +1,7 @@
 /**
  * Country codes (ISO 3166-1 alpha-2). Extend when adding new regions.
  */
-export type CountryCode = 'CA' | 'US' | string;
+export type TimeZoneCountryCode = 'CA' | 'US' | string;
 
 /**
  * Region code: province (Canada) or state (US). ISO 3166-2 style without country prefix.
@@ -29,4 +29,4 @@ export interface RegionTimeZoneInfo {
 }
 
 /** Map of country code -> region code -> timezone info */
-export type RegionTimeZoneMap = Record<CountryCode, Record<RegionCode, RegionTimeZoneInfo>>;
+export type RegionTimeZoneMap = Record<TimeZoneCountryCode, Record<RegionCode, RegionTimeZoneInfo>>;

@@ -33,6 +33,7 @@ const signupFormSchemaObject = z.object({
   state: z.string().min(1, 'State is required'),
   role: z.enum(SIGNUP_ROLES, { required_error: 'Please select customer or trainer' }),
   referralCode: z.string().optional(),
+  isd: z.string().min(1, 'ISD is required'),
 });
 
 /** Sign-up form schema (includes confirmPassword and optional referral for UI). */

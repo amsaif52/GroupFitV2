@@ -1,5 +1,5 @@
 import { REGION_TIMEZONES } from './regions';
-import type { CountryCode, RegionCode, TimeZoneId } from './types';
+import type { TimeZoneCountryCode, RegionCode, TimeZoneId } from './types';
 
 /**
  * Check if the runtime supports a given IANA timezone (Intl).
@@ -18,7 +18,7 @@ export function isTimeZoneValid(timeZone: TimeZoneId): boolean {
  * Returns undefined if the region is not in the map (add it to REGION_TIMEZONES when expanding).
  */
 export function getTimezoneForRegion(
-  country: CountryCode,
+  country: TimeZoneCountryCode,
   region: RegionCode
 ): TimeZoneId | undefined {
   const byCountry = REGION_TIMEZONES[country as keyof typeof REGION_TIMEZONES];
@@ -77,7 +77,7 @@ export function formatNowInTimezone(
  */
 export function formatInRegion(
   date: Date,
-  country: CountryCode,
+  country: TimeZoneCountryCode,
   region: RegionCode,
   options: Intl.DateTimeFormatOptions = {},
   locale = 'en-CA'
@@ -90,7 +90,10 @@ export function formatInRegion(
 /**
  * List all timezones available for a region (primary + alternates).
  */
-export function getTimeZonesForRegion(country: CountryCode, region: RegionCode): TimeZoneId[] {
+export function getTimeZonesForRegion(
+  country: TimeZoneCountryCode,
+  region: RegionCode
+): TimeZoneId[] {
   const byCountry = REGION_TIMEZONES[country as keyof typeof REGION_TIMEZONES];
   if (!byCountry) return [];
   const info = byCountry[region as keyof typeof byCountry];

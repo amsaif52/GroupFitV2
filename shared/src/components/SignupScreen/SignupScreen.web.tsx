@@ -4,13 +4,16 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { SignupFormInput } from '../../utils/auth-schemas';
 import { signupFormSchema, SIGNUP_ROLES } from '../../utils/auth-schemas';
-import { COUNTRY_CODES, getSubdivisionsForCountry } from '../../utils';
+import { getSubdivisionsForCountry } from '../../utils';
 import Button from '../atoms/Button.web';
 import Select from '../atoms/Select.web';
+import { CountryOption } from '../../services/countryList';
 
 const OTP_LENGTH = 4;
 
 export interface SignupScreenWebProps {
+  /** When provided, used for the phone prefix dropdown instead of static COUNTRY_CODES (e.g. from API). */
+  countryOptions: CountryOption[];
   /** When set with onVerifySignupOtp, form submit sends OTP first; then user verifies to create account. */
   onSendSignupOtp?: (data: SignupFormInput) => void | Promise<void>;
   /** Called with OTP and form data after user enters code. Create account and redirect. */
@@ -67,8 +70,8 @@ export interface SignupScreenWebProps {
   resendCodeLabel?: string;
   /** OTP step: change number button text */
   changeNumberLabel?: string;
-  /** When provided, used for the phone prefix dropdown instead of static COUNTRY_CODES (e.g. from API). */
-  countryOptions?: { code: string; dial: string; name: string }[];
+  /** Whether social login is enabled */
+  socialLoginEnabled?: boolean;
 }
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -143,18 +146,10 @@ export function SignupScreenWeb({
   resendCodeLabel = 'Resend code',
   changeNumberLabel = 'Change number',
   countryOptions,
+  socialLoginEnabled = false,
 }: SignupScreenWebProps) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
-  const countryListForPhone =
-    countryOptions && countryOptions.length > 0 ? countryOptions : COUNTRY_CODES;
-  const [phoneDialCode, setPhoneDialCode] = useState(countryListForPhone[0]?.dial ?? '+1');
-  useEffect(() => {
-    if (countryOptions?.length) {
-      const list = countryOptions;
-      setPhoneDialCode((prev) => (list.some((c) => c.dial === prev) ? prev : list[0].dial));
-    }
-  }, [countryOptions]);
   const [signupStep, setSignupStep] = useState<'form' | 'otp'>('form');
   const [pendingSignupData, setPendingSignupData] = useState<SignupFormInput | null>(null);
   const [otpDigits, setOtpDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
@@ -223,20 +218,16 @@ export function SignupScreenWeb({
       state: '',
       role: 'customer',
       referralCode: '',
+      isd: '',
     },
   });
   const selectedCountry = watch('country');
+  const selectedCountryIsd = watch('isd');
   const stateOptions = selectedCountry ? getSubdivisionsForCountry(selectedCountry) : undefined;
+  const countryRegister = register('country');
 
   const resolvedTitle = title;
   const resolvedSubtitle = subtitle;
-  const showSocial = Boolean(onGooglePress || onApplePress || googleButton || appleButton);
-
-  const { onChange: countryOnChange, ...countryRegister } = register('country');
-  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    countryOnChange(e);
-    setValue('state', '');
-  };
 
   async function handleSubmit(data: SignupFormInput) {
     setTermsError(null);
@@ -245,7 +236,7 @@ export function SignupScreenWeb({
       return;
     }
     const phoneDigits = (data.phone ?? '').replace(/\D/g, '');
-    const fullPhone = phoneDigits ? `${phoneDialCode}${phoneDigits}` : '';
+    const fullPhone = phoneDigits ? `${selectedCountryIsd}${phoneDigits}` : '';
     const dataWithPhone = { ...data, phone: fullPhone };
 
     if (useOtpFlow && onSendSignupOtp) {
@@ -367,7 +358,7 @@ export function SignupScreenWeb({
         </form>
       ) : (
         <>
-          {showSocial && (
+          {socialLoginEnabled && (
             <div className="gf-auth__social">
               {googleButton != null ? (
                 <div className="gf-button--full gf-button--social">{googleButton}</div>
@@ -437,19 +428,20 @@ export function SignupScreenWeb({
             <label className="gf-auth__label">
               <div className="gf-auth__phone-row">
                 <Select
-                  options={countryListForPhone.map(({ code, dial, name }) => ({
+                  options={countryOptions.map(({ code, dial, name }) => ({
                     value: dial,
                     label: `${dial} ${name}`,
                   }))}
-                  value={phoneDialCode}
-                  onValueChange={setPhoneDialCode}
+                  placeholder={'Phone code'}
+                  value={selectedCountryIsd}
+                  onValueChange={(value) => setValue('isd', value)}
                   variant="compact"
-                  aria-label="Country code"
+                  aria-label="Phone code"
                 />
                 <input
                   type="tel"
                   {...register('phone')}
-                  placeholder={phoneLabel}
+                  placeholder={'Phone number'}
                   className="gf-auth__input gf-auth__input--phone"
                   aria-invalid={Boolean(errors.phone)}
                 />
@@ -463,13 +455,19 @@ export function SignupScreenWeb({
 
             <label className="gf-auth__label">
               <Select
-                options={COUNTRY_CODES.map(({ code, name }) => ({ value: code, label: name }))}
+                options={countryOptions.map(({ name }) => ({ value: name, label: name }))}
                 placeholder={countryLabel}
                 variant="default"
                 className="gf-auth__input"
                 aria-invalid={Boolean(errors.country)}
-                {...countryRegister}
-                onValueChange={() => setValue('state', '')}
+                name="country"
+                value={selectedCountry}
+                onValueChange={(value) => {
+                  setValue('country', value);
+                  setValue('state', '');
+                }}
+                onBlur={countryRegister.onBlur}
+                ref={countryRegister.ref}
               />
               {errors.country && (
                 <span className="gf-auth__field-error" role="alert">
