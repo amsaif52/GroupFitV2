@@ -19,7 +19,8 @@ describe('TrainerService', () => {
   };
 
   const mockPrisma = {
-    user: { findUnique: jest.fn() },
+    user: { findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn() },
+    notification: { createMany: jest.fn() },
     session: { findMany: jest.fn(), findFirst: jest.fn(), aggregate: jest.fn(), update: jest.fn() },
     referral: { findMany: jest.fn() },
     review: {
@@ -44,6 +45,10 @@ describe('TrainerService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    trainerSocialLink: {
+      upsert: jest.fn(),
+      findUnique: jest.fn(),
+    },
     faq: { findMany: jest.fn() },
     contactSetting: { findUnique: jest.fn() },
   };
@@ -61,13 +66,38 @@ describe('TrainerService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('deleteProfile', () => {
-    it('returns success message for account deletion request', () => {
-      const result = service.deleteProfile();
+  describe('editProfile', () => {
+    it('updates profile and returns success', async () => {
+      const trainer = {
+        id: 'trainer-1',
+        role: 'trainer',
+        name: 'Trainer',
+        email: 't@test.com',
+        trainerProfileCompleteAt: null,
+        about: null,
+        yearsExperience: null,
+        languageSpoken: null,
+        streetLine1: null,
+        city: null,
+        postalCode: null,
+      };
+      const updated = {
+        ...trainer,
+        name: 'Updated Name',
+        locale: 'en',
+        phone: null,
+        countryCode: null,
+      };
+      mockPrisma.user.findUnique.mockResolvedValue(trainer);
+      mockPrisma.user.update.mockResolvedValue(updated);
+      const result = await service.editProfile('trainer-1', { name: 'Updated Name' });
       expect(result.mtype).toBe('success');
-      expect(result.message).toContain('deletion');
+      expect(result.message).toBe('Profile updated');
+      expect(mockPrisma.user.update).toHaveBeenCalled();
     });
   });
+
+  // describe('deleteProfile', () => {
 
   describe('deletetrainer', () => {
     it('returns same deletion message as deleteProfile', () => {
@@ -98,21 +128,39 @@ describe('TrainerService', () => {
   });
 
   describe('saveSocialLinks', () => {
-    it('returns success (stub)', () => {
-      const result = service.saveSocialLinks('trainer-1', { facebook: 'https://fb.com/me' });
+    it('returns success and saved socialLinks', async () => {
+      mockPrisma.trainerSocialLink.upsert.mockResolvedValue({
+        facebookId: 'https://fb.com/me',
+        instagramId: null,
+        tiktokId: null,
+        twitterId: null,
+        youtubeId: null,
+      });
+      const result = await service.saveSocialLinks('trainer-1', {
+        facebookId: 'https://fb.com/me',
+      });
       expect(result.mtype).toBe('success');
+      expect(result.socialLinks).toEqual({
+        facebookId: 'https://fb.com/me',
+        instagramId: null,
+        tiktokId: null,
+        twitterId: null,
+        youtubeId: null,
+      });
     });
   });
 
   describe('getSocialLinks', () => {
-    it('returns getSocialLinks object with null placeholders', () => {
-      const result = service.getSocialLinks();
+    it('returns socialLinks object (null placeholders when none saved)', async () => {
+      mockPrisma.trainerSocialLink.findUnique.mockResolvedValue(null);
+      const result = await service.getSocialLinks('trainer-1');
       expect(result.mtype).toBe('success');
-      expect(result.getSocialLinks).toEqual({
-        facebook: null,
-        instagram: null,
-        twitter: null,
-        linkedin: null,
+      expect(result.socialLinks).toEqual({
+        facebookId: null,
+        instagramId: null,
+        tiktokId: null,
+        twitterId: null,
+        youtubeId: null,
       });
     });
   });

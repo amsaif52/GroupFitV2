@@ -31,7 +31,7 @@ describe('CustomerService', () => {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
     },
-    session: { findMany: jest.fn(), findFirst: jest.fn() },
+    session: { findMany: jest.fn(), findFirst: jest.fn(), count: jest.fn() },
     group: {
       findMany: jest.fn(),
       findFirst: jest.fn(),
@@ -39,6 +39,7 @@ describe('CustomerService', () => {
       delete: jest.fn(),
     },
     groupMember: {
+      findMany: jest.fn(),
       create: jest.fn(),
       findFirst: jest.fn(),
       delete: jest.fn(),
@@ -174,14 +175,47 @@ describe('CustomerService', () => {
   });
 
   describe('viewTrainer', () => {
-    it('returns trainer when found by id and role trainer', async () => {
-      mockPrisma.user.findFirst.mockResolvedValue(mockUser);
+    it('returns trainer with profile when found by id and role trainer', async () => {
+      const userWithIncludes = {
+        ...mockUser,
+        avatarUrl: 'https://example.com/avatar.jpg',
+        about: 'Fitness coach',
+        yearsExperience: 5,
+        languageSpoken: 'English, French',
+        socialLinks: {
+          facebookId: 'fb1',
+          instagramId: 'ig1',
+          tiktokId: null,
+          twitterId: null,
+          youtubeId: null,
+        },
+        additionalImages: [{ id: 'img1', imageUrl: 'https://example.com/1.jpg' }],
+        trainerActivities: [{ activityCode: 'yoga', createdAt: new Date() }],
+      };
+      mockPrisma.user.findFirst.mockResolvedValue(userWithIncludes);
+      mockPrisma.activity.findMany.mockResolvedValue([{ code: 'yoga', name: 'Yoga' }]);
+      mockPrisma.session.count.mockResolvedValue(10);
+      mockPrisma.review.aggregate.mockResolvedValue({ _avg: { rating: 4.5 }, _count: 3 });
       const result = await service.viewTrainer('trainer-1');
       expect(result.mtype).toBe('success');
       expect(result.trainerName).toBe('Trainer One');
       expect(result.email).toBe('trainer@test.com');
+      expect(result.avatarUrl).toBe('https://example.com/avatar.jpg');
+      expect(result.about).toBe('Fitness coach');
+      expect(result.yearsExperience).toBe(5);
+      expect(result.languageSpoken).toBe('English, French');
+      expect(result.specializations).toEqual(['Yoga']);
+      expect(result.sessionsCompleted).toBe(10);
+      expect(result.rating).toBe(4.5);
+      expect(result.reviewCount).toBe(3);
       expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
-        where: { id: 'trainer-1', role: 'trainer' },
+        where: {
+          id: 'trainer-1',
+          role: 'trainer',
+          isActive: true,
+          trainerProfileCompleteAt: { not: null },
+        },
+        include: expect.any(Object),
       });
     });
 
@@ -201,7 +235,13 @@ describe('CustomerService', () => {
         'Trainer One'
       );
       expect(mockPrisma.user.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { role: 'trainer' } })
+        expect.objectContaining({
+          where: expect.objectContaining({
+            role: 'trainer',
+            isActive: true,
+            trainerProfileCompleteAt: { not: null },
+          }),
+        })
       );
     });
   });

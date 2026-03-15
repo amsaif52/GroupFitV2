@@ -25,3 +25,4 @@ export { SplashScreenWeb as SplashScreen } from './SplashScreen';
 export type { SplashScreenWebProps as SplashScreenProps } from './SplashScreen';
 export { HelpChatWeb as HelpChat } from './HelpChat/HelpChat.web';
 export type { HelpChatProps } from './HelpChat/HelpChat.types';
+export { AddressScreenWeb as AddressScreen } from './AddressScreen/AddressScreen.web';

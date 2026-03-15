@@ -6,6 +6,7 @@ import {
   MinLength,
   IsNumber,
   IsDateString,
+  IsBoolean,
   Min,
   Max,
 } from 'class-validator';
@@ -85,4 +86,60 @@ export class EditProfileDto {
   @IsString()
   @MaxLength(2000)
   preExistingConditions?: string;
+
+  /** Trainer: address line 1 */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  streetLine1?: string;
+
+  /** Trainer: address line 2 */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  streetLine2?: string;
+
+  /** Trainer: city */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  city?: string;
+
+  /** Trainer: postal code */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  postalCode?: string;
+
+  /** Trainer: language(s) spoken */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  languageSpoken?: string;
+
+  /** Trainer: about yourself / bio */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(3000)
+  about?: string;
+
+  /** Trainer: years of experience */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(80)
+  yearsExperience?: number;
+
+  /** Trainer: registered for GST/HST */
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  gstRegistered?: boolean;
 }

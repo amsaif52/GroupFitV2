@@ -4,6 +4,7 @@
  * Add paths here when you create the corresponding page.
  */
 export const ROUTES = {
+  logout: '/logout',
   login: '/login',
   signup: '/signup',
   verify: '/verify',

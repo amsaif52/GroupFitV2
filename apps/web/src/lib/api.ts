@@ -1,19 +1,23 @@
 import { createAxiosApiClient } from '@groupfit/shared';
-import { getStoredToken } from './auth';
+import { getStoredToken, clearStoredToken } from './auth';
+import { getApiBaseUrl } from '@/config';
 
-const baseURL =
-  typeof window !== 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api')
-    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api');
+/** On 401: clear token; redirect to login only if we had sent a token (session was invalid). */
+function handleUnauthorized(context: { hadToken: boolean }): void {
+  clearStoredToken();
+  if (context.hadToken && typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+}
 
 /**
  * Axios instance for calling the API. Use api.get(), api.post(), etc.
- * Session is kept until the user explicitly logs out (no 401-triggered logout).
+ * On 401 (e.g. user not found or deactivated), we clear the token and redirect to login.
  */
 export const api = createAxiosApiClient({
-  baseURL,
+  baseURL: getApiBaseUrl(),
   getAccessToken: getStoredToken,
-  // Intentionally no onUnauthorized: we do not force logout on 401.
+  onUnauthorized: handleUnauthorized,
 });
 
 /** Customer division: POST /api/customer/<action>. */
@@ -54,6 +58,17 @@ export const customerApi = {
   }) => api.post<{ mtype: string; message?: string }>('/customer/editProfile', body),
   paymentList: () => api.post<{ mtype: string; list?: unknown[] }>('/customer/PaymentList', {}),
 
+  /** Single call for all dashboard data (today sessions, upcoming, activities, favourites, trending, favourite trainers). */
+  dashboardData: (body?: Record<string, unknown>) =>
+    api.post<{
+      mtype: string;
+      todaysessionlist?: unknown[];
+      customerSessionList?: unknown[];
+      activityList?: unknown[];
+      favouriteActivities?: unknown[];
+      trendingActivities?: unknown[];
+      favouriteTrainersList?: unknown[];
+    }>('/customer/dashboardData', body ?? {}),
   customerSessionList: (body: { status?: string }) =>
     api.post<{ mtype: string; customerSessionList?: unknown[] }>(
       '/customer/customerSessionList',
@@ -172,6 +187,22 @@ export const customerApi = {
       name?: string;
       email?: string;
       phone?: string;
+      avatarUrl?: string | null;
+      about?: string | null;
+      yearsExperience?: number | null;
+      languageSpoken?: string | null;
+      socialLinks?: {
+        facebookId?: string | null;
+        instagramId?: string | null;
+        tiktokId?: string | null;
+        twitterId?: string | null;
+        youtubeId?: string | null;
+      } | null;
+      additionalImages?: { id: string; imageUrl: string }[];
+      specializations?: string[];
+      sessionsCompleted?: number;
+      rating?: number;
+      reviewCount?: number;
     }>('/customer/viewTrainer', { trainerId }),
 
   customerServiceList: () =>
@@ -390,6 +421,9 @@ export const trainerApi = {
       countryCode?: string | null;
       state?: string | null;
       canSetOwnPrice?: boolean;
+      trainerProfileCompleteAt?: string | null;
+      profileComplete?: boolean;
+      missingRequiredFields?: string[];
     }>('/trainer/viewProfile', {}),
   editProfile: (body: {
     name?: string;
@@ -397,7 +431,63 @@ export const trainerApi = {
     locale?: string;
     countryCode?: string;
     state?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    streetLine1?: string;
+    streetLine2?: string;
+    city?: string;
+    postalCode?: string;
+    languageSpoken?: string;
+    about?: string;
+    yearsExperience?: number;
+    gstRegistered?: boolean;
   }) => api.post<{ mtype: string; message?: string }>('/trainer/editProfile', body),
+
+  getSocialLinks: () =>
+    api.post<{
+      mtype: string;
+      socialLinks?: {
+        facebookId?: string | null;
+        instagramId?: string | null;
+        tiktokId?: string | null;
+        twitterId?: string | null;
+        youtubeId?: string | null;
+      };
+    }>('/trainer/getSocialLinks', {}),
+
+  saveSocialLinks: (body: {
+    facebookId?: string;
+    instagramId?: string;
+    tiktokId?: string;
+    twitterId?: string;
+    youtubeId?: string;
+  }) =>
+    api.post<{
+      mtype: string;
+      message?: string;
+      socialLinks?: {
+        facebookId?: string | null;
+        instagramId?: string | null;
+        tiktokId?: string | null;
+        twitterId?: string | null;
+        youtubeId?: string | null;
+      };
+    }>('/trainer/saveSocialLinks', body),
+
+  getTrainerImages: () =>
+    api.post<{
+      mtype: string;
+      images?: { id: string; imageUrl: string }[];
+    }>('/trainer/getTrainerImages', {}),
+
+  saveTrainerImages: (body: { urls: string[] }) =>
+    api.post<{
+      mtype: string;
+      message?: string;
+      images?: { id: string; imageUrl: string }[];
+    }>('/trainer/saveTrainerImages', body),
+
+  deleteProfile: () => api.post<{ mtype: string; message?: string }>('/trainer/deleteProfile', {}),
 
   trainerSessionList: (body?: Record<string, unknown>) =>
     api.post<{ mtype: string; trainerSessionList?: unknown[] }>(
@@ -511,6 +601,8 @@ export const trainerApi = {
       mtype: string;
       availabilityList?: {
         id: string;
+        serviceAreaId?: string | null;
+        serviceAreaLabel?: string | null;
         dayOfWeek: number;
         startTime: string;
         endTime: string;
@@ -522,13 +614,20 @@ export const trainerApi = {
       mtype: string;
       availabilityList?: {
         id: string;
+        serviceAreaId?: string | null;
+        serviceAreaLabel?: string | null;
         dayOfWeek: number;
         startTime: string;
         endTime: string;
         createdAt: string;
       }[];
     }>('/trainer/trainerAvailabilityList', body ?? {}),
-  addTrainerAvailability: (body: { dayOfWeek: number; startTime: string; endTime: string }) =>
+  addTrainerAvailability: (body: {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    serviceAreaId?: string | null;
+  }) =>
     api.post<{ mtype: string; id?: string; message?: string }>(
       '/trainer/addTrainerAvailability',
       body
@@ -538,6 +637,7 @@ export const trainerApi = {
     dayOfWeek?: number;
     startTime?: string;
     endTime?: string;
+    serviceAreaId?: string | null;
   }) => api.post<{ mtype: string; message?: string }>('/trainer/editTrainerAvailability', body),
   viewAvailabilty: (id?: string) =>
     api.post<{
@@ -848,6 +948,70 @@ export const adminApi = {
     api.post<{ mtype: string; message?: string }>('/admin/updateTrainer', {
       trainerId,
       ...body,
+    }),
+  setTrainerVerified: (trainerId: string, isVerified: boolean) =>
+    api.post<{ mtype: string; message?: string }>('/admin/setTrainerVerified', {
+      trainerId,
+      isVerified,
+    }),
+  trainerSessions: (trainerId: string) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        customerName?: string | null;
+        customerEmail: string;
+        activityName?: string | null;
+        scheduledAt: string;
+        status: string;
+        amountCents?: number | null;
+        createdAt: string;
+      }[];
+    }>('/admin/trainerSessions', { trainerId }),
+  trainerEarnings: (trainerId: string) =>
+    api.post<{
+      mtype: string;
+      data?: {
+        completedSessionCount: number;
+        earningTotalCents: number;
+        earningTotalFormatted: string;
+      };
+    }>('/admin/trainerEarnings', { trainerId }),
+  trainerCertificates: (trainerId: string) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        name: string;
+        issuingOrganization?: string | null;
+        issuedAt?: string | null;
+        credentialId?: string | null;
+        documentUrl?: string | null;
+        createdAt: string;
+      }[];
+    }>('/admin/trainerCertificates', { trainerId }),
+  trainerServiceAreas: (trainerId: string) =>
+    api.post<{
+      mtype: string;
+      list?: {
+        id: string;
+        label: string;
+        address?: string | null;
+        latitude?: number | null;
+        longitude?: number | null;
+        radiusKm?: number | null;
+        isActive: boolean;
+        createdAt: string;
+      }[];
+    }>('/admin/trainerServiceAreas', { trainerId }),
+  getPlaidVerificationLink: (trainerId: string) =>
+    api.post<{ mtype: string; link?: string; message?: string }>(
+      '/admin/getPlaidVerificationLink',
+      { trainerId }
+    ),
+  getStripeConnectLink: (trainerId: string) =>
+    api.post<{ mtype: string; link?: string; message?: string }>('/admin/getStripeConnectLink', {
+      trainerId,
     }),
 
   trainerActivityList: (trainerId: string) =>

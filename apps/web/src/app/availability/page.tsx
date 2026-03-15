@@ -11,11 +11,15 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 type SlotItem = {
   id: string;
+  serviceAreaId?: string | null;
+  serviceAreaLabel?: string | null;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
   createdAt: string;
 };
+
+type ServiceAreaItem = { id: string; label: string; isActive: boolean };
 
 const TIME_STEP_MINUTES = 15;
 
@@ -52,12 +56,14 @@ const TIME_OPTIONS = getTimeOptions();
 export default function AvailabilityPage() {
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState<SlotItem[]>([]);
+  const [serviceAreas, setServiceAreas] = useState<ServiceAreaItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<SlotItem | null>(null);
   const [formDay, setFormDay] = useState<number>(1);
   const [formStart, setFormStart] = useState('09:00');
   const [formEnd, setFormEnd] = useState('17:00');
+  const [formServiceAreaId, setFormServiceAreaId] = useState<string>('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
 
@@ -86,11 +92,27 @@ export default function AvailabilityPage() {
     fetchList();
   }, []);
 
+  useEffect(() => {
+    trainerApi
+      .trainerServiceList()
+      .then((res) => {
+        const data = res?.data as Record<string, unknown> | undefined;
+        const areas = (data?.trainerServiceList ?? data?.list) as ServiceAreaItem[] | undefined;
+        setServiceAreas(
+          (areas ?? [])
+            .filter((a) => a.isActive !== false)
+            .map((a) => ({ id: a.id, label: a.label, isActive: a.isActive }))
+        );
+      })
+      .catch(() => setServiceAreas([]));
+  }, []);
+
   const openAdd = () => {
     setEditing(null);
     setFormDay(1);
     setFormStart('09:00');
     setFormEnd('17:00');
+    setFormServiceAreaId('');
     setShowForm(true);
   };
 
@@ -99,6 +121,7 @@ export default function AvailabilityPage() {
     setFormDay(row.dayOfWeek);
     setFormStart(formatTimeForInput(row.startTime));
     setFormEnd(formatTimeForInput(row.endTime));
+    setFormServiceAreaId(row.serviceAreaId ?? '');
     setShowForm(true);
   };
 
@@ -108,6 +131,7 @@ export default function AvailabilityPage() {
     setFormDay(1);
     setFormStart('09:00');
     setFormEnd('17:00');
+    setFormServiceAreaId('');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -127,6 +151,7 @@ export default function AvailabilityPage() {
           dayOfWeek: formDay,
           startTime: start,
           endTime: end,
+          serviceAreaId: formServiceAreaId.trim() || null,
         })
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
@@ -145,6 +170,7 @@ export default function AvailabilityPage() {
           dayOfWeek: formDay,
           startTime: start,
           endTime: end,
+          serviceAreaId: formServiceAreaId.trim() || null,
         })
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
@@ -192,6 +218,21 @@ export default function AvailabilityPage() {
       >
         ← Dashboard
       </Link>
+
+      <div
+        style={{
+          padding: 12,
+          marginBottom: 16,
+          background: 'var(--groupfit-border-light, #f0f0f0)',
+          borderRadius: 8,
+          fontSize: 13,
+          color: 'var(--groupfit-grey)',
+        }}
+      >
+        <strong>Disclaimer:</strong> You can select a time range; we will automatically schedule
+        sessions within that range. Session length and the cooldown between sessions use the
+        parameters chosen for each service area location.
+      </div>
 
       {error && <p style={{ color: '#c00', marginBottom: 16 }}>{error}</p>}
 
@@ -243,6 +284,28 @@ export default function AvailabilityPage() {
               {DAY_NAMES.map((name, i) => (
                 <option key={i} value={i}>
                   {name}
+                </option>
+              ))}
+            </select>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Location (service area)
+            </label>
+            <select
+              value={formServiceAreaId}
+              onChange={(e) => setFormServiceAreaId(e.target.value)}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 280,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
+            >
+              <option value="">No specific location</option>
+              {serviceAreas.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
                 </option>
               ))}
             </select>
@@ -329,71 +392,107 @@ export default function AvailabilityPage() {
           No time slots yet. Add when you’re available for sessions.
         </div>
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {list.map((row) => (
-            <li
-              key={row.id}
-              style={{
-                padding: 16,
-                marginBottom: 12,
-                border: '1px solid var(--groupfit-border-light)',
-                borderRadius: 8,
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 8,
-                }}
-              >
-                <div>
-                  <span style={{ fontWeight: 600 }}>
-                    {DAY_NAMES[row.dayOfWeek] ?? `Day ${row.dayOfWeek}`}
-                  </span>
-                  <span style={{ marginLeft: 8, color: 'var(--groupfit-grey)' }}>
-                    {formatTimeForInput(row.startTime)} – {formatTimeForInput(row.endTime)}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => openEdit(row)}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: 13,
-                      borderRadius: 6,
-                      border: '1px solid var(--groupfit-secondary)',
-                      background: '#fff',
-                      color: 'var(--groupfit-secondary)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(row.id)}
-                    disabled={actionId === row.id}
-                    style={{
-                      padding: '6px 12px',
-                      fontSize: 13,
-                      borderRadius: 6,
-                      border: '1px solid #c00',
-                      background: '#fff',
-                      color: '#c00',
-                      cursor: actionId === row.id ? 'not-allowed' : 'pointer',
-                    }}
-                  >
-                    {actionId === row.id ? '…' : 'Remove'}
-                  </button>
-                </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {DAY_NAMES.map((dayName, dayIndex) => {
+            const daySlots = list.filter((row) => row.dayOfWeek === dayIndex);
+            if (daySlots.length === 0) return null;
+            return (
+              <div key={dayIndex}>
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    marginBottom: 10,
+                    color: 'var(--groupfit-secondary)',
+                  }}
+                >
+                  {dayName}
+                </h3>
+                <ul
+                  style={{
+                    listStyle: 'none',
+                    padding: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
+                >
+                  {daySlots.map((row) => (
+                    <li
+                      key={row.id}
+                      style={{
+                        padding: 16,
+                        border: '1px solid var(--groupfit-border-light)',
+                        borderRadius: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: 8,
+                        }}
+                      >
+                        <div>
+                          <span style={{ color: 'var(--groupfit-grey)' }}>
+                            {formatTimeForInput(row.startTime)} – {formatTimeForInput(row.endTime)}
+                          </span>
+                          {row.serviceAreaLabel && (
+                            <span
+                              style={{
+                                display: 'block',
+                                fontSize: 13,
+                                color: 'var(--groupfit-grey)',
+                                marginTop: 4,
+                              }}
+                            >
+                              {row.serviceAreaLabel}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => openEdit(row)}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: 13,
+                              borderRadius: 6,
+                              border: '1px solid var(--groupfit-secondary)',
+                              background: '#fff',
+                              color: 'var(--groupfit-secondary)',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(row.id)}
+                            disabled={actionId === row.id}
+                            style={{
+                              padding: '6px 12px',
+                              fontSize: 13,
+                              borderRadius: 6,
+                              border: '1px solid #c00',
+                              background: '#fff',
+                              color: '#c00',
+                              cursor: actionId === row.id ? 'not-allowed' : 'pointer',
+                            }}
+                          >
+                            {actionId === row.id ? '…' : 'Remove'}
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       )}
     </TrainerLayout>
   );

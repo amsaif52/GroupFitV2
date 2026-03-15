@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { ROLES } from '@groupfit/shared';
 import { useStoredUser } from '@/lib/auth';
+import { useProfileForHeader } from '@/hooks/useProfileForHeader';
 import { LocationDropdown } from './LocationDropdown';
+import { HeaderProfileAvatar } from './HeaderProfileAvatar';
 import { ROUTES } from '@/app/routes';
 
 type CustomerHeaderProps = {
@@ -25,6 +27,7 @@ export function CustomerHeader({
   style,
 }: CustomerHeaderProps) {
   const { user } = useStoredUser();
+  const profile = useProfileForHeader();
   const isCustomer = user?.role !== ROLES.TRAINER && user?.role !== ROLES.ADMIN;
 
   return (
@@ -37,6 +40,12 @@ export function CustomerHeader({
       <span className="gf-home__logo">{title}</span>
       <div className="gf-home__header-actions">
         {isCustomer && <LocationDropdown />}
+        <HeaderProfileAvatar
+          name={profile.name}
+          avatarUrl={profile.avatarUrl}
+          profileLink={ROUTES.profileEdit}
+          onDark
+        />
         <Link
           href={ROUTES.notifications}
           className="gf-home__header-link"

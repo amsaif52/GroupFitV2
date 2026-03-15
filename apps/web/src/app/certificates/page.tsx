@@ -6,6 +6,7 @@ import { TrainerLayout } from '../TrainerLayout';
 import { trainerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
+import { CloudinaryUploadButton } from '@/components/CloudinaryUploadButton';
 
 type CertItem = {
   id: string;
@@ -17,16 +18,33 @@ type CertItem = {
   createdAt: string;
 };
 
+const modalOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1000,
+};
+
+const modalPanelStyle: React.CSSProperties = {
+  background: '#fff',
+  borderRadius: 12,
+  padding: '1.5rem',
+  width: '100%',
+  maxWidth: 480,
+  maxHeight: '90vh',
+  overflow: 'auto',
+};
+
 export default function CertificatesPage() {
   const [loading, setLoading] = useState(true);
   const [list, setList] = useState<CertItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<CertItem | null>(null);
   const [formName, setFormName] = useState('');
-  const [formIssuingOrg, setFormIssuingOrg] = useState('');
-  const [formIssuedAt, setFormIssuedAt] = useState('');
-  const [formCredentialId, setFormCredentialId] = useState('');
   const [formDocumentUrl, setFormDocumentUrl] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -59,30 +77,21 @@ export default function CertificatesPage() {
   const openAdd = () => {
     setEditing(null);
     setFormName('');
-    setFormIssuingOrg('');
-    setFormIssuedAt('');
-    setFormCredentialId('');
     setFormDocumentUrl('');
-    setShowForm(true);
+    setModalOpen(true);
   };
 
   const openEdit = (row: CertItem) => {
     setEditing(row);
     setFormName(row.name);
-    setFormIssuingOrg(row.issuingOrganization ?? '');
-    setFormIssuedAt(row.issuedAt ? row.issuedAt.slice(0, 10) : '');
-    setFormCredentialId(row.credentialId ?? '');
     setFormDocumentUrl(row.documentUrl ?? '');
-    setShowForm(true);
+    setModalOpen(true);
   };
 
-  const closeForm = () => {
-    setShowForm(false);
+  const closeModal = () => {
+    setModalOpen(false);
     setEditing(null);
     setFormName('');
-    setFormIssuingOrg('');
-    setFormIssuedAt('');
-    setFormCredentialId('');
     setFormDocumentUrl('');
   };
 
@@ -97,15 +106,12 @@ export default function CertificatesPage() {
         .editTrainerCertificate({
           id: editing.id,
           name,
-          issuingOrganization: formIssuingOrg.trim() || null,
-          issuedAt: formIssuedAt.trim() || null,
-          credentialId: formCredentialId.trim() || null,
           documentUrl: formDocumentUrl.trim() || null,
         })
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
           if (data?.mtype === 'success') {
-            closeForm();
+            closeModal();
             fetchList();
           } else {
             setError(String(data?.message ?? 'Update failed'));
@@ -117,15 +123,12 @@ export default function CertificatesPage() {
       trainerApi
         .addTrainerCertificate({
           name,
-          issuingOrganization: formIssuingOrg.trim() || null,
-          issuedAt: formIssuedAt.trim() || null,
-          credentialId: formCredentialId.trim() || null,
           documentUrl: formDocumentUrl.trim() || null,
         })
         .then((res) => {
           const data = res?.data as Record<string, unknown>;
           if (data?.mtype === 'success') {
-            closeForm();
+            closeModal();
             fetchList();
           } else {
             setError(String(data?.message ?? 'Add failed'));
@@ -143,8 +146,12 @@ export default function CertificatesPage() {
       .deleteCertification(id)
       .then((res) => {
         const data = res?.data as Record<string, unknown>;
-        if (data?.mtype === 'success') fetchList();
-        else setError(String(data?.message ?? 'Delete failed'));
+        if (data?.mtype === 'success') {
+          fetchList();
+          if (editing?.id === id) closeModal();
+        } else {
+          setError(String(data?.message ?? 'Delete failed'));
+        }
       })
       .catch((err) => setError(getApiErrorMessage(err, 'Delete failed')))
       .finally(() => setActionId(null));
@@ -153,11 +160,11 @@ export default function CertificatesPage() {
   return (
     <TrainerLayout>
       <header className="gf-home__header" style={{ marginBottom: 16 }}>
-        <span className="gf-home__logo">Certificates</span>
+        <span className="gf-home__logo">Certifications / Resume</span>
       </header>
 
       <p style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 16 }}>
-        Add and manage your certifications (e.g. CPR, NASM, ACE).
+        Add and manage your certifications and resume. Upload an image for each item.
       </p>
 
       <Link
@@ -189,145 +196,123 @@ export default function CertificatesPage() {
           cursor: 'pointer',
         }}
       >
-        Add certificate
+        Add certificate or resume
       </button>
 
-      {showForm && (
+      {modalOpen && (
         <div
-          style={{
-            marginBottom: 24,
-            padding: 20,
-            border: '1px solid var(--groupfit-border-light)',
-            borderRadius: 8,
-          }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cert-modal-title"
+          style={modalOverlayStyle}
+          onClick={(e) => e.target === e.currentTarget && closeModal()}
         >
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
-            {editing ? 'Edit certificate' : 'New certificate'}
-          </h2>
-          <form onSubmit={handleSubmit}>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Name *
-            </label>
-            <input
-              type="text"
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              placeholder="e.g. CPR, NASM-CPT"
-              required
-              style={{
-                padding: 8,
-                width: '100%',
-                maxWidth: 280,
-                marginBottom: 12,
-                borderRadius: 6,
-                border: '1px solid var(--groupfit-border-light)',
-              }}
-            />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Issuing organization (optional)
-            </label>
-            <input
-              type="text"
-              value={formIssuingOrg}
-              onChange={(e) => setFormIssuingOrg(e.target.value)}
-              placeholder="e.g. American Red Cross"
-              style={{
-                padding: 8,
-                width: '100%',
-                maxWidth: 320,
-                marginBottom: 12,
-                borderRadius: 6,
-                border: '1px solid var(--groupfit-border-light)',
-              }}
-            />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Issue date (optional)
-            </label>
-            <input
-              type="date"
-              value={formIssuedAt}
-              onChange={(e) => setFormIssuedAt(e.target.value)}
-              style={{
-                padding: 8,
-                width: '100%',
-                maxWidth: 180,
-                marginBottom: 12,
-                borderRadius: 6,
-                border: '1px solid var(--groupfit-border-light)',
-              }}
-            />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Credential ID (optional)
-            </label>
-            <input
-              type="text"
-              value={formCredentialId}
-              onChange={(e) => setFormCredentialId(e.target.value)}
-              placeholder="License or credential number"
-              style={{
-                padding: 8,
-                width: '100%',
-                maxWidth: 280,
-                marginBottom: 12,
-                borderRadius: 6,
-                border: '1px solid var(--groupfit-border-light)',
-              }}
-            />
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Document URL (optional)
-            </label>
-            <input
-              type="url"
-              value={formDocumentUrl}
-              onChange={(e) => setFormDocumentUrl(e.target.value)}
-              placeholder="https://..."
-              style={{
-                padding: 8,
-                width: '100%',
-                maxWidth: 400,
-                marginBottom: 16,
-                borderRadius: 6,
-                border: '1px solid var(--groupfit-border-light)',
-              }}
-            />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="submit"
-                disabled={submitLoading}
+          <div style={modalPanelStyle} onClick={(e) => e.stopPropagation()}>
+            <h2 id="cert-modal-title" style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
+              {editing ? 'Edit certificate / resume' : 'Add certificate or resume'}
+            </h2>
+            <form onSubmit={handleSubmit}>
+              <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+                Label *
+              </label>
+              <input
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="e.g. CPR, NASM-CPT, Resume"
+                required
                 style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background: 'var(--groupfit-secondary)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  cursor: submitLoading ? 'not-allowed' : 'pointer',
+                  padding: 8,
+                  width: '100%',
+                  marginBottom: 12,
+                  borderRadius: 6,
+                  border: '1px solid var(--groupfit-border-light)',
                 }}
-              >
-                {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
-              </button>
-              <button
-                type="button"
-                onClick={closeForm}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: 8,
-                  border: '1px solid #666',
-                  background: '#fff',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+              />
+              <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+                Document (image)
+              </label>
+              <div style={{ marginBottom: 8 }}>
+                <CloudinaryUploadButton
+                  onUpload={(url) => setFormDocumentUrl(url)}
+                  label="Upload image or PDF"
+                  allowPdf
+                />
+              </div>
+              {formDocumentUrl && (
+                <div style={{ marginBottom: 16 }}>
+                  <button
+                    type="button"
+                    onClick={() => setFormDocumentUrl('')}
+                    style={{
+                      fontSize: 13,
+                      color: 'var(--groupfit-secondary)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    Remove document
+                  </button>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="submit"
+                  disabled={submitLoading}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'var(--groupfit-secondary)',
+                    color: '#fff',
+                    fontWeight: 600,
+                    cursor: submitLoading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {submitLoading ? 'Saving…' : editing ? 'Update' : 'Add'}
+                </button>
+                {editing && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(editing.id)}
+                    disabled={actionId === editing.id}
+                    style={{
+                      padding: '10px 16px',
+                      borderRadius: 8,
+                      border: '1px solid #c00',
+                      background: '#fff',
+                      color: '#c00',
+                      cursor: actionId === editing.id ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {actionId === editing.id ? '…' : 'Remove'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  style={{
+                    padding: '10px 16px',
+                    borderRadius: 8,
+                    border: '1px solid var(--groupfit-border-light)',
+                    background: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {loading ? (
         <p style={{ color: 'var(--groupfit-grey)' }}>Loading…</p>
       ) : list.length === 0 ? (
-        <div className="gf-home__empty">No certificates yet. Add one above.</div>
+        <div className="gf-home__empty">No certificates or resume yet. Add one above.</div>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {list.map((row) => (
@@ -341,21 +326,6 @@ export default function CertificatesPage() {
               }}
             >
               <div style={{ fontWeight: 600, marginBottom: 4 }}>{row.name}</div>
-              {row.issuingOrganization && (
-                <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>
-                  {row.issuingOrganization}
-                </div>
-              )}
-              {row.issuedAt && (
-                <div style={{ fontSize: 14, color: 'var(--groupfit-grey)', marginBottom: 4 }}>
-                  Issued {new Date(row.issuedAt).toLocaleDateString()}
-                </div>
-              )}
-              {row.credentialId && (
-                <div style={{ fontSize: 13, color: 'var(--groupfit-grey)' }}>
-                  ID: {row.credentialId}
-                </div>
-              )}
               {row.documentUrl && (
                 <a
                   href={row.documentUrl}

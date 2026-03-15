@@ -51,6 +51,21 @@ export class TrainerService {
   async viewProfile(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+    const isTrainer = user.role === 'trainer';
+    const missingRequiredFields = isTrainer
+      ? this.getMissingRequiredProfileFields({
+          name: user.name,
+          about: user.about,
+          yearsExperience: user.yearsExperience,
+          languageSpoken: user.languageSpoken,
+          streetLine1: user.streetLine1,
+          city: user.city,
+          postalCode: user.postalCode,
+        })
+      : [];
+    const profileComplete = isTrainer
+      ? user.trainerProfileCompleteAt != null && missingRequiredFields.length === 0
+      : true;
     return {
       mtype: 'success',
       message: 'OK',
@@ -60,14 +75,108 @@ export class TrainerService {
       role: user.role,
       locale: user.locale ?? 'en',
       phone: user.phone ?? '',
+      avatarUrl: user.avatarUrl ?? undefined,
       countryCode: user.countryCode ?? undefined,
       state: user.state ?? null,
       canSetOwnPrice: user.trainerCanSetOwnPrice ?? false,
+      gender: user.gender ?? undefined,
+      dateOfBirth: user.dateOfBirth ? user.dateOfBirth.toISOString().slice(0, 10) : undefined,
+      streetLine1: user.streetLine1 ?? undefined,
+      streetLine2: user.streetLine2 ?? undefined,
+      city: user.city ?? undefined,
+      postalCode: user.postalCode ?? undefined,
+      languageSpoken: user.languageSpoken ?? undefined,
+      about: user.about ?? undefined,
+      yearsExperience: user.yearsExperience ?? undefined,
+      gstRegistered: user.gstRegistered ?? undefined,
+      trainerProfileCompleteAt: user.trainerProfileCompleteAt?.toISOString() ?? null,
+      profileComplete,
+      missingRequiredFields,
     };
   }
 
+  /** Required trainer profile fields for visibility (excl. additional images and social links). */
+  private isTrainerProfileComplete(u: {
+    name: string | null;
+    about: string | null;
+    yearsExperience: number | null;
+    languageSpoken: string | null;
+    streetLine1: string | null;
+    city: string | null;
+    postalCode: string | null;
+  }): boolean {
+    const s = (x: string | null) => (x ?? '').trim();
+    return (
+      s(u.name).length > 0 &&
+      s(u.about).length > 0 &&
+      u.yearsExperience != null &&
+      s(u.languageSpoken).length > 0 &&
+      s(u.streetLine1).length > 0 &&
+      s(u.city).length > 0 &&
+      s(u.postalCode).length > 0
+    );
+  }
+
+  /** Human-readable labels for required profile fields. Returned in viewProfile so trainer knows what to complete. */
+  private static REQUIRED_PROFILE_FIELDS: {
+    key:
+      | 'name'
+      | 'about'
+      | 'yearsExperience'
+      | 'languageSpoken'
+      | 'streetLine1'
+      | 'city'
+      | 'postalCode';
+    label: string;
+  }[] = [
+    { key: 'name', label: 'Name' },
+    { key: 'about', label: 'About' },
+    { key: 'yearsExperience', label: 'Years of experience' },
+    { key: 'languageSpoken', label: 'Language(s) spoken' },
+    { key: 'streetLine1', label: 'Address (street)' },
+    { key: 'city', label: 'City' },
+    { key: 'postalCode', label: 'Postal code' },
+  ];
+
+  private getMissingRequiredProfileFields(u: {
+    name: string | null;
+    about: string | null;
+    yearsExperience: number | null;
+    languageSpoken: string | null;
+    streetLine1: string | null;
+    city: string | null;
+    postalCode: string | null;
+  }): string[] {
+    const s = (x: string | null) => (x ?? '').trim();
+    const missing: string[] = [];
+    for (const { key, label } of TrainerService.REQUIRED_PROFILE_FIELDS) {
+      const val = u[key];
+      if (key === 'yearsExperience') {
+        if (val == null) missing.push(label);
+      } else if (s(val as string | null).length === 0) {
+        missing.push(label);
+      }
+    }
+    return missing;
+  }
+
   async editProfile(userId: string, dto: EditProfileDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        name: true,
+        email: true,
+        trainerProfileCompleteAt: true,
+        about: true,
+        yearsExperience: true,
+        languageSpoken: true,
+        streetLine1: true,
+        city: true,
+        postalCode: true,
+      },
+    });
     if (!user) throw new NotFoundException('User not found');
     const updated = await this.prisma.user.update({
       where: { id: userId },
@@ -75,10 +184,62 @@ export class TrainerService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.locale !== undefined && { locale: dto.locale }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl || null }),
         ...(dto.countryCode !== undefined && { countryCode: dto.countryCode || null }),
         ...(dto.state !== undefined && { state: dto.state }),
+        ...(dto.gender !== undefined && { gender: dto.gender || null }),
+        ...(dto.dateOfBirth !== undefined && {
+          dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : null,
+        }),
+        ...(dto.streetLine1 !== undefined && { streetLine1: dto.streetLine1 || null }),
+        ...(dto.streetLine2 !== undefined && { streetLine2: dto.streetLine2 || null }),
+        ...(dto.city !== undefined && { city: dto.city || null }),
+        ...(dto.postalCode !== undefined && { postalCode: dto.postalCode || null }),
+        ...(dto.languageSpoken !== undefined && { languageSpoken: dto.languageSpoken || null }),
+        ...(dto.about !== undefined && { about: dto.about || null }),
+        ...(dto.yearsExperience !== undefined && { yearsExperience: dto.yearsExperience ?? null }),
+        ...(dto.gstRegistered !== undefined && { gstRegistered: dto.gstRegistered ?? null }),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        locale: true,
+        phone: true,
+        countryCode: true,
+        trainerProfileCompleteAt: true,
+        about: true,
+        yearsExperience: true,
+        languageSpoken: true,
+        streetLine1: true,
+        city: true,
+        postalCode: true,
       },
     });
+    if (
+      user.role === 'trainer' &&
+      !updated.trainerProfileCompleteAt &&
+      this.isTrainerProfileComplete(updated)
+    ) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { trainerProfileCompleteAt: new Date() },
+      });
+      const admins = await this.prisma.user.findMany({
+        where: { role: 'admin' },
+        select: { id: true },
+      });
+      const trainerLabel = updated.name?.trim() || updated.email;
+      if (admins.length > 0) {
+        await this.prisma.notification.createMany({
+          data: admins.map((admin) => ({
+            userId: admin.id,
+            title: 'Trainer profile complete',
+            body: `${trainerLabel} (${updated.email}) has completed their profile and is pending approval to be visible to customers.`,
+          })),
+        });
+      }
+    }
     return {
       mtype: 'success',
       message: 'Profile updated',
@@ -117,20 +278,107 @@ export class TrainerService {
     };
   }
 
-  /** Save social links (stub: no DB fields yet; accept body, return success). */
-  saveSocialLinks(
-    _userId: string,
-    _body: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string }
+  /** Save trainer social media links for current user. All fields optional. */
+  async saveSocialLinks(
+    userId: string,
+    body: {
+      facebookId?: string;
+      instagramId?: string;
+      tiktokId?: string;
+      twitterId?: string;
+      youtubeId?: string;
+    }
   ) {
-    return { mtype: 'success', message: 'OK' };
+    const trimmed = {
+      facebookId: body.facebookId?.trim() || null,
+      instagramId: body.instagramId?.trim() || null,
+      tiktokId: body.tiktokId?.trim() || null,
+      twitterId: body.twitterId?.trim() || null,
+      youtubeId: body.youtubeId?.trim() || null,
+    };
+    const row = await this.prisma.trainerSocialLink.upsert({
+      where: { trainerId: userId },
+      create: {
+        trainerId: userId,
+        ...trimmed,
+      },
+      update: trimmed,
+    });
+    return {
+      mtype: 'success',
+      message: 'Social links saved',
+      socialLinks: {
+        facebookId: row.facebookId,
+        instagramId: row.instagramId,
+        tiktokId: row.tiktokId,
+        twitterId: row.twitterId,
+        youtubeId: row.youtubeId,
+      },
+    };
   }
 
-  /** Get social links (stub: return empty object until DB/storage exists). */
-  getSocialLinks() {
+  /** Get trainer social media links for current user. */
+  async getSocialLinks(userId: string) {
+    const row = await this.prisma.trainerSocialLink.findUnique({
+      where: { trainerId: userId },
+    });
     return {
       mtype: 'success',
       message: 'OK',
-      getSocialLinks: { facebook: null, instagram: null, twitter: null, linkedin: null },
+      socialLinks: row
+        ? {
+            facebookId: row.facebookId,
+            instagramId: row.instagramId,
+            tiktokId: row.tiktokId,
+            twitterId: row.twitterId,
+            youtubeId: row.youtubeId,
+          }
+        : {
+            facebookId: null,
+            instagramId: null,
+            tiktokId: null,
+            twitterId: null,
+            youtubeId: null,
+          },
+    };
+  }
+
+  /** Get trainer additional images (profile gallery). */
+  async getTrainerImages(userId: string) {
+    const rows = await this.prisma.trainerAdditionalImage.findMany({
+      where: { trainerId: userId },
+      orderBy: { sortOrder: 'asc' },
+    });
+    return {
+      mtype: 'success',
+      message: 'OK',
+      images: rows.map((r) => ({ id: r.id, imageUrl: r.imageUrl })),
+    };
+  }
+
+  /** Save trainer additional images (replaces existing list with given URLs). */
+  async saveTrainerImages(userId: string, body: { urls?: string[] }) {
+    const urls = Array.isArray(body?.urls)
+      ? body.urls.map((u) => (typeof u === 'string' ? u.trim() : '')).filter(Boolean)
+      : [];
+    await this.prisma.trainerAdditionalImage.deleteMany({ where: { trainerId: userId } });
+    if (urls.length > 0) {
+      await this.prisma.trainerAdditionalImage.createMany({
+        data: urls.map((imageUrl, index) => ({
+          trainerId: userId,
+          imageUrl,
+          sortOrder: index,
+        })),
+      });
+    }
+    const rows = await this.prisma.trainerAdditionalImage.findMany({
+      where: { trainerId: userId },
+      orderBy: { sortOrder: 'asc' },
+    });
+    return {
+      mtype: 'success',
+      message: 'Images saved',
+      images: rows.map((r) => ({ id: r.id, imageUrl: r.imageUrl })),
     };
   }
 
@@ -366,17 +614,22 @@ export class TrainerService {
   async trainerAvailabilityList(userId: string) {
     const rows = await this.prisma.trainerAvailability.findMany({
       where: { trainerId: userId },
+      include: { serviceArea: true },
       orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
     });
     const availabilityList = rows.map(
       (r: {
         id: string;
+        serviceAreaId: string | null;
         dayOfWeek: number;
         startTime: string;
         endTime: string;
         createdAt: Date;
+        serviceArea: { id: string; label: string } | null;
       }) => ({
         id: r.id,
+        serviceAreaId: r.serviceAreaId ?? null,
+        serviceAreaLabel: r.serviceArea?.label ?? null,
         dayOfWeek: r.dayOfWeek,
         startTime: r.startTime,
         endTime: r.endTime,
@@ -394,7 +647,8 @@ export class TrainerService {
     userId: string,
     dayOfWeek: number,
     startTime: string,
-    endTime: string
+    endTime: string,
+    serviceAreaId?: string | null
   ) {
     const day = Number(dayOfWeek);
     if (Number.isNaN(day) || day < 0 || day > 6)
@@ -402,8 +656,22 @@ export class TrainerService {
     const start = String(startTime ?? '').trim();
     const end = String(endTime ?? '').trim();
     if (!start || !end) return { mtype: 'error', message: 'startTime and endTime required' };
+    let resolvedServiceAreaId: string | null = null;
+    if (serviceAreaId && String(serviceAreaId).trim()) {
+      const area = await this.prisma.trainerServiceArea.findFirst({
+        where: { id: String(serviceAreaId).trim(), trainerId: userId },
+      });
+      if (!area) return { mtype: 'error', message: 'Service area not found or not yours' };
+      resolvedServiceAreaId = area.id;
+    }
     const slot = await this.prisma.trainerAvailability.create({
-      data: { trainerId: userId, dayOfWeek: day, startTime: start, endTime: end },
+      data: {
+        trainerId: userId,
+        dayOfWeek: day,
+        startTime: start,
+        endTime: end,
+        ...(resolvedServiceAreaId && { serviceAreaId: resolvedServiceAreaId }),
+      },
     });
     return { mtype: 'success', message: 'OK', id: slot.id };
   }
@@ -413,13 +681,19 @@ export class TrainerService {
     id: string,
     dayOfWeek?: number,
     startTime?: string,
-    endTime?: string
+    endTime?: string,
+    serviceAreaId?: string | null
   ) {
     const slot = await this.prisma.trainerAvailability.findFirst({
       where: { id, trainerId: userId },
     });
     if (!slot) return { mtype: 'error', message: 'Slot not found' };
-    const data: { dayOfWeek?: number; startTime?: string; endTime?: string } = {};
+    const data: {
+      dayOfWeek?: number;
+      startTime?: string;
+      endTime?: string;
+      serviceAreaId?: string | null;
+    } = {};
     if (dayOfWeek !== undefined) {
       const day = Number(dayOfWeek);
       if (Number.isNaN(day) || day < 0 || day > 6)
@@ -428,6 +702,17 @@ export class TrainerService {
     }
     if (startTime !== undefined) data.startTime = String(startTime).trim();
     if (endTime !== undefined) data.endTime = String(endTime).trim();
+    if (serviceAreaId !== undefined) {
+      if (serviceAreaId == null || !String(serviceAreaId).trim()) {
+        data.serviceAreaId = null;
+      } else {
+        const area = await this.prisma.trainerServiceArea.findFirst({
+          where: { id: String(serviceAreaId).trim(), trainerId: userId },
+        });
+        if (!area) return { mtype: 'error', message: 'Service area not found or not yours' };
+        data.serviceAreaId = area.id;
+      }
+    }
     await this.prisma.trainerAvailability.update({
       where: { id },
       data,
@@ -439,12 +724,15 @@ export class TrainerService {
     if (id) {
       const slot = await this.prisma.trainerAvailability.findFirst({
         where: { id, trainerId: userId },
+        include: { serviceArea: true },
       });
       if (!slot) return { mtype: 'error', message: 'Slot not found' };
       return {
         mtype: 'success',
         message: 'OK',
         id: slot.id,
+        serviceAreaId: slot.serviceAreaId ?? null,
+        serviceAreaLabel: slot.serviceArea?.label ?? null,
         dayOfWeek: slot.dayOfWeek,
         startTime: slot.startTime,
         endTime: slot.endTime,
@@ -502,6 +790,13 @@ export class TrainerService {
   ) {
     const nameNorm = String(name ?? '').trim();
     if (!nameNorm) return { mtype: 'error', message: 'Name is required' };
+    const user = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { id: true, role: true },
+    });
+    if (!user) return { mtype: 'error', message: 'User not found' };
+    if (user.role !== 'trainer')
+      return { mtype: 'error', message: 'Only trainers can add certificates' };
     const cert = await this.prisma.trainerCertificate.create({
       data: {
         trainerId,

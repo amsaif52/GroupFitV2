@@ -105,4 +105,11 @@ export class AuthController {
   async countryList() {
     return this.auth.countryListForPhone();
   }
+
+  @Post('feature-flags')
+  @ApiOperation({ summary: 'Get feature flags (public, no auth). For login page SSR.' })
+  @ApiResponse({ status: 200, description: 'Returns { flags: Record<string, boolean> }' })
+  async featureFlags() {
+    return this.auth.getFeatureFlags();
+  }
 }

@@ -132,13 +132,6 @@ export function ProfileScreenNative({
           </View>
           <View style={styles.list}>
             <Row icon="👤" label="Edit Profile" onPress={onEditProfile} />
-            <Row icon="📅" label="Availability" onPress={onAvailability} />
-            <Row icon="🏃" label="Activities" onPress={onActivities} />
-            <Row icon="📍" label="Activity Area" onPress={onActivityArea} />
-            <Row icon="📜" label="Certificates" onPress={onCertificates} />
-            <Row icon="🏦" label="Bank Details" onPress={onBankDetails} />
-            <Row icon="⭐" label="Reviews" onPress={onReviews} />
-            <Row icon="💰" label="Earning" onPress={onEarning} />
             <Row icon="🔒" label="Privacy Policy" onPress={() => Linking.openURL(PRIVACY_URL)} />
             <Row
               icon="📄"

@@ -147,16 +147,35 @@ export function CustomerProfileContent({
   );
 }
 
+function TrainerRatingStars({ rating }: { rating: number }) {
+  const value = Math.max(0, Math.min(5, rating));
+  const full = Math.floor(value);
+  const empty = 5 - full;
+  return (
+    <div className="gf-profile__stars" aria-label={`${value.toFixed(1)} out of 5 stars`}>
+      {'★'.repeat(full)}
+      <span className="gf-profile__stars-empty">{'★'.repeat(empty)}</span>
+    </div>
+  );
+}
+
 export function TrainerProfileContent({
   user,
   onLogout,
   t,
+  rating,
+  reviewCount,
 }: {
   user: { name?: string; email?: string; sub?: string };
   onLogout: () => void;
   t: ReturnType<typeof getTranslations>;
+  rating?: number;
+  reviewCount?: number;
 }) {
   const displayName = user.name || user.email || user.sub || '';
+  const ratingValue = rating ?? 0;
+  const count = reviewCount ?? 0;
+  const ratingLoaded = rating !== undefined;
 
   return (
     <div className="gf-profile gf-profile--trainer">
@@ -167,11 +186,19 @@ export function TrainerProfileContent({
 
       <div className="gf-profile__rating">
         <p className="gf-profile__rating-label">Overall Rating</p>
-        <p className="gf-profile__rating-value">4.0</p>
-        <div className="gf-profile__stars" aria-label="4 out of 5 stars">
-          {'★'.repeat(4)}
-          <span className="gf-profile__stars-empty">{'★'.repeat(1)}</span>
-        </div>
+        <p className="gf-profile__rating-value">{ratingLoaded ? ratingValue.toFixed(1) : '—'}</p>
+        {ratingLoaded ? (
+          <TrainerRatingStars rating={ratingValue} />
+        ) : (
+          <div className="gf-profile__stars" aria-hidden>
+            <span className="gf-profile__stars-empty">{'★'.repeat(5)}</span>
+          </div>
+        )}
+        {ratingLoaded && (
+          <p className="gf-profile__rating-count">
+            {count === 0 ? 'No reviews' : `${count} ${count === 1 ? 'review' : 'reviews'}`}
+          </p>
+        )}
       </div>
 
       <div className="gf-profile__list">
@@ -180,69 +207,6 @@ export function TrainerProfileContent({
             👤
           </span>
           <span>Edit Profile</span>
-          <span className="gf-profile__row-chevron" aria-hidden>
-            ›
-          </span>
-        </ProfileLink>
-        <ProfileLink href={getProfileLink('/availability')}>
-          <span className="gf-profile__row-icon" aria-hidden>
-            📅
-          </span>
-          <span>Availability</span>
-          <span className="gf-profile__row-chevron" aria-hidden>
-            ›
-          </span>
-        </ProfileLink>
-        <ProfileLink href={getProfileLink('/activities')}>
-          <span className="gf-profile__row-icon" aria-hidden>
-            🏃
-          </span>
-          <span>Activities</span>
-          <span className="gf-profile__row-chevron" aria-hidden>
-            ›
-          </span>
-        </ProfileLink>
-        <ProfileLink href={getProfileLink('/activity-area')}>
-          <span className="gf-profile__row-icon" aria-hidden>
-            📍
-          </span>
-          <span>Activity Area</span>
-          <span className="gf-profile__row-chevron" aria-hidden>
-            ›
-          </span>
-        </ProfileLink>
-        <ProfileLink href={getProfileLink('/certificates')}>
-          <span className="gf-profile__row-icon" aria-hidden>
-            📜
-          </span>
-          <span>Certificates</span>
-          <span className="gf-profile__row-chevron" aria-hidden>
-            ›
-          </span>
-        </ProfileLink>
-        <ProfileLink href={getProfileLink('/bank-details')}>
-          <span className="gf-profile__row-icon" aria-hidden>
-            🏦
-          </span>
-          <span>Bank Details</span>
-          <span className="gf-profile__row-chevron" aria-hidden>
-            ›
-          </span>
-        </ProfileLink>
-        <ProfileLink href={getProfileLink('/reviews')}>
-          <span className="gf-profile__row-icon" aria-hidden>
-            ⭐
-          </span>
-          <span>Reviews</span>
-          <span className="gf-profile__row-chevron" aria-hidden>
-            ›
-          </span>
-        </ProfileLink>
-        <ProfileLink href={getProfileLink('/earning')}>
-          <span className="gf-profile__row-icon" aria-hidden>
-            💰
-          </span>
-          <span>Earning</span>
           <span className="gf-profile__row-chevron" aria-hidden>
             ›
           </span>

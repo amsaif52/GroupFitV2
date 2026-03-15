@@ -20,6 +20,7 @@ export default {
     createAccount: 'Create account',
     alreadyHaveAccount: 'Already a member?',
     enterPhoneNumberOrEmail: 'Enter your phone number or email',
+    enterPhoneNumber: 'Enter your phone number',
     enterDetailsToCreateAccount: 'Enter your details to create your account',
     name: 'Name',
     confirmPassword: 'Confirm password',

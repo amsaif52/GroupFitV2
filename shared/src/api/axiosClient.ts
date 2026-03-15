@@ -2,10 +2,16 @@ import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
 import type { ApiErrorBody } from './types';
 import { ApiClientError } from './client';
 
+export type UnauthorizedContext = {
+  /** True if the request was sent with an Authorization header (we thought we were logged in). */
+  hadToken: boolean;
+};
+
 export type AxiosApiClientConfig = {
   baseURL: string;
   getAccessToken?: () => string | null;
-  onUnauthorized?: () => void;
+  /** Called on 401. hadToken: we sent a token and server rejected it (session invalid). */
+  onUnauthorized?: (context: UnauthorizedContext) => void;
   /** Extra Axios config (headers, timeout, etc.) */
   axiosConfig?: AxiosRequestConfig;
 };
@@ -40,7 +46,8 @@ export function createAxiosApiClient(config: AxiosApiClientConfig): AxiosInstanc
       const status = err.response.status;
       const body = err.response.data as ApiErrorBody | undefined;
       if (status === 401 && onUnauthorized) {
-        onUnauthorized();
+        const hadToken = Boolean(err.config?.headers?.Authorization);
+        onUnauthorized({ hadToken });
       }
       throw new ApiClientError(body?.message ?? err.message ?? 'Request failed', status, body);
     }

@@ -7,15 +7,8 @@ import { ROUTES } from './routes';
 const TRAINER_NAV = [
   { href: ROUTES.dashboard, label: 'Home' },
   { href: ROUTES.sessions, label: 'My Sessions' },
-  { href: ROUTES.availability, label: 'Availability' },
-  { href: ROUTES.activityArea, label: 'Service areas' },
-  { href: ROUTES.myActivities, label: 'My activities' },
-  { href: ROUTES.certificates, label: 'Certificates' },
-  { href: ROUTES.bankDetails, label: 'Bank Details' },
   { href: ROUTES.refer, label: 'Refer' },
   { href: ROUTES.earning, label: 'My Earnings' },
-  { href: ROUTES.reviews, label: 'Reviews' },
-  { href: ROUTES.help, label: 'Help' },
   { href: ROUTES.account, label: 'Account' },
 ] as const;
 

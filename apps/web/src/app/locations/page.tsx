@@ -7,6 +7,7 @@ import { CustomerHeader } from '@/components/CustomerHeader';
 import { customerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
+import { COUNTRY_CODES, type CountryCode } from '@groupfit/shared';
 import { useDefaultLocation } from '@/contexts/DefaultLocationContext';
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
@@ -40,10 +41,12 @@ type ParsedAddress = {
 
 function getComponent(
   components: { long_name: string; short_name: string; types: string[] }[],
-  type: string
+  type: string,
+  useShort = false
 ): string {
   const c = components.find((x) => x.types.includes(type));
-  return c?.long_name ?? '';
+  if (!c) return '';
+  return useShort ? c.short_name : c.long_name;
 }
 
 function parseAddressComponents(place: {
@@ -64,7 +67,7 @@ function parseAddressComponents(place: {
       getComponent(comp, 'sublocality_level_1'),
     stateProvince: getComponent(comp, 'administrative_area_level_1'),
     postalCode: getComponent(comp, 'postal_code'),
-    country: getComponent(comp, 'country'),
+    country: getComponent(comp, 'country'), // long name
   };
 }
 
@@ -104,6 +107,7 @@ export default function LocationsPage() {
   const [formStateProvince, setFormStateProvince] = useState('');
   const [formPostalCode, setFormPostalCode] = useState('');
   const [formCountry, setFormCountry] = useState('');
+  const [formCountryCode, setFormCountryCode] = useState('');
   const [formLatitude, setFormLatitude] = useState<string>('');
   const [formLongitude, setFormLongitude] = useState<string>('');
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -147,6 +151,8 @@ export default function LocationsPage() {
     )
       return;
     const input = addressInputRef.current;
+    const country = formCountryCode?.trim().toLowerCase();
+    const componentRestrictions = country ? { country } : undefined;
 
     function initAutocomplete() {
       const win =
@@ -157,7 +163,7 @@ export default function LocationsPage() {
                   places: {
                     Autocomplete: new (
                       el: HTMLInputElement,
-                      opts?: { types?: string[] }
+                      opts?: { types?: string[]; componentRestrictions?: { country: string } }
                     ) => {
                       addListener: (ev: string, fn: () => void) => void;
                       getPlace: (cb: (place: unknown) => void) => void;
@@ -170,7 +176,10 @@ export default function LocationsPage() {
       const g = win?.google;
       if (!g?.maps?.places?.Autocomplete) return;
       const Autocomplete = g.maps.places.Autocomplete;
-      const autocomplete = new Autocomplete(input, { types: ['address'] });
+      const autocomplete = new Autocomplete(input, {
+        types: ['address'],
+        ...(componentRestrictions && { componentRestrictions }),
+      });
       autocompleteRef.current = autocomplete;
       autocomplete.addListener('place_changed', () => {
         const place = (autocomplete as unknown as { getPlace?: () => unknown }).getPlace?.();
@@ -188,6 +197,9 @@ export default function LocationsPage() {
         setFormStateProvince(parsed.stateProvince);
         setFormPostalCode(parsed.postalCode);
         setFormCountry(parsed.country);
+        const comp = p.address_components ?? [];
+        const countryShort = getComponent(comp, 'country', true);
+        if (countryShort) setFormCountryCode(countryShort.toUpperCase());
         if (p.geometry?.location) {
           setFormLatitude(String(p.geometry.location.lat()));
           setFormLongitude(String(p.geometry.location.lng()));
@@ -218,7 +230,7 @@ export default function LocationsPage() {
     return () => {
       autocompleteRef.current = null;
     };
-  }, [showForm, inputMode]);
+  }, [showForm, inputMode, formCountryCode]);
 
   const openAdd = () => {
     setEditing(null);
@@ -230,6 +242,7 @@ export default function LocationsPage() {
     setFormStateProvince('');
     setFormPostalCode('');
     setFormCountry('');
+    setFormCountryCode('');
     setFormLatitude('');
     setFormLongitude('');
     setInputMode('autocomplete');
@@ -246,6 +259,13 @@ export default function LocationsPage() {
     setFormStateProvince(row.stateProvince ?? '');
     setFormPostalCode(row.postalCode ?? '');
     setFormCountry(row.country ?? '');
+    setFormCountryCode(
+      row.country
+        ? ((COUNTRY_CODES as CountryCode[]).find(
+            (c) => c.name === row.country || c.code === row.country
+          )?.code ?? '')
+        : ''
+    );
     setFormLatitude(row.latitude != null ? String(row.latitude) : '');
     setFormLongitude(row.longitude != null ? String(row.longitude) : '');
     setInputMode(GOOGLE_MAPS_API_KEY ? 'autocomplete' : 'manual');
@@ -263,6 +283,7 @@ export default function LocationsPage() {
     setFormStateProvince('');
     setFormPostalCode('');
     setFormCountry('');
+    setFormCountryCode('');
     setFormLatitude('');
     setFormLongitude('');
   };
@@ -433,6 +454,28 @@ export default function LocationsPage() {
 
                   <div className="gf-locations-form__section">
                     <span className="gf-locations-form__section-title">Address</span>
+                    <label className="gf-locations-form__label" htmlFor="locations-country">
+                      Country
+                    </label>
+                    <select
+                      id="locations-country"
+                      value={formCountryCode}
+                      onChange={(e) => {
+                        const code = e.target.value;
+                        setFormCountryCode(code);
+                        const name =
+                          (COUNTRY_CODES as CountryCode[]).find((c) => c.code === code)?.name ?? '';
+                        setFormCountry(name);
+                      }}
+                      className="gf-locations-form__input gf-locations-form__input--narrow"
+                    >
+                      <option value="">Select country (optional, narrows Google search)</option>
+                      {(COUNTRY_CODES as CountryCode[]).map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
                     {!GOOGLE_MAPS_API_KEY && (
                       <p className="gf-locations-form__hint">
                         Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to use address search.
@@ -474,13 +517,19 @@ export default function LocationsPage() {
                           value={formAddress}
                           onChange={(e) => setFormAddress(e.target.value)}
                           placeholder={
-                            GOOGLE_MAPS_API_KEY ? 'Start typing address…' : 'Street, city'
+                            formCountryCode
+                              ? `e.g. 123 Main St, ${(COUNTRY_CODES as CountryCode[]).find((c) => c.code === formCountryCode)?.name ?? formCountryCode}`
+                              : GOOGLE_MAPS_API_KEY
+                                ? 'Select a country above, then type address…'
+                                : 'Street, city'
                           }
                           autoComplete="off"
                           className="gf-locations-form__input"
                         />
                         <p className="gf-locations-form__hint">
-                          Selecting an address fills street, city, state, country and coordinates.
+                          {formCountryCode
+                            ? `Suggestions limited to ${(COUNTRY_CODES as CountryCode[]).find((c) => c.code === formCountryCode)?.name ?? formCountryCode}. Selecting an address fills details and coordinates.`
+                            : 'Select a country above to narrow search. Selecting an address fills street, city, state, country and coordinates.'}
                         </p>
                       </>
                     ) : (

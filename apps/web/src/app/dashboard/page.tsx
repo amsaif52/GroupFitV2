@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { ROUTES, getProfileLink } from '../routes';
 import { CustomerLayout } from '../CustomerLayout';
 import { CustomerHeader } from '@/components/CustomerHeader';
+import { HeaderProfileAvatar } from '@/components/HeaderProfileAvatar';
+import { useProfileForHeader } from '@/hooks/useProfileForHeader';
 import { TrainerLayout } from '../TrainerLayout';
 import { api, customerApi, trainerApi } from '@/lib/api';
 import { formatZero } from '@/lib/currency';
@@ -357,51 +359,53 @@ function MyTrainersSection({
   );
 }
 
+type CustomerDashboardState = {
+  loading: boolean;
+  todaySessions: SessionItem[];
+  upcomingSessions: SessionItem[];
+  activities: ActivityItem[];
+  favouriteActivities: ActivityItem[];
+  trending: ActivityItem[];
+  favouriteTrainers: TrainerItem[];
+};
+
+const initialDashboardState: CustomerDashboardState = {
+  loading: true,
+  todaySessions: [],
+  upcomingSessions: [],
+  activities: [],
+  favouriteActivities: [],
+  trending: [],
+  favouriteTrainers: [],
+};
+
 function CustomerDashboardContent({
   user,
 }: {
   user: { name?: string | null; email?: string | null; sub?: string } | null;
 }) {
-  const [loading, setLoading] = useState(true);
-  const [todaySessions, setTodaySessions] = useState<SessionItem[]>([]);
-  const [upcomingSessions, setUpcomingSessions] = useState<SessionItem[]>([]);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [favouriteActivities, setFavouriteActivities] = useState<ActivityItem[]>([]);
-  const [trending, setTrending] = useState<ActivityItem[]>([]);
-  const [favouriteTrainers, setFavouriteTrainers] = useState<TrainerItem[]>([]);
+  const [dashboard, setDashboard] = useState<CustomerDashboardState>(initialDashboardState);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [todayRes, upcomingRes, allActRes, favActRes, trendRes, favTrainRes] =
-          await Promise.all([
-            customerApi.todaysessionlist(),
-            customerApi.customerSessionList({ status: 'Upcoming' }),
-            customerApi.fetchAllCategoryActivities(),
-            customerApi.fetchFavouriteActivities(),
-            customerApi.GetTrendingActivities(),
-            customerApi.fetchFavouriteTrainers(),
-          ]);
+        const res = await customerApi.dashboardData();
         if (cancelled) return;
-        const getData = (r: { data?: unknown }) => (r?.data as Record<string, unknown>) ?? {};
-        setTodaySessions((getData(todayRes).todaysessionlist as SessionItem[]) ?? []);
-        setUpcomingSessions((getData(upcomingRes).customerSessionList as SessionItem[]) ?? []);
-        setActivities((getData(allActRes).activityList as ActivityItem[]) ?? []);
-        setFavouriteActivities((getData(favActRes).favouriteActivities as ActivityItem[]) ?? []);
-        setTrending((getData(trendRes).trendingActivities as ActivityItem[]) ?? []);
-        setFavouriteTrainers((getData(favTrainRes).favouriteTrainersList as TrainerItem[]) ?? []);
+        const data = (res?.data as Record<string, unknown>) ?? {};
+        setDashboard({
+          loading: false,
+          todaySessions: (data.todaysessionlist as SessionItem[]) ?? [],
+          upcomingSessions: (data.customerSessionList as SessionItem[]) ?? [],
+          activities: (data.activityList as ActivityItem[]) ?? [],
+          favouriteActivities: (data.favouriteActivities as ActivityItem[]) ?? [],
+          trending: (data.trendingActivities as ActivityItem[]) ?? [],
+          favouriteTrainers: (data.favouriteTrainersList as TrainerItem[]) ?? [],
+        });
       } catch {
         if (!cancelled) {
-          setTodaySessions([]);
-          setUpcomingSessions([]);
-          setActivities([]);
-          setFavouriteActivities([]);
-          setTrending([]);
-          setFavouriteTrainers([]);
+          setDashboard({ ...initialDashboardState, loading: false });
         }
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
@@ -409,7 +413,8 @@ function CustomerDashboardContent({
     };
   }, []);
 
-  const upcoming = todaySessions.length > 0 ? todaySessions : upcomingSessions;
+  const upcoming =
+    dashboard.todaySessions.length > 0 ? dashboard.todaySessions : dashboard.upcomingSessions;
   const firstName = user?.name?.split(/\s+/)[0] ?? user?.email ?? null;
 
   return (
@@ -420,36 +425,64 @@ function CustomerDashboardContent({
         </h1>
         <p className="gf-home__welcome-sub">Here’s what’s coming up.</p>
       </div>
-      <UpcomingSessionsSection sessions={upcoming} loading={loading} seeAllHref={ROUTES.sessions} />
+      <UpcomingSessionsSection
+        sessions={upcoming}
+        loading={dashboard.loading}
+        seeAllHref={ROUTES.sessions}
+      />
       <ActivityCarouselSection
         title="Activities"
         seeAllHref={ROUTES.activityCategories}
-        items={activities}
-        loading={loading}
+        items={dashboard.activities}
+        loading={dashboard.loading}
         emptyMessage="No activities yet. Explore and add favourites."
         detailHref={ROUTES.activityCategoryDetail}
       />
       <ActivityCarouselSection
         title="Favourites"
         seeAllHref={ROUTES.activities}
-        items={favouriteActivities}
-        loading={loading}
+        items={dashboard.favouriteActivities}
+        loading={dashboard.loading}
         emptyMessage="No favourited activities. Add some from Activities."
       />
       <ActivityCarouselSection
         title="Trending"
         seeAllHref={ROUTES.activities}
-        items={trending}
-        loading={loading}
+        items={dashboard.trending}
+        loading={dashboard.loading}
         emptyMessage="No trending activities right now."
         isCarousel
       />
       <MyTrainersSection
-        trainers={favouriteTrainers}
-        loading={loading}
+        trainers={dashboard.favouriteTrainers}
+        loading={dashboard.loading}
         seeAllHref={ROUTES.trainers}
       />
     </div>
+  );
+}
+
+function TrainerDashboardHeader() {
+  const profile = useProfileForHeader();
+  return (
+    <header className="gf-home__header" style={{ marginBottom: 16 }}>
+      <span className="gf-home__logo">GroupFit</span>
+      <div className="gf-home__header-actions">
+        <HeaderProfileAvatar
+          name={profile.name}
+          avatarUrl={profile.avatarUrl}
+          profileLink={ROUTES.profileEdit}
+          onDark
+        />
+        <Link
+          href={getProfileLink('/notifications')}
+          className="gf-home__header-link"
+          aria-label="Notifications"
+        >
+          🔔
+        </Link>
+      </div>
+    </header>
   );
 }
 
@@ -680,18 +713,7 @@ export default function DashboardPage() {
   if (isTrainer) {
     return (
       <TrainerLayout>
-        <header className="gf-home__header" style={{ marginBottom: 16 }}>
-          <span className="gf-home__logo">GroupFit</span>
-          <div className="gf-home__header-actions">
-            <Link
-              href={getProfileLink('/notifications')}
-              className="gf-home__header-link"
-              aria-label="Notifications"
-            >
-              🔔
-            </Link>
-          </div>
-        </header>
+        <TrainerDashboardHeader />
         <TrainerDashboardContent user={user} />
       </TrainerLayout>
     );

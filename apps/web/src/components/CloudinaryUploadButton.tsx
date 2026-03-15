@@ -2,24 +2,28 @@
 
 import { useRef, useState } from 'react';
 
-import { uploadImage, isCloudinaryConfigured } from '@/lib/cloudinary';
+import { uploadImage, uploadImageOrPdf, isCloudinaryConfigured } from '@/lib/cloudinary';
 
 type Props = {
   onUpload: (url: string) => void;
   accept?: string;
   label?: string;
   disabled?: boolean;
+  /** When true, same button accepts images and PDFs (uses raw upload for PDF). */
+  allowPdf?: boolean;
 };
 
 export function CloudinaryUploadButton({
   onUpload,
-  accept = 'image/*',
+  accept,
   label = 'Upload image',
   disabled = false,
+  allowPdf = false,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const effectiveAccept = accept ?? (allowPdf ? 'image/*,application/pdf' : 'image/*');
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -27,7 +31,7 @@ export function CloudinaryUploadButton({
     setError(null);
     setUploading(true);
     try {
-      const url = await uploadImage(file);
+      const url = allowPdf ? await uploadImageOrPdf(file) : await uploadImage(file);
       onUpload(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -44,7 +48,7 @@ export function CloudinaryUploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept={accept}
+        accept={effectiveAccept}
         onChange={handleChange}
         style={{ display: 'none' }}
         aria-hidden

@@ -6,6 +6,7 @@ import { TrainerLayout } from '../TrainerLayout';
 import { trainerApi } from '@/lib/api';
 import { ROUTES } from '../routes';
 import { getApiErrorMessage } from '@groupfit/shared';
+import { COUNTRY_CODES, type CountryCode } from '@groupfit/shared';
 
 /** Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in .env.local to enable address autocomplete (Places API). */
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
@@ -32,6 +33,8 @@ export default function ActivityAreaPage() {
   const [formLatitude, setFormLatitude] = useState<string>('');
   const [formLongitude, setFormLongitude] = useState<string>('');
   const [formRadiusKm, setFormRadiusKm] = useState<string>('');
+  const [formCountryCode, setFormCountryCode] = useState('');
+  const [locationEntryMethod, setLocationEntryMethod] = useState<'google' | 'manual'>('manual');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -64,38 +67,49 @@ export default function ActivityAreaPage() {
     fetchList();
   }, []);
 
-  // Load Google Maps Places and attach Autocomplete to address input when form is shown
+  // Google Places Autocomplete for service area address (only when "Search with Google", restricted by country)
   useEffect(() => {
-    if (!showForm || !GOOGLE_MAPS_API_KEY || !addressInputRef.current) return;
+    if (
+      !showForm ||
+      !GOOGLE_MAPS_API_KEY ||
+      locationEntryMethod !== 'google' ||
+      !addressInputRef.current
+    )
+      return;
 
     const input = addressInputRef.current;
+    const country = formCountryCode?.trim().toLowerCase();
+    const componentRestrictions = country ? { country } : undefined;
 
     function initAutocomplete() {
-      const g =
-        typeof window !== 'undefined' &&
-        (
-          window as unknown as {
-            google?: {
-              maps: {
-                places: {
-                  Autocomplete: new (
-                    el: HTMLInputElement,
-                    opts?: { types?: string[] }
-                  ) => {
-                    addListener: (ev: string, fn: () => void) => void;
-                    getPlace: () => {
-                      formatted_address?: string;
-                      geometry?: { location: { lat: () => number; lng: () => number } };
+      const win =
+        typeof window !== 'undefined'
+          ? (window as unknown as {
+              google?: {
+                maps: {
+                  places: {
+                    Autocomplete: new (
+                      el: HTMLInputElement,
+                      opts?: { types?: string[]; componentRestrictions?: { country: string } }
+                    ) => {
+                      addListener: (ev: string, fn: () => void) => void;
+                      getPlace: () => {
+                        formatted_address?: string;
+                        geometry?: { location: { lat: () => number; lng: () => number } };
+                      };
                     };
                   };
                 };
               };
-            };
-          }
-        ).google;
+            })
+          : null;
+      const g = win?.google;
       if (!g?.maps?.places?.Autocomplete) return;
       const Autocomplete = g.maps.places.Autocomplete;
-      const autocomplete = new Autocomplete(input, { types: ['address'] });
+      const autocomplete = new Autocomplete(input, {
+        types: ['address'],
+        ...(componentRestrictions && { componentRestrictions }),
+      });
       autocompleteRef.current = autocomplete;
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
@@ -146,7 +160,7 @@ export default function ActivityAreaPage() {
     return () => {
       autocompleteRef.current = null;
     };
-  }, [showForm]);
+  }, [showForm, locationEntryMethod, formCountryCode]);
 
   const openAdd = () => {
     setEditing(null);
@@ -155,6 +169,8 @@ export default function ActivityAreaPage() {
     setFormLatitude('');
     setFormLongitude('');
     setFormRadiusKm('');
+    setFormCountryCode('');
+    setLocationEntryMethod('manual');
     setShowForm(true);
   };
 
@@ -165,6 +181,8 @@ export default function ActivityAreaPage() {
     setFormLatitude(row.latitude != null ? String(row.latitude) : '');
     setFormLongitude(row.longitude != null ? String(row.longitude) : '');
     setFormRadiusKm(row.radiusKm != null ? String(row.radiusKm) : '');
+    setFormCountryCode('');
+    setLocationEntryMethod('manual');
     setShowForm(true);
   };
 
@@ -176,23 +194,39 @@ export default function ActivityAreaPage() {
     setFormLatitude('');
     setFormLongitude('');
     setFormRadiusKm('');
+    setFormCountryCode('');
+    setLocationEntryMethod('manual');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const label = formLabel.trim();
     if (!label) return;
+    const address = formAddress.trim();
+    if (!address) {
+      setError('Address is required. Please choose a location from the suggestions.');
+      return;
+    }
+    const radiusRaw = formRadiusKm.trim();
+    if (!radiusRaw) {
+      setError('Travel radius (km) is required.');
+      return;
+    }
+    const radius = Number(radiusRaw);
+    if (Number.isNaN(radius) || radius < 0 || radius > 100) {
+      setError('Please enter a valid travel radius between 0 and 100 km.');
+      return;
+    }
     setSubmitLoading(true);
     setError(null);
     const lat = formLatitude.trim() ? Number(formLatitude) : null;
     const lng = formLongitude.trim() ? Number(formLongitude) : null;
-    const radius = formRadiusKm.trim() ? Number(formRadiusKm) : null;
     if (editing) {
       trainerApi
         .editTrainerService({
           id: editing.id,
           label,
-          address: formAddress.trim() || null,
+          address,
           latitude: lat,
           longitude: lng,
           radiusKm: radius,
@@ -212,7 +246,7 @@ export default function ActivityAreaPage() {
       trainerApi
         .addTrainerService({
           label,
-          address: formAddress.trim() || null,
+          address,
           latitude: lat,
           longitude: lng,
           radiusKm: radius,
@@ -333,16 +367,151 @@ export default function ActivityAreaPage() {
               }}
             />
             <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Address (optional)
+              Country
+            </label>
+            <select
+              value={formCountryCode}
+              onChange={(e) => setFormCountryCode(e.target.value)}
+              style={{
+                padding: 8,
+                width: '100%',
+                maxWidth: 280,
+                marginBottom: 12,
+                borderRadius: 6,
+                border: '1px solid var(--groupfit-border-light)',
+              }}
+            >
+              <option value="">Select country</option>
+              {(COUNTRY_CODES as CountryCode[]).map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <p
+              style={{
+                fontSize: 14,
+                color: 'var(--groupfit-secondary)',
+                marginBottom: 8,
+                marginTop: 0,
+              }}
+            >
+              How would you like to enter the address?
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
+              <button
+                type="button"
+                onClick={() => GOOGLE_MAPS_API_KEY && setLocationEntryMethod('google')}
+                disabled={!GOOGLE_MAPS_API_KEY}
+                style={{
+                  padding: '12px 14px',
+                  textAlign: 'left',
+                  border:
+                    locationEntryMethod === 'google'
+                      ? '2px solid var(--groupfit-primary, #1976d2)'
+                      : '1px solid var(--groupfit-border-light, #ccc)',
+                  borderRadius: 8,
+                  background:
+                    locationEntryMethod === 'google'
+                      ? 'var(--groupfit-primary-light, #e3f2fd)'
+                      : 'transparent',
+                  cursor: GOOGLE_MAPS_API_KEY ? 'pointer' : 'not-allowed',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  opacity: GOOGLE_MAPS_API_KEY ? 1 : 0.7,
+                }}
+              >
+                Search with Google
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocationEntryMethod('manual')}
+                style={{
+                  padding: '12px 14px',
+                  textAlign: 'left',
+                  border:
+                    locationEntryMethod === 'manual'
+                      ? '2px solid var(--groupfit-primary, #1976d2)'
+                      : '1px solid var(--groupfit-border-light, #ccc)',
+                  borderRadius: 8,
+                  background:
+                    locationEntryMethod === 'manual'
+                      ? 'var(--groupfit-primary-light, #e3f2fd)'
+                      : 'transparent',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
+              >
+                Enter manually
+              </button>
+            </div>
+            {locationEntryMethod === 'google' && GOOGLE_MAPS_API_KEY && (
+              <div
+                style={{
+                  padding: 12,
+                  marginBottom: 12,
+                  background: 'var(--groupfit-border-light, #f5f5f5)',
+                  borderRadius: 8,
+                }}
+              >
+                <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+                  Search for address
+                </label>
+                <input
+                  ref={addressInputRef}
+                  type="text"
+                  placeholder={
+                    formCountryCode
+                      ? `e.g. 123 Main St, ${(COUNTRY_CODES as CountryCode[]).find((c) => c.code === formCountryCode)?.name ?? formCountryCode}`
+                      : 'Select a country above, then type address'
+                  }
+                  autoComplete="off"
+                  style={{
+                    padding: 10,
+                    width: '100%',
+                    maxWidth: 400,
+                    borderRadius: 6,
+                    border: '1px solid var(--groupfit-border-light)',
+                  }}
+                />
+                {formCountryCode ? (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--groupfit-secondary)',
+                      marginTop: 6,
+                      marginBottom: 0,
+                    }}
+                  >
+                    Suggestions limited to{' '}
+                    {(COUNTRY_CODES as CountryCode[]).find((c) => c.code === formCountryCode)
+                      ?.name ?? formCountryCode}
+                    .
+                  </p>
+                ) : (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--groupfit-secondary)',
+                      marginTop: 6,
+                      marginBottom: 0,
+                    }}
+                  >
+                    Select a country above to narrow search.
+                  </p>
+                )}
+              </div>
+            )}
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
+              Address *
             </label>
             <input
-              ref={addressInputRef}
               type="text"
               value={formAddress}
               onChange={(e) => setFormAddress(e.target.value)}
-              placeholder={
-                GOOGLE_MAPS_API_KEY ? 'Start typing address for suggestions…' : 'Street, city'
-              }
+              placeholder="Street, city"
+              required
               autoComplete="off"
               style={{
                 padding: 8,
@@ -354,47 +523,21 @@ export default function ActivityAreaPage() {
               }}
             />
             <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Latitude / Longitude (optional)
-            </label>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-              <input
-                type="text"
-                value={formLatitude}
-                onChange={(e) => setFormLatitude(e.target.value)}
-                placeholder="Lat"
-                style={{
-                  padding: 8,
-                  width: 120,
-                  borderRadius: 6,
-                  border: '1px solid var(--groupfit-border-light)',
-                }}
-              />
-              <input
-                type="text"
-                value={formLongitude}
-                onChange={(e) => setFormLongitude(e.target.value)}
-                placeholder="Lng"
-                style={{
-                  padding: 8,
-                  width: 120,
-                  borderRadius: 6,
-                  border: '1px solid var(--groupfit-border-light)',
-                }}
-              />
-            </div>
-            <label style={{ display: 'block', marginBottom: 4, fontSize: 14, fontWeight: 600 }}>
-              Radius (km, optional)
+              Travel radius (km) *
             </label>
             <input
-              type="text"
-              inputMode="decimal"
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
               value={formRadiusKm}
               onChange={(e) => setFormRadiusKm(e.target.value)}
-              placeholder="e.g. 10"
+              placeholder="How far you'll travel from this location (0–100)"
+              required
               style={{
                 padding: 8,
-                width: 80,
-                marginBottom: 16,
+                width: 120,
+                marginBottom: 6,
                 borderRadius: 6,
                 border: '1px solid var(--groupfit-border-light)',
               }}

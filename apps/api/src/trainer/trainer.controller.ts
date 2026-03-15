@@ -53,19 +53,40 @@ export class TrainerController {
 
   @Post('saveSocialLinks')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Save social links (stub; no persistence yet)' })
+  @ApiOperation({ summary: 'Save trainer social media links' })
   saveSocialLinks(
     @CurrentUser('sub') userId: string,
-    @Body() body: { facebook?: string; instagram?: string; twitter?: string; linkedin?: string }
+    @Body()
+    body: {
+      facebookId?: string;
+      instagramId?: string;
+      tiktokId?: string;
+      twitterId?: string;
+      youtubeId?: string;
+    }
   ) {
     return this.trainerService.saveSocialLinks(userId, body ?? {});
   }
 
   @Post('getSocialLinks')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get social links (stub; empty until storage added)' })
-  getSocialLinks(@Body() _body: Record<string, unknown>) {
-    return this.trainerService.getSocialLinks();
+  @ApiOperation({ summary: 'Get trainer social media links' })
+  getSocialLinks(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+    return this.trainerService.getSocialLinks(userId);
+  }
+
+  @Post('getTrainerImages')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get trainer additional images' })
+  getTrainerImages(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+    return this.trainerService.getTrainerImages(userId);
+  }
+
+  @Post('saveTrainerImages')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Save trainer additional images (replaces existing list)' })
+  saveTrainerImages(@CurrentUser('sub') userId: string, @Body() body: { urls?: string[] }) {
+    return this.trainerService.saveTrainerImages(userId, body ?? {});
   }
 
   @Post('convertRequiredTimeFormat')
@@ -185,13 +206,20 @@ export class TrainerController {
   @ApiOperation({ summary: 'Add availability slot' })
   addTrainerAvailability(
     @CurrentUser('sub') userId: string,
-    @Body() body: { dayOfWeek?: number; startTime?: string; endTime?: string }
+    @Body()
+    body: {
+      dayOfWeek?: number;
+      startTime?: string;
+      endTime?: string;
+      serviceAreaId?: string | null;
+    }
   ) {
     return this.trainerService.addTrainerAvailability(
       userId,
       Number(body?.dayOfWeek ?? 0),
       body?.startTime ?? '',
-      body?.endTime ?? ''
+      body?.endTime ?? '',
+      body?.serviceAreaId
     );
   }
 
@@ -200,14 +228,22 @@ export class TrainerController {
   @ApiOperation({ summary: 'Edit availability slot' })
   editTrainerAvailability(
     @CurrentUser('sub') userId: string,
-    @Body() body: { id?: string; dayOfWeek?: number; startTime?: string; endTime?: string }
+    @Body()
+    body: {
+      id?: string;
+      dayOfWeek?: number;
+      startTime?: string;
+      endTime?: string;
+      serviceAreaId?: string | null;
+    }
   ) {
     return this.trainerService.editTrainerAvailability(
       userId,
       body?.id ?? '',
       body?.dayOfWeek,
       body?.startTime,
-      body?.endTime
+      body?.endTime,
+      body?.serviceAreaId
     );
   }
 

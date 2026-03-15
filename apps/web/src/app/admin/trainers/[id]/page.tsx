@@ -17,6 +17,38 @@ type TrainerActivityRow = {
   createdAt?: string;
 };
 
+type TrainerSessionRow = {
+  id: string;
+  customerName?: string | null;
+  customerEmail: string;
+  activityName?: string | null;
+  scheduledAt: string;
+  status: string;
+  amountCents?: number | null;
+  createdAt: string;
+};
+
+type TrainerCertRow = {
+  id: string;
+  name: string;
+  issuingOrganization?: string | null;
+  issuedAt?: string | null;
+  credentialId?: string | null;
+  documentUrl?: string | null;
+  createdAt: string;
+};
+
+type ServiceAreaRow = {
+  id: string;
+  label: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  radiusKm?: number | null;
+  isActive: boolean;
+  createdAt: string;
+};
+
 export default function AdminTrainerDetailPage() {
   const params = useParams();
   const id = params?.id as string | undefined;
@@ -42,6 +74,19 @@ export default function AdminTrainerDetailPage() {
   const [editError, setEditError] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [sessionsList, setSessionsList] = useState<TrainerSessionRow[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [certificatesList, setCertificatesList] = useState<TrainerCertRow[]>([]);
+  const [certificatesLoading, setCertificatesLoading] = useState(false);
+  const [serviceAreasList, setServiceAreasList] = useState<ServiceAreaRow[]>([]);
+  const [serviceAreasLoading, setServiceAreasLoading] = useState(false);
+  const [earningsData, setEarningsData] = useState<{
+    completedSessionCount: number;
+    earningTotalCents: number;
+    earningTotalFormatted: string;
+  } | null>(null);
+  const [earningsLoading, setEarningsLoading] = useState(false);
+  const [linkCopied, setLinkCopied] = useState<'plaid' | 'stripe' | null>(null);
 
   const router = useRouter();
 
@@ -93,9 +138,98 @@ export default function AdminTrainerDetailPage() {
     fetchUser();
   }, [id, fetchUser]);
 
+  const fetchTrainerSessions = useCallback(() => {
+    if (!id) return;
+    setSessionsLoading(true);
+    adminApi
+      .trainerSessions(id)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown> | undefined;
+        if (data?.mtype === 'success' && Array.isArray(data?.list)) {
+          setSessionsList(data.list as TrainerSessionRow[]);
+        } else {
+          setSessionsList([]);
+        }
+      })
+      .catch(() => setSessionsList([]))
+      .finally(() => setSessionsLoading(false));
+  }, [id]);
+
+  const fetchTrainerCertificates = useCallback(() => {
+    if (!id) return;
+    setCertificatesLoading(true);
+    adminApi
+      .trainerCertificates(id)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown> | undefined;
+        if (data?.mtype === 'success' && Array.isArray(data?.list)) {
+          setCertificatesList(data.list as TrainerCertRow[]);
+        } else {
+          setCertificatesList([]);
+        }
+      })
+      .catch(() => setCertificatesList([]))
+      .finally(() => setCertificatesLoading(false));
+  }, [id]);
+
+  const fetchTrainerServiceAreas = useCallback(() => {
+    if (!id) return;
+    setServiceAreasLoading(true);
+    adminApi
+      .trainerServiceAreas(id)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown> | undefined;
+        if (data?.mtype === 'success' && Array.isArray(data?.list)) {
+          setServiceAreasList(data.list as ServiceAreaRow[]);
+        } else {
+          setServiceAreasList([]);
+        }
+      })
+      .catch(() => setServiceAreasList([]))
+      .finally(() => setServiceAreasLoading(false));
+  }, [id]);
+
+  const fetchTrainerEarnings = useCallback(() => {
+    if (!id) return;
+    setEarningsLoading(true);
+    adminApi
+      .trainerEarnings(id)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown> | undefined;
+        if (data?.mtype === 'success' && data?.data) {
+          const d = data.data as {
+            completedSessionCount: number;
+            earningTotalCents: number;
+            earningTotalFormatted: string;
+          };
+          setEarningsData(d);
+        } else {
+          setEarningsData(null);
+        }
+      })
+      .catch(() => setEarningsData(null))
+      .finally(() => setEarningsLoading(false));
+  }, [id]);
+
   useEffect(() => {
     if (id && user?.role === 'trainer') fetchActivityList();
   }, [id, user?.role, fetchActivityList]);
+
+  useEffect(() => {
+    if (id && user?.role === 'trainer') {
+      fetchTrainerSessions();
+      fetchTrainerCertificates();
+      fetchTrainerServiceAreas();
+      fetchTrainerEarnings();
+    }
+  }, [
+    id,
+    user?.role,
+    fetchTrainerSessions,
+    fetchTrainerCertificates,
+    fetchTrainerServiceAreas,
+    fetchTrainerEarnings,
+  ]);
 
   useEffect(() => {
     if (!showAddModal) return;
@@ -253,6 +387,69 @@ export default function AdminTrainerDetailPage() {
       .finally(() => setActionLoading(null));
   };
 
+  const handleToggleVerified = () => {
+    if (!id || user == null) return;
+    const nextVerified = user.isVerified === true ? false : true;
+    setActionLoading('verified');
+    adminApi
+      .setTrainerVerified(id, nextVerified)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown>;
+        if (data?.mtype === 'success') {
+          setUser((u) => (u ? { ...u, isVerified: nextVerified } : null));
+        } else {
+          setError(String(data?.message ?? 'Update failed'));
+        }
+      })
+      .catch(() => setError('Update failed'))
+      .finally(() => setActionLoading(null));
+  };
+
+  const copyToClipboard = (text: string, kind: 'plaid' | 'stripe') => {
+    if (typeof navigator?.clipboard?.writeText === 'function') {
+      navigator.clipboard.writeText(text).then(() => {
+        setLinkCopied(kind);
+        setTimeout(() => setLinkCopied(null), 2000);
+      });
+    }
+  };
+
+  const handleSendPlaidLink = () => {
+    if (!id) return;
+    setActionLoading('plaid');
+    adminApi
+      .getPlaidVerificationLink(id)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown>;
+        if (data?.mtype === 'success' && typeof data?.link === 'string') {
+          copyToClipboard(data.link, 'plaid');
+          window.open(data.link, '_blank');
+        } else {
+          setError(String(data?.message ?? 'Could not get link'));
+        }
+      })
+      .catch(() => setError('Could not get Plaid link'))
+      .finally(() => setActionLoading(null));
+  };
+
+  const handleSendStripeLink = () => {
+    if (!id) return;
+    setActionLoading('stripe');
+    adminApi
+      .getStripeConnectLink(id)
+      .then((res) => {
+        const data = res?.data as Record<string, unknown>;
+        if (data?.mtype === 'success' && typeof data?.link === 'string') {
+          copyToClipboard(data.link, 'stripe');
+          window.open(data.link, '_blank');
+        } else {
+          setError(String(data?.message ?? 'Could not get link'));
+        }
+      })
+      .catch(() => setError('Could not get Stripe Connect link'))
+      .finally(() => setActionLoading(null));
+  };
+
   useEffect(() => {
     if (!showEditModal) return;
     const onKeyDown = (ev: KeyboardEvent) => {
@@ -285,7 +482,7 @@ export default function AdminTrainerDetailPage() {
           <h1 className="gf-admin-title">Trainer Details</h1>
         </div>
         {user && (
-          <div className="gf-admin-actions">
+          <div className="gf-admin-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
             <button
               type="button"
               onClick={handleToggleActive}
@@ -307,6 +504,57 @@ export default function AdminTrainerDetailPage() {
                   ? 'Set Inactive'
                   : 'Set Active'}
             </button>
+            {user.role === 'trainer' && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleToggleVerified}
+                  disabled={actionLoading !== null}
+                  className={
+                    user.isVerified === true
+                      ? 'gf-admin-btn gf-admin-btn--secondary'
+                      : 'gf-admin-btn gf-admin-btn--primary'
+                  }
+                  style={
+                    user.isVerified === true
+                      ? { background: 'var(--groupfit-secondary)', color: '#fff' }
+                      : undefined
+                  }
+                >
+                  {actionLoading === 'verified'
+                    ? '…'
+                    : user.isVerified === true
+                      ? 'Unverify'
+                      : 'Verify'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendPlaidLink}
+                  disabled={actionLoading !== null}
+                  className="gf-admin-btn gf-admin-btn--secondary"
+                  title="Open and copy Plaid verification link"
+                >
+                  {actionLoading === 'plaid'
+                    ? '…'
+                    : linkCopied === 'plaid'
+                      ? 'Copied!'
+                      : 'Plaid link'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSendStripeLink}
+                  disabled={actionLoading !== null}
+                  className="gf-admin-btn gf-admin-btn--secondary"
+                  title="Open and copy Stripe Connect link"
+                >
+                  {actionLoading === 'stripe'
+                    ? '…'
+                    : linkCopied === 'stripe'
+                      ? 'Copied!'
+                      : 'Stripe Connect'}
+                </button>
+              </>
+            )}
             <button
               type="button"
               onClick={handleDelete}
@@ -356,28 +604,46 @@ export default function AdminTrainerDetailPage() {
               <span className="gf-admin-detail-row__value">{String(user.phone ?? '—')}</span>
             </div>
             {user.role === 'trainer' && (
-              <div className="gf-admin-detail-row">
-                <span className="gf-admin-detail-row__label">Can set own activity price</span>
-                <span className="gf-admin-detail-row__value">
-                  <button
-                    type="button"
-                    disabled={toggleLoading}
-                    onClick={() => setTrainerCanSetOwnPrice(!user.trainerCanSetOwnPrice)}
-                    className="gf-admin-btn gf-admin-btn--secondary"
-                    style={{
-                      background: user.trainerCanSetOwnPrice
-                        ? 'var(--groupfit-secondary)'
-                        : undefined,
-                      color: user.trainerCanSetOwnPrice ? '#fff' : undefined,
-                    }}
-                  >
-                    {toggleLoading ? '…' : user.trainerCanSetOwnPrice ? 'On' : 'Off'}
-                  </button>
-                  <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--groupfit-grey)' }}>
-                    When On, custom prices below are used for sessions.
+              <>
+                <div className="gf-admin-detail-row">
+                  <span className="gf-admin-detail-row__label">Verified</span>
+                  <span className="gf-admin-detail-row__value">
+                    <span
+                      className={
+                        user.isVerified === true
+                          ? 'gf-admin-status-pill gf-admin-status-pill--active'
+                          : 'gf-admin-status-pill gf-admin-status-pill--inactive'
+                      }
+                      style={{ marginRight: 8 }}
+                    >
+                      {user.isVerified === true ? 'Verified' : 'Unverified'}
+                    </span>
+                    (toggle via header button)
                   </span>
-                </span>
-              </div>
+                </div>
+                <div className="gf-admin-detail-row">
+                  <span className="gf-admin-detail-row__label">Can set own activity price</span>
+                  <span className="gf-admin-detail-row__value">
+                    <button
+                      type="button"
+                      disabled={toggleLoading}
+                      onClick={() => setTrainerCanSetOwnPrice(!user.trainerCanSetOwnPrice)}
+                      className="gf-admin-btn gf-admin-btn--secondary"
+                      style={{
+                        background: user.trainerCanSetOwnPrice
+                          ? 'var(--groupfit-secondary)'
+                          : undefined,
+                        color: user.trainerCanSetOwnPrice ? '#fff' : undefined,
+                      }}
+                    >
+                      {toggleLoading ? '…' : user.trainerCanSetOwnPrice ? 'On' : 'Off'}
+                    </button>
+                    <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--groupfit-grey)' }}>
+                      When On, custom prices below are used for sessions.
+                    </span>
+                  </span>
+                </div>
+              </>
             )}
           </section>
 
@@ -493,6 +759,147 @@ export default function AdminTrainerDetailPage() {
                 </div>
               )}
             </section>
+          )}
+
+          {user?.role === 'trainer' && (
+            <>
+              <section className="gf-admin-form-section" style={{ marginTop: 24 }}>
+                <h2 className="gf-admin-form-section__title">Earning</h2>
+                {earningsLoading ? (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>Loading…</p>
+                ) : earningsData ? (
+                  <div className="gf-admin-detail-row" style={{ flexWrap: 'wrap', gap: 16 }}>
+                    <span>
+                      <strong>Completed sessions:</strong> {earningsData.completedSessionCount}
+                    </span>
+                    <span>
+                      <strong>Total earnings:</strong> {earningsData.earningTotalFormatted}
+                    </span>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>No earnings data.</p>
+                )}
+              </section>
+
+              <section className="gf-admin-form-section" style={{ marginTop: 24 }}>
+                <h2 className="gf-admin-form-section__title">Sessions</h2>
+                {sessionsLoading ? (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>Loading…</p>
+                ) : sessionsList.length === 0 ? (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>No sessions.</p>
+                ) : (
+                  <div className="gf-admin-table-wrap" style={{ overflow: 'auto' }}>
+                    <table className="gf-admin-table">
+                      <thead>
+                        <tr>
+                          <th>Activity</th>
+                          <th>Customer</th>
+                          <th>Scheduled</th>
+                          <th>Status</th>
+                          <th>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sessionsList.map((row) => (
+                          <tr key={row.id}>
+                            <td>{row.activityName ?? '—'}</td>
+                            <td>{row.customerName ?? row.customerEmail}</td>
+                            <td style={{ whiteSpace: 'nowrap' }}>
+                              {new Date(row.scheduledAt).toLocaleString(undefined, {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                              })}
+                            </td>
+                            <td>{row.status}</td>
+                            <td>
+                              {row.amountCents != null
+                                ? `$${(row.amountCents / 100).toFixed(2)}`
+                                : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
+              <section className="gf-admin-form-section" style={{ marginTop: 24 }}>
+                <h2 className="gf-admin-form-section__title">Service area</h2>
+                {serviceAreasLoading ? (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>Loading…</p>
+                ) : serviceAreasList.length === 0 ? (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>No service areas.</p>
+                ) : (
+                  <div className="gf-admin-table-wrap" style={{ overflow: 'auto' }}>
+                    <table className="gf-admin-table">
+                      <thead>
+                        <tr>
+                          <th>Label</th>
+                          <th>Address</th>
+                          <th>Active</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {serviceAreasList.map((row) => (
+                          <tr key={row.id}>
+                            <td>{row.label}</td>
+                            <td>{row.address ?? '—'}</td>
+                            <td>
+                              <span
+                                className={
+                                  row.isActive
+                                    ? 'gf-admin-status-pill gf-admin-status-pill--active'
+                                    : 'gf-admin-status-pill gf-admin-status-pill--inactive'
+                                }
+                              >
+                                {row.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+
+              <section className="gf-admin-form-section" style={{ marginTop: 24 }}>
+                <h2 className="gf-admin-form-section__title">Certifications</h2>
+                {certificatesLoading ? (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>Loading…</p>
+                ) : certificatesList.length === 0 ? (
+                  <p style={{ margin: 0, color: 'var(--groupfit-grey)' }}>No certificates.</p>
+                ) : (
+                  <div className="gf-admin-table-wrap" style={{ overflow: 'auto' }}>
+                    <table className="gf-admin-table">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Issuing organization</th>
+                          <th>Issued</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {certificatesList.map((row) => (
+                          <tr key={row.id}>
+                            <td>{row.name}</td>
+                            <td>{row.issuingOrganization ?? '—'}</td>
+                            <td>
+                              {row.issuedAt
+                                ? new Date(row.issuedAt).toLocaleDateString(undefined, {
+                                    dateStyle: 'short',
+                                  })
+                                : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </>
           )}
         </div>
       ) : null}

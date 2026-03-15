@@ -407,6 +407,68 @@ export class AdminController {
     });
   }
 
+  @Post('setTrainerVerified')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Set trainer verified/unverified (admin only)' })
+  setTrainerVerified(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string; isVerified?: boolean }
+  ) {
+    return this.adminService.setTrainerVerified(
+      adminUserId,
+      body?.trainerId ?? '',
+      !!body?.isVerified
+    );
+  }
+
+  @Post('trainerSessions')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Sessions for a trainer (admin)' })
+  trainerSessions(@Body() body: { trainerId?: string }) {
+    return this.adminService.trainerSessions(body?.trainerId ?? '');
+  }
+
+  @Post('trainerEarnings')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Earnings for a trainer (admin)' })
+  trainerEarnings(@Body() body: { trainerId?: string }) {
+    return this.adminService.trainerEarnings(body?.trainerId ?? '');
+  }
+
+  @Post('trainerCertificates')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Certificates for a trainer (admin)' })
+  trainerCertificates(@Body() body: { trainerId?: string }) {
+    return this.adminService.trainerCertificates(body?.trainerId ?? '');
+  }
+
+  @Post('trainerServiceAreas')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Service areas for a trainer (admin)' })
+  trainerServiceAreas(@Body() body: { trainerId?: string }) {
+    return this.adminService.trainerServiceAreas(body?.trainerId ?? '');
+  }
+
+  @Post('getPlaidVerificationLink')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Get Plaid verification link for trainer (admin)' })
+  getPlaidVerificationLink(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string }
+  ) {
+    return this.adminService.getPlaidVerificationLink(adminUserId, body?.trainerId ?? '');
+  }
+
+  @Post('getStripeConnectLink')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Get Stripe Connect link for trainer (admin)' })
+  getStripeConnectLink(
+    @CurrentUser('sub') adminUserId: string,
+    @Body() body: { trainerId?: string }
+  ) {
+    return this.adminService.getStripeConnectLink(adminUserId, body?.trainerId ?? '');
+  }
+
   @Post('faqList')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiOperation({ summary: 'FAQ list from DB' })

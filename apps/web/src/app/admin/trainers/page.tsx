@@ -153,7 +153,8 @@ export default function AdminTrainersPage() {
                 <th>Email</th>
                 <th>Created On</th>
                 <th>Updated On</th>
-                <th>Is Active</th>
+                <th>Active</th>
+                <th>Verified</th>
               </tr>
             </thead>
             <tbody>
@@ -191,6 +192,17 @@ export default function AdminTrainersPage() {
                       }
                     >
                       {row.isActive !== false ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className={
+                        row.isVerified === true
+                          ? 'gf-admin-status-pill gf-admin-status-pill--active'
+                          : 'gf-admin-status-pill gf-admin-status-pill--inactive'
+                      }
+                    >
+                      {row.isVerified === true ? 'Verified' : 'Unverified'}
                     </span>
                   </td>
                 </tr>

@@ -718,6 +718,41 @@ export class CustomerService {
     return { mtype: 'success', message: 'OK', todaysessionlist };
   }
 
+  /**
+   * Single API call that returns all data needed for the customer dashboard:
+   * today's sessions, upcoming sessions, activity list (categories), favourite activities,
+   * trending activities, and favourite trainers.
+   */
+  async getDashboardData(userId: string) {
+    const [
+      todayResult,
+      upcomingResult,
+      activityList,
+      favouriteResult,
+      trendingResult,
+      favouriteTrainersList,
+    ] = await Promise.all([
+      this.todaysessionlist(userId),
+      this.customerSessionList(userId),
+      this.getActivityCategoryList(),
+      this.fetchFavouriteActivities(userId),
+      this.GetTrendingActivities(),
+      this.fetchFavouriteTrainersList(userId),
+    ]);
+    return {
+      mtype: 'success' as const,
+      message: 'OK' as const,
+      todaysessionlist: (todayResult as { todaysessionlist: unknown[] }).todaysessionlist,
+      customerSessionList: (upcomingResult as { customerSessionList: unknown[] })
+        .customerSessionList,
+      activityList,
+      favouriteActivities: (favouriteResult as { favouriteActivities: unknown[] })
+        .favouriteActivities,
+      trendingActivities: (trendingResult as { trendingActivities: unknown[] }).trendingActivities,
+      favouriteTrainersList,
+    };
+  }
+
   /** Same as fetchSessionDetails: view a session the customer owns. */
   async ViewSession(userId: string, sessionId: string) {
     return this.fetchSessionDetails(userId, sessionId);
@@ -1244,9 +1279,55 @@ export class CustomerService {
   // Trainers (toprated = all trainers; favourite = stub for now)
   async viewTrainer(trainerId: string) {
     const user = await this.prisma.user.findFirst({
-      where: { id: trainerId, role: 'trainer' },
+      where: {
+        id: trainerId,
+        role: 'trainer',
+        isActive: true,
+        trainerProfileCompleteAt: { not: null },
+      },
+      include: {
+        socialLinks: true,
+        additionalImages: { orderBy: { sortOrder: 'asc' } },
+        trainerActivities: { orderBy: { createdAt: 'asc' } },
+      },
     });
     if (!user) return { mtype: 'error', message: 'Trainer not found' };
+    const activityCodes = user.trainerActivities.map(
+      (a: { activityCode: string }) => a.activityCode
+    );
+    const activities =
+      activityCodes.length > 0
+        ? await this.prisma.activity.findMany({
+            where: { code: { in: activityCodes } },
+            select: { code: true, name: true },
+          })
+        : [];
+    const nameByCode = Object.fromEntries(
+      activities.map((a: { code: string; name: string }) => [a.code, a.name])
+    );
+    const specializations = user.trainerActivities.map(
+      (a: { activityCode: string }) => nameByCode[a.activityCode] ?? a.activityCode
+    );
+    const [sessionsCompleted, reviewAgg] = await Promise.all([
+      this.prisma.session.count({
+        where: { trainerId: user.id, status: 'completed' },
+      }),
+      this.prisma.review.aggregate({
+        where: { trainerId: user.id },
+        _avg: { rating: true },
+        _count: true,
+      }),
+    ]);
+    const rating = reviewAgg._count > 0 ? Math.round((reviewAgg._avg.rating ?? 0) * 10) / 10 : 0;
+    const socialLinks = user.socialLinks
+      ? {
+          facebookId: user.socialLinks.facebookId,
+          instagramId: user.socialLinks.instagramId,
+          tiktokId: user.socialLinks.tiktokId,
+          twitterId: user.socialLinks.twitterId,
+          youtubeId: user.socialLinks.youtubeId,
+        }
+      : null;
     return {
       mtype: 'success',
       message: 'OK',
@@ -1256,10 +1337,23 @@ export class CustomerService {
       name: user.name ?? user.email,
       email: user.email,
       phone: user.phone ?? '',
+      avatarUrl: user.avatarUrl ?? null,
+      about: user.about ?? null,
+      yearsExperience: user.yearsExperience ?? null,
+      languageSpoken: user.languageSpoken ?? null,
+      socialLinks,
+      additionalImages: user.additionalImages.map((img: { id: string; imageUrl: string }) => ({
+        id: img.id,
+        imageUrl: img.imageUrl,
+      })),
+      specializations,
+      sessionsCompleted,
+      rating,
+      reviewCount: reviewAgg._count,
     };
   }
 
-  /** Top rated trainers. Optional latitude/longitude/radiusKm filter by service area. */
+  /** Top rated trainers. Optional latitude/longitude/radiusKm filter by service area. Only trainers with completed profile and admin-approved (isActive) are visible. */
   async topratedTrainersList(body?: { latitude?: number; longitude?: number; radiusKm?: number }) {
     const lat = body?.latitude;
     const lon = body?.longitude;
@@ -1273,12 +1367,17 @@ export class CustomerService {
     ) {
       trainerIds = await getTrainerIdsAtLocation(this.prisma, lat, lon, radiusKm);
     }
+    const baseWhere = {
+      role: 'trainer' as const,
+      isActive: true,
+      trainerProfileCompleteAt: { not: null } as const,
+    };
     const where =
       trainerIds !== null && trainerIds.length > 0
-        ? { role: 'trainer' as const, id: { in: trainerIds } }
+        ? { ...baseWhere, id: { in: trainerIds } }
         : trainerIds !== null && trainerIds.length === 0
-          ? { role: 'trainer' as const, id: { in: [] } }
-          : { role: 'trainer' as const };
+          ? { ...baseWhere, id: { in: [] } }
+          : baseWhere;
     const users = await this.prisma.user.findMany({
       where,
       select: { id: true, name: true, email: true, phone: true },

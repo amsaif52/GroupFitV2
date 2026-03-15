@@ -1,0 +1,192 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
+import {
+  getTranslations,
+  ROLES,
+  decodeJwtPayload,
+  getApiErrorMessage,
+  type Role,
+  type Locale,
+  type LoginResponse,
+} from '@groupfit/shared';
+import { LoginScreen } from '@/lib/shared-login';
+import { api } from '@/lib/api';
+import { setStoredToken } from '@/lib/auth';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { type FeatureFlags } from '@/lib/queries/featureFlags';
+
+const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? undefined;
+
+type CountryOption = { code: string; dial: string; name: string };
+
+export type { FeatureFlags };
+
+export default function LoginPageClient({
+  featureFlags: initialFlags = {},
+}: {
+  featureFlags?: FeatureFlags;
+}) {
+  const router = useRouter();
+  const [locale] = useState<Locale>('en');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
+  const t = getTranslations(locale);
+
+  useEffect(() => {
+    api
+      .post<{ mtype?: string; list?: { id: string; name: string; isdCode: string }[] }>(
+        '/auth/country-list',
+        {}
+      )
+      .then((res) => {
+        const list = res?.data?.list;
+        if (list?.length) {
+          setCountryOptions(list.map((c) => ({ code: c.id, dial: c.isdCode, name: c.name })));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  async function handleSubmit(email: string, password: string) {
+    setError(null);
+    setLoading(true);
+    try {
+      const { data } = await api.post<LoginResponse>('/auth/login', {
+        email,
+        password,
+      });
+      setStoredToken(data.accessToken);
+      const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
+      router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
+      router.refresh();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Login failed'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSendOtp(payload: string, type: 'phone' | 'email') {
+    setError(null);
+    try {
+      const { data } = await api.post<{ message: string; userCode: string }>('/auth/send-otp', {
+        data: payload.trim(),
+        type,
+      });
+      return { userCode: data.userCode };
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Could not send code. Please try again.'));
+      throw err;
+    }
+  }
+
+  async function handleVerifyOtp(otp: string, userCode: string) {
+    setError(null);
+    const { data } = await api.post<LoginResponse>('/auth/verify-otp', {
+      otp,
+      userCode,
+    });
+    setStoredToken(data.accessToken);
+    const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
+    router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
+    router.refresh();
+  }
+
+  const handleGoogleSuccess = useCallback(
+    async (credential: string) => {
+      setError(null);
+      try {
+        const { data } = await api.post<LoginResponse>('/auth/google', {
+          idToken: credential,
+        });
+        setStoredToken(data.accessToken);
+        const role = data.user?.role ?? (decodeJwtPayload(data.accessToken)?.role as Role);
+        router.push(role === ROLES.ADMIN ? '/choose-experience' : '/dashboard');
+        router.refresh();
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, 'Google sign-in failed'));
+      }
+    },
+    [router]
+  );
+
+  const handleGoogleError = useCallback(() => {
+    setError('Google sign-in was cancelled or failed.');
+  }, []);
+
+  function handleGoogleLoginFallback() {
+    setError('Google sign-in is not configured. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID.');
+  }
+
+  async function handleAppleLogin() {
+    setError(null);
+    try {
+      setError('Apple sign-in is not configured yet. Use email/password or Google.');
+    } catch {
+      setError('Something went wrong.');
+    }
+  }
+
+  const googleButton =
+    initialFlags.enable_google_login && googleClientId ? (
+      <GoogleLogin
+        onSuccess={(res: { credential?: string }) =>
+          res.credential && handleGoogleSuccess(res.credential)
+        }
+        onError={handleGoogleError}
+        theme="outline"
+        size="large"
+        text="continue_with"
+        shape="rectangular"
+        width="320"
+      />
+    ) : null;
+
+  const content = (
+    <>
+      <LoginScreen
+        variant="admin"
+        title={t.auth.signIn}
+        subtitle={
+          initialFlags.emaillogin ? t.auth.enterPhoneNumberOrEmail : t.auth.enterPhoneNumber
+        }
+        emailLabel={t.auth.email}
+        passwordLabel={t.auth.password}
+        phoneLabel={t.auth.phone}
+        sendCodeLabel={t.auth.sendCode}
+        otpPlaceholder={t.auth.otpPlaceholder}
+        verifyLabel={t.auth.verify}
+        resendCodeLabel={t.auth.resendCode}
+        phoneTabLabel={t.auth.phone}
+        emailTabLabel={t.auth.email}
+        submitLabel={t.auth.login}
+        loadingLabel={t.common.loading}
+        footerPrompt="New here?"
+        footerLinkText={t.auth.signUp}
+        onSubmit={handleSubmit}
+        loading={loading}
+        error={error}
+        onSignUpClick={() => router.push('/signup')}
+        onGooglePress={initialFlags.issociallogin ? undefined : handleGoogleLoginFallback}
+        onApplePress={initialFlags.issociallogin ? handleAppleLogin : undefined}
+        googleButton={googleButton ?? undefined}
+        continueWithGoogleLabel={t.auth.continueWithGoogle}
+        continueWithAppleLabel={t.auth.continueWithApple}
+        orLabel={t.auth.or}
+        onSendOtp={handleSendOtp}
+        onVerifyOtp={handleVerifyOtp}
+        countryOptions={countryOptions.length > 0 ? countryOptions : undefined}
+        showEmailLogin={initialFlags.emaillogin}
+        showSocialLogin={initialFlags.issociallogin}
+      />
+    </>
+  );
+
+  if (googleClientId && initialFlags.enable_google_login) {
+    return <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>;
+  }
+  return content;
+}

@@ -92,12 +92,14 @@ export class AuthService {
     if (existing) {
       throw new ConflictException('An account with this email already exists.');
     }
+    const newRole = role ?? DEFAULT_ROLE;
     const user = await this.prisma.user.create({
       data: {
         email,
         name: name ?? null,
-        role: role ?? DEFAULT_ROLE,
+        role: newRole,
         locale: 'en',
+        isActive: newRole !== 'trainer',
       },
     });
     return this.issueToken(user);
@@ -125,12 +127,14 @@ export class AuthService {
           data: { googleId },
         });
     } else {
+      const newRole = role ?? DEFAULT_ROLE;
       user = await this.prisma.user.create({
         data: {
           email,
           googleId,
-          role: role ?? DEFAULT_ROLE,
+          role: newRole,
           locale: 'en',
+          isActive: newRole !== 'trainer',
         },
       });
     }
@@ -163,12 +167,14 @@ export class AuthService {
         throw new UnauthorizedException(
           'Apple did not provide an email. Sign in with Apple requires email on first sign-in.'
         );
+      const newRole = role ?? DEFAULT_ROLE;
       user = await this.prisma.user.create({
         data: {
           email,
           appleId,
-          role: role ?? DEFAULT_ROLE,
+          role: newRole,
           locale: 'en',
+          isActive: newRole !== 'trainer',
         },
       });
     }
@@ -253,6 +259,7 @@ export class AuthService {
         state: data.state,
         role: data.role,
         locale: 'en',
+        isActive: data.role !== 'trainer',
       } as Prisma.UserCreateInput,
     });
     return this.issueToken(user);
@@ -420,5 +427,17 @@ export class AuthService {
       select: { id: true, name: true, isdCode: true },
     });
     return { mtype: 'success', list };
+  }
+
+  /** Public: feature flags for login and other public pages (name -> status). */
+  async getFeatureFlags(): Promise<{ mtype: string; flags: Record<string, boolean> }> {
+    const rows = await this.prisma.featureFlag.findMany({
+      select: { name: true, status: true },
+    });
+    const flags: Record<string, boolean> = {};
+    for (const row of rows) {
+      flags[row.name] = row.status;
+    }
+    return { mtype: 'success', flags };
   }
 }

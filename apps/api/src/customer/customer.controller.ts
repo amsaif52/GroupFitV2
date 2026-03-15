@@ -236,6 +236,16 @@ export class CustomerController {
     return this.customerService.todaysessionlist(userId);
   }
 
+  @Post('dashboardData')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary:
+      'All dashboard data in one call (today sessions, upcoming, activities, favourites, trending, favourite trainers)',
+  })
+  dashboardData(@CurrentUser('sub') userId: string, @Body() _body: Record<string, unknown>) {
+    return this.customerService.getDashboardData(userId);
+  }
+
   @Post('ViewSession')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'View session (same as fetchSessionDetails)' })

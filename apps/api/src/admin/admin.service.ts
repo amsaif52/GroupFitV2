@@ -53,6 +53,8 @@ const userSelect = {
   state: true,
   trainerCanSetOwnPrice: true,
   isActive: true,
+  isVerified: true,
+  trainerProfileCompleteAt: true,
   createdAt: true,
   updatedAt: true,
 };
@@ -865,7 +867,7 @@ export class AdminService {
         phone,
         role: 'trainer',
         locale: 'en',
-        isActive: true,
+        isActive: false,
       },
       select: userSelect,
     });
@@ -925,6 +927,155 @@ export class AdminService {
       data: { isActive },
     });
     return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Set trainer verified/unverified (admin only). */
+  async setTrainerVerified(adminUserId: string, trainerId: string, isVerified: boolean) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const trainer = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { role: true },
+    });
+    if (!trainer) return { mtype: 'error', message: 'Trainer not found' };
+    if (trainer.role !== 'trainer') return { mtype: 'error', message: 'User is not a trainer' };
+    await this.prisma.user.update({
+      where: { id: trainerId },
+      data: { isVerified },
+    });
+    return { mtype: 'success', message: 'OK' };
+  }
+
+  /** Sessions for a trainer (admin view). */
+  async trainerSessions(trainerId: string) {
+    const sessions = await this.prisma.session.findMany({
+      where: { trainerId },
+      include: {
+        customer: { select: { id: true, email: true, name: true } },
+      },
+      orderBy: { scheduledAt: 'desc' },
+    });
+    const list = sessions.map((s) => ({
+      id: s.id,
+      customerId: s.customerId,
+      customerName: s.customer.name,
+      customerEmail: s.customer.email,
+      activityName: s.activityName,
+      scheduledAt: s.scheduledAt.toISOString(),
+      status: s.status,
+      amountCents: s.amountCents,
+      createdAt: s.createdAt.toISOString(),
+    }));
+    return { mtype: 'success', message: 'OK', list };
+  }
+
+  /** Earnings for a trainer (completed sessions sum). */
+  async trainerEarnings(trainerId: string) {
+    const [completedCount, sumResult] = await Promise.all([
+      this.prisma.session.count({
+        where: { trainerId, status: 'completed' },
+      }),
+      this.prisma.session.aggregate({
+        where: { trainerId, status: 'completed' },
+        _sum: { amountCents: true },
+      }),
+    ]);
+    const totalCents = sumResult._sum.amountCents ?? 0;
+    return {
+      mtype: 'success',
+      message: 'OK',
+      data: {
+        completedSessionCount: completedCount,
+        earningTotalCents: totalCents,
+        earningTotalFormatted: `$${(totalCents / 100).toFixed(2)}`,
+      },
+    };
+  }
+
+  /** Certificates for a trainer (admin view). */
+  async trainerCertificates(trainerId: string) {
+    const list = await this.prisma.trainerCertificate.findMany({
+      where: { trainerId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return {
+      mtype: 'success',
+      message: 'OK',
+      list: list.map((c) => ({
+        id: c.id,
+        name: c.name,
+        issuingOrganization: c.issuingOrganization ?? null,
+        issuedAt: c.issuedAt?.toISOString() ?? null,
+        credentialId: c.credentialId ?? null,
+        documentUrl: c.documentUrl ?? null,
+        createdAt: c.createdAt.toISOString(),
+      })),
+    };
+  }
+
+  /** Service areas for a trainer (admin view). */
+  async trainerServiceAreas(trainerId: string) {
+    const list = await this.prisma.trainerServiceArea.findMany({
+      where: { trainerId },
+      orderBy: { createdAt: 'asc' },
+    });
+    return {
+      mtype: 'success',
+      message: 'OK',
+      list: list.map((a) => ({
+        id: a.id,
+        label: a.label,
+        address: a.address ?? null,
+        latitude: a.latitude ?? null,
+        longitude: a.longitude ?? null,
+        radiusKm: a.radiusKm ?? null,
+        isActive: a.isActive,
+        createdAt: a.createdAt.toISOString(),
+      })),
+    };
+  }
+
+  /** Plaid verification link for trainer (admin). Returns URL from env or placeholder. */
+  async getPlaidVerificationLink(adminUserId: string, trainerId: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const trainer = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { id: true, role: true, email: true },
+    });
+    if (!trainer || trainer.role !== 'trainer')
+      return { mtype: 'error', message: 'Trainer not found' };
+    const baseUrl =
+      process.env.PLAID_VERIFICATION_LINK ?? process.env.PLAID_LINK_URL ?? 'https://plaid.com/link';
+    const link = `${baseUrl}?trainer_id=${encodeURIComponent(trainerId)}`;
+    return { mtype: 'success', message: 'OK', link };
+  }
+
+  /** Stripe Connect onboarding link for trainer (admin). Returns URL from env or placeholder. */
+  async getStripeConnectLink(adminUserId: string, trainerId: string) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: adminUserId },
+      select: { role: true },
+    });
+    if (!admin || admin.role !== 'admin') return { mtype: 'error', message: 'Forbidden' };
+    const trainer = await this.prisma.user.findUnique({
+      where: { id: trainerId },
+      select: { id: true, role: true },
+    });
+    if (!trainer || trainer.role !== 'trainer')
+      return { mtype: 'error', message: 'Trainer not found' };
+    const baseUrl =
+      process.env.STRIPE_CONNECT_LINK ??
+      process.env.STRIPE_CONNECT_ONBOARDING_URL ??
+      'https://connect.stripe.com/oauth/authorize';
+    const link = `${baseUrl}?trainer_id=${encodeURIComponent(trainerId)}`;
+    return { mtype: 'success', message: 'OK', link };
   }
 
   /** FAQ list from DB (master data). */

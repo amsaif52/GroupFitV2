@@ -72,6 +72,9 @@ export interface LoginScreenWebProps {
   onVerifyOtp?: (otp: string, userCode: string) => Promise<void>;
   /** When provided, used for the phone prefix dropdown instead of static COUNTRY_CODES (e.g. from API). */
   countryOptions?: { code: string; dial: string; name: string }[];
+  /** When false, only phone login is shown (no email tab). Default true. */
+  showEmailLogin?: boolean;
+  showSocialLogin?: boolean;
 }
 
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -106,14 +109,12 @@ const AppleIcon = () => (
 );
 
 export function LoginScreenWeb({
-  onSubmit,
   loading = false,
   error = null,
   onSignUpClick,
   title,
   subtitle,
   emailLabel = 'Email',
-  passwordLabel = 'Password',
   phoneLabel = 'Phone number',
   sendCodeLabel = 'Send code',
   otpPlaceholder = 'Enter 4-digit code',
@@ -137,6 +138,8 @@ export function LoginScreenWeb({
   onSendOtp,
   onVerifyOtp,
   countryOptions,
+  showEmailLogin = false,
+  showSocialLogin = false,
 }: LoginScreenWebProps) {
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('phone');
   const [otpStep, setOtpStep] = useState<{ userCode: string; phone: string } | null>(null);
@@ -144,7 +147,11 @@ export function LoginScreenWeb({
   const [sendOtpLoading, setSendOtpLoading] = useState(false);
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
   const countryList = countryOptions && countryOptions.length > 0 ? countryOptions : COUNTRY_CODES;
-  const [countryDial, setCountryDial] = useState(countryList[0]?.dial ?? '+1');
+  // Dedupe by dial code so <option key={value}> remains unique (avoid multiple "+1" keys)
+  const uniqueCountryList = countryList.filter(
+    (c, index, arr) => arr.findIndex((x) => x.dial === c.dial) === index
+  );
+  const [countryDial, setCountryDial] = useState(uniqueCountryList[0]?.dial ?? '+1');
   useEffect(() => {
     if (countryOptions?.length) {
       const list = countryOptions;
@@ -216,13 +223,6 @@ export function LoginScreenWeb({
 
   const resolvedTitle = title;
   const resolvedSubtitle = subtitle;
-  const showSocial = Boolean(onGooglePress || onApplePress || googleButton || appleButton);
-  const showPhoneLogin = Boolean(onSendOtp && onVerifyOtp);
-
-  // async function handleEmailSubmit(data: LoginInput) {
-  //   await onSubmit(data.email);
-  // }
-
   async function handleSendOtp(data: LoginInput | LoginPhoneInput) {
     if (!onSendOtp) return;
     setSendOtpLoading(true);
@@ -236,6 +236,8 @@ export function LoginScreenWeb({
       setOtpDigits(Array(OTP_LENGTH).fill(''));
       otpForm.setValue('userCode', userCode);
       setResendCooldownSeconds(RESEND_COOLDOWN_SECONDS);
+    } catch {
+      // Caller (e.g. login page) sets error state so user sees API message (e.g. "User not found.")
     } finally {
       setSendOtpLoading(false);
     }
@@ -280,7 +282,7 @@ export function LoginScreenWeb({
         </div>
       )}
 
-      {showSocial && !otpStep && (
+      {showSocialLogin && !otpStep && (
         <div className="gf-auth__social">
           {googleButton != null ? (
             <div className="gf-button--full gf-button--social">{googleButton}</div>
@@ -316,26 +318,32 @@ export function LoginScreenWeb({
 
       {!otpStep ? (
         <>
-          <div className="gf-auth__tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={loginMethod === 'phone'}
-              className={'gf-auth__tab' + (loginMethod === 'phone' ? ' gf-auth__tab--active' : '')}
-              onClick={() => setLoginMethod('phone')}
-            >
-              {phoneTabLabel}
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={loginMethod === 'email'}
-              className={'gf-auth__tab' + (loginMethod === 'email' ? ' gf-auth__tab--active' : '')}
-              onClick={() => setLoginMethod('email')}
-            >
-              {emailTabLabel}
-            </button>
-          </div>
+          {showEmailLogin && (
+            <div className="gf-auth__tabs" role="tablist">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginMethod === 'phone'}
+                className={
+                  'gf-auth__tab' + (loginMethod === 'phone' ? ' gf-auth__tab--active' : '')
+                }
+                onClick={() => setLoginMethod('phone')}
+              >
+                {phoneTabLabel}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={loginMethod === 'email'}
+                className={
+                  'gf-auth__tab' + (loginMethod === 'email' ? ' gf-auth__tab--active' : '')
+                }
+                onClick={() => setLoginMethod('email')}
+              >
+                {emailTabLabel}
+              </button>
+            </div>
+          )}
 
           {loginMethod === 'phone' && (
             <form
@@ -347,7 +355,7 @@ export function LoginScreenWeb({
               <label className="gf-auth__label">
                 <div className="gf-auth__phone-row">
                   <Select
-                    options={countryList.map(({ code, dial, name }) => ({
+                    options={uniqueCountryList.map(({ code, dial, name }) => ({
                       value: dial,
                       label: `${dial} ${name}`,
                     }))}
@@ -383,7 +391,7 @@ export function LoginScreenWeb({
             </form>
           )}
 
-          {loginMethod === 'email' && (
+          {loginMethod === 'email' && showEmailLogin && (
             <form
               onSubmit={emailForm.handleSubmit(handleSendOtp)}
               noValidate
